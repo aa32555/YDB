@@ -18,7 +18,10 @@
 #define ASCII_TTEOL		"\012"
 #define EBCDIC_TTEOL 		"\025"
 
+#ifndef ESC
 #define ESC			ASCII_ESC
+#endif
+
 #define NATIVE_ESC		ASCII_ESC
 #define NATIVE_CR		ASCII_CR
 #define NATIVE_LF		ASCII_LF

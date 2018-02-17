@@ -48,10 +48,10 @@ void setterm(io_desc *ioptr)
 	}
 	t = *tt_ptr->ttio_struct;
 	if (tt_ptr->canonical)
-	{	t.c_lflag &= ~(ECHO);
 		t.c_lflag |= ICANON;
-	}else
-	{	t.c_lflag &= ~(ICANON | ECHO);
+	else
+	{
+		t.c_lflag &= ~(ICANON);
 		t.c_cc[VTIME] = 8;
 		t.c_cc[VMIN] = 1;
 	}

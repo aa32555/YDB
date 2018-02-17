@@ -15,9 +15,11 @@
 
 #include "mdef.h"
 
-#ifdef UNIX
+#include "gtm_stdio.h"
+
 #include <errno.h>
-#endif
+#include <readline/readline.h>
+#include <readline/history.h>
 
 #include "gdsroot.h"
 #include "gdskill.h"
@@ -44,9 +46,11 @@
 #include "getzposition.h"
 #include "restrict.h"
 #include "dm_audit_log.h"
+#include "outofband.h"
 #ifdef DEBUG
 #include "have_crit.h"		/* for the TPNOTACID_CHECK macro */
 #endif
+
 
 #define	DIRECTMODESTR	"DIRECT MODE (any TP RESTART will fail)"
 
@@ -56,6 +60,7 @@ GBLREF	io_pair		io_std_device;
 GBLREF	stack_frame	*frame_pointer;
 GBLREF	unsigned char	*restart_pc;
 GBLREF	unsigned char	*restart_ctxt;
+GBLREF	volatile int4	outofband;
 
 LITREF	mval		literal_notimeout;
 
@@ -71,11 +76,13 @@ void	op_dmode(void)
 	boolean_t		xec_cmd = TRUE;			/* Determines if command should be
 								 * executed (for direct mode auditing purposes)
 								 */
+	boolean_t		isatty;
 	static boolean_t	dmode_intruptd;
 	static boolean_t	kill = FALSE;
 	static int		loop_cnt = 0;
 	static int		old_errno = 0;
 	static io_pair		save_device;
+	char			*ptr;
 	DCL_THREADGBL_ACCESS;
 
 	SETUP_THREADGBL_ACCESS;
@@ -120,7 +127,24 @@ void	op_dmode(void)
 	TPNOTACID_CHECK(DIRECTMODESTR);
 	if (io_curr_device.in->type == tt)
 	{
-		dm_read(input_line);
+		isatty = TRUE;
+		iott_flush(io_curr_device.out);	/* finish any pending flush timers (or else we would see a newline) */
+		ptr = readline("YDB>");
+		input_line->mvtype = MV_STR;
+		input_line->str.len = strlen(ptr);
+		input_line->str.addr = ptr;
+		/* NARSTODO: Maintain $y based on input_line string's length and terminal's width */
+		/* NARSTODO: $x can be set to 0 easily */
+		/* NARSTODO: Any other terminal characteristics need to be set? Need to look into dm_read */
+		/* NARSTODO: Migrate iott_read also to use readline */
+		/* NARSTODO: Add READLINE device parameter */
+		/* NARSTODO: Ensure outofband events (like jobinterrupt) are handled properly */
+		/* NARSTODO: Need to rework code to do a dlopen of libreadline.so that way we honor READLINE devparm
+		 *		only if dlopen succeeds and fail otherwise.
+		 */
+		/* NARSTODO: Add history ability. */
+		/* NARSTODO: any other unknowns */
+		/* dm_read(input_line); */
 		/* If direct mode auditing is enabled, this attempts to send the command to logger */
 		if ((AUDIT_ENABLE_DMODE & RESTRICTED(dm_audit_enable)) && !dm_audit_log(input_line, AUDIT_SRC_DMREAD))
 		{
@@ -130,6 +154,7 @@ void	op_dmode(void)
 		}
 	} else
 	{
+		isatty = FALSE;
 		prompt.mvtype = MV_STR;
 		prompt.str = TREF(gtmprompt);
 		op_write(&prompt);
@@ -145,7 +170,10 @@ void	op_dmode(void)
 			gtm_putmsg_csa(CSA_ARG(NULL) VARLSTCNT(1) ERR_APDLOGFAIL);
 		}
 	}
-	op_wteol(1);
+#	ifdef NARSTODO
+	if (!isatty)
+		op_wteol(1);
+#	endif
 	io_curr_device = save_device;
 	dmode_intruptd = FALSE;
 	/* Only executes command when Direct Mode Auditing
@@ -154,4 +182,9 @@ void	op_dmode(void)
 	if (xec_cmd)
 		op_commarg(input_line, indir_linetail);
 	frame_pointer->type = 0;
+#	ifdef NARSTODO
+	/* Get job interrupt to work */
+	if (isatty && outofband)
+		outofband_action(FALSE);
+#	endif
 }
