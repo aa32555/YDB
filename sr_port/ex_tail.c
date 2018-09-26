@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2017 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2017 YottaDB LLC. and/or its subsidiaries.	*
+ * Copyright (c) 2017-2018 YottaDB LLC. and/or its subsidiaries.*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -77,6 +77,14 @@ void ex_tail(oprtype *opr)
 			{
 				if (OC_LIT != t->operand[j].oprval.tref->opcode)
 					break;				/* from for */
+				/* Go down to the mlit and ensure it has a numeric type */
+				for (t0 = t->operand[0].oprval.tref; TRIP_REF == t0->operand[0].oprclass;
+						t0 = t0->operand[0].oprval.tref)
+					; /* Intentionally left blank */
+				v0 = &t0->operand[0].oprval.mlit->v;
+				MV_FORCE_NUM(v0);
+				if (!(MV_NM & v0->mvtype))
+					break;
 			}
 			if (ARRAYTOP(t->operand) > i)
 				break;					/* from while */
