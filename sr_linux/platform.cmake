@@ -17,6 +17,7 @@
 #################################################################
 
 set(srdir "sr_linux")
+set(enable_LTO 1)	# By default, enable gcc LTO (Link Time Optimization) on all architectures
 if("${CMAKE_SIZEOF_VOID_P}" EQUAL 4)
   if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv6l")
     set(arch "armv6l")
@@ -51,6 +52,10 @@ else()
     set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -march=armv8-a -mcpu=cortex-a53")
     set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -Wa,-march=armv8-a")
     set(CMAKE_ASM_FLAGS_DEBUG "-Wa,-ggdb3 ${CMAKE_ASM_FLAGS_DEBUG}")
+    # On 64-bit ARM, we noticed a bug with using LTO that causes PRO builds of YottaDB to fail with a SIG-11
+    # in a ZWRITE command (in mpt_extra/gbl, m_commands/readwt and unicode/unicodeZwritePattern subtests).
+    # So disable LTO on that architecture for now. (2019/01/24)
+    set(enable_LTO 0)
   else()
     set(arch "x86_64")
     set(bits 64)
@@ -123,15 +128,17 @@ if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 else()
 	# For "Release" or "RelWithDebInfo" type of builds, keep this option disabled for performance reasons
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-stack-protector")
-	# Enable (a) link time optimization and (b) use gold linker.
-	# (a) was seen to reduce the size of libyottadb.so by 5% and improve runtimes by 7% on a simple database test
-	# (b) gold linker was seen to slightly (~ 0.1%) improve build times and run times compared to default ld linker.
-	# Use -flto=N where N is number of available CPUs to speed up the link time.
-	include(ProcessorCount)
-	ProcessorCount(NUMCPUS)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto=${NUMCPUS} -fuse-ld=gold")
-	set(CMAKE_AR "gcc-ar")		# needed on some versions of gcc to get -flto working
-	set(CMAKE_RANLIB "gcc-ranlib")	# needed on some versions of gcc to get -flto working
+	if (enable_LTO)
+		# Enable (a) link time optimization and (b) use gold linker.
+		# (a) was seen to reduce the size of libyottadb.so by 5% and improve runtimes by 7% on a simple database test
+		# (b) gold linker was seen to slightly (~ 0.1%) improve build times and run times compared to default ld linker.
+		# Use -flto=N where N is number of available CPUs to speed up the link time.
+		include(ProcessorCount)
+		ProcessorCount(NUMCPUS)
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto=${NUMCPUS} -fuse-ld=gold")
+		set(CMAKE_AR "gcc-ar")		# needed on some versions of gcc to get -flto working
+		set(CMAKE_RANLIB "gcc-ranlib")	# needed on some versions of gcc to get -flto working
+	endif()
 endif()
 
 # On ARM Linux, gcc by default does not include -funwind-tables whereas it does on x86_64 Linux.
