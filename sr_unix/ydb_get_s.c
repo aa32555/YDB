@@ -114,7 +114,7 @@ int ydb_get_s(ydb_buffer_t *varname, int subs_used, ydb_buffer_t *subsarray, ydb
 				src_lv = (lv_val *)callg((callgfnptr)op_getindx, &plist);	/* Locate node */
 			}
 			if (!LV_IS_VAL_DEFINED(src_lv))				/* Fetched value should be defined */
-				rts_error_csa(CSA_ARG(NULL) VARLSTCNT(1) ERR_LVUNDEF);
+				rts_error_csa(CSA_ARG(NULL) VARLSTCNT(1) ERR_LVUNDEF, 2, varname->len_used, varname->buf_addr);
 			/* Copy value to return buffer */
 			SET_YDB_BUFF_T_FROM_MVAL(ret_value, &src_lv->v, "NULL ret_value->buf_addr", LYDBRTNNAME(LYDB_RTN_GET));
 			break;

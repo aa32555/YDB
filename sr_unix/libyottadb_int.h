@@ -381,7 +381,7 @@ MBSTART {															\
 	if ((NULL == (VARTABENTP)) || (NULL == (lv_val *)((VARTABENTP)->value)))						\
 	{															\
 		if (ERR_LVUNDEF_OK)												\
-			rts_error_csa(CSA_ARG(NULL) VARLSTCNT(1) ERR_LVUNDEF);							\
+			rts_error_csa(CSA_ARG(NULL) VARLSTCNT(4) ERR_LVUNDEF, 2, (VARNAMEP)->len_used, (VARNAMEP)->buf_addr);							\
 		else														\
 			VARLVVALP = NULL;											\
 	} else															\
