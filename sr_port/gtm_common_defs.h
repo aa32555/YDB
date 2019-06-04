@@ -184,6 +184,6 @@ typedef struct
 typedef int32_t		int4;		/* 4-byte signed integer */
 typedef uint32_t	uint4;		/* 4-byte unsigned integer */
 typedef uint64_t	ydb_uint8;
-typedef int		boolean_t;	/* boolean type */
+typedef unsigned int	boolean_t;	/* boolean type */
 
 #endif /* GTM_COMMON_DEFS_H */

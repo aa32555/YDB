@@ -727,7 +727,12 @@ void timer_handler(int why, siginfo_t *info, void *context)
 
 	SETUP_THREADGBL_ACCESS;
 	assert((DUMMY_SIG_NUM == why) || (SIGALRM == why));
+	#ifndef __APPLE__
+	/* This is for the SimpleThreadAPI which currently supports Linux only as it uses
+	 * Linux specific signals to determine certain statuses
+	 */
 	FORWARD_SIG_TO_MAIN_THREAD_IF_NEEDED(sig_hndlr_timer_handler, why, IS_EXI_SIGNAL_FALSE, info, context);
+	#endif
 	assert(gtm_is_main_thread() || gtm_jvm_process || simpleThreadAPI_active);
 	DUMP_TIMER_INFO("At the start of timer_handler()");
 #	ifdef DEBUG
@@ -786,7 +791,7 @@ void timer_handler(int why, siginfo_t *info, void *context)
 		cmp = abs_time_comp(&at, (ABS_TIME *)&tpop->expir_time);
 		if (cmp < 0)
 			break;
-#		if defined(DEBUG) && !defined(_AIX) && !defined(__armv6l__) && !defined(__armv7l__) && !defined(__aarch64__)
+#		if defined(DEBUG) && !defined(_AIX) && !defined(__armv6l__) && !defined(__armv7l__) && !defined(__aarch64__) && !defined(__APPLE__)
 		if (tpop->safe && (TREF(continue_proc_cnt) == last_continue_proc_cnt)
 			&& !(ydb_white_box_test_case_enabled
 				&& ((WBTEST_SIGTSTP_IN_JNL_OUTPUT_SP == ydb_white_box_test_case_number)
@@ -1174,7 +1179,12 @@ STATICFNDEF void init_timers()
 
 	memset(&act, 0, SIZEOF(act));
 	sigemptyset(&act.sa_mask);
+	#ifdef __APPLE__
+	/* APPLE doesn't have a sighandler_t, so cast using expected structures */
+	act.sa_handler = (void (*)(int))timer_handler;
+	#else
 	act.sa_handler = (sighandler_t)timer_handler;
+	#endif
 	act.sa_flags = SA_SIGINFO;	/* FORWARD_SIG_TO_MAIN_THREAD_IF_NEEDED (invoked in "timer_handler")
 					 * relies on "info" and "context" being passed in.
 					 */
@@ -1223,7 +1233,12 @@ void check_for_timer_pops(boolean_t sig_handler_changed)
 		sigaction(SIGALRM, NULL, &current_sa);	/* get current info */
 		if (!first_timeset)
 		{
+			#ifdef __APPLE__
+			/* APPLE doesn't have a sighandler_t, so cast using expected structures */
+			if ((void (*)(int))timer_handler != current_sa.sa_handler)	/* check if what we expected */
+			#else
 			if ((sighandler_t)timer_handler != current_sa.sa_handler)	/* check if what we expected */
+			#endif
 			{
 				init_timers();
 				if (!stolen_timer)

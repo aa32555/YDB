@@ -37,6 +37,18 @@ chnd_jmp	=	24
 	.text
 	.extern gtm_asm_establish
 
+.ifdef __APPLE__
+.macro SIGSETJMP
+	call sigsetjmp
+	incl %eax
+.endm
+.else
+.macro SIGSETJMP
+	call 	__sigsetjmp@PLT
+	cmp	$0,%eax				# Which return is this?
+.endm
+.endif
+
 .macro ESTABLISH labelend, labelskip
         call	gtm_asm_establish
 	movq	ctxt(%rip), %rax
@@ -45,8 +57,7 @@ chnd_jmp	=	24
 	addq	$chnd_jmp, %rax			# setjmp(ctxt->jmp)
 	movq	$0, %rsi
 	movq	%rax, %rdi
-	call 	__sigsetjmp@PLT
-	cmp	$0,%eax				# Which return is this?
+	SIGSETJMP
 	je	\labelend
 	# This is the return when an error was unwound. Need to reduce rts_error_depth before doing anything else
 	movq	gtm_threadgbl(%rip), %r11	# %r10 contains threadgbl base

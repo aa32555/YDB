@@ -82,7 +82,9 @@ static	pid_t			child_pid;
 
 #ifndef SYS_ERRLIST_INCLUDE
 /* currently either stdio.h or errno.h both of which are included above needed by TIMEOUT_ERROR in jobsp.h */
-#if !defined(__sun) && !defined(___MVS__)
+#ifdef __APPLE__
+GBLREF	__const int		sys_nerr;
+#elif !defined(__sun) && !defined(___MVS__)
 GBLREF	int			sys_nerr;
 #endif
 #endif
@@ -196,7 +198,12 @@ void job_term_handler(int sig, siginfo_t *info, void *context)
 	int status;
 	joberr_t exit_status = joberr_gen;
 
+	#ifndef __APPLE__
+	/* This is for the SimpleThreadAPI which currently supports Linux only as it uses
+	 * Linux specific signals to determine certain statuses
+	 */
 	FORWARD_SIG_TO_MAIN_THREAD_IF_NEEDED(sig_hndlr_job_term_handler, sig, IS_EXI_SIGNAL_FALSE, info, context);
+	#endif
 	/*
 	 * ret	= 0 - Child is present but not changed the state
 	 *	< 0 - Error. No child present.

@@ -80,7 +80,7 @@ void sig_init(void (*signal_handler)(), void (*ctrlc_handler)(), void (*suspsig_
         			 */
 				sigaction(sig, &null_action, NULL);
 				break;
-			case SIGCLD:
+			case SIGCHLD:
 				/* Default handling necessary for SIGCLD signal. CAUTION: consider the affect on JOB (timeout)
 				 * implementation before changing this behavior (like defuncts, ECHILD errors, etc.).
 				 */

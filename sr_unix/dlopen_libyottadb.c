@@ -32,6 +32,11 @@
 
 #include "ydb_chk_dist.h"
 
+#ifdef __APPLE__
+/* Import to get access to _NSGetExecutablePath */
+#include <mach-o/dyld.h>
+#endif
+
 #ifdef DEBUG
 # include <sys/types.h>	/* needed by "assert" macro */
 # include <signal.h>	/* needed by "assert" macro */
@@ -68,7 +73,18 @@ int dlopen_libyottadb(int argc, char **argv, char **envp, char *main_func)
 	 * the executable was invoked without specifying an absolute or relative path (e.g. using $PATH in shell).
 	 */
 	/* Get currently running executable */
+	#if defined(__APPLE__)
+	uint32_t size = YDB_PATH_MAX;
+	char curr_exe_path[YDB_PATH_MAX];
+	if (_NSGetExecutablePath(curr_exe_path, &size) < 0)
+	{
+		FPRINTF(stderr, "%%YDB-E-DISTPATHMAX, Executable path length is greater than maximum (%d)\n", YDB_DIST_PATH_MAX);
+		return ERR_DISTPATHMAX;
+	}
+	pathptr = realpath(curr_exe_path, curr_exe_realpath);
+	#elif defined(__linux__)
 	pathptr = realpath(PROCSELF, curr_exe_realpath);
+	#endif
 	if (NULL != pathptr)
 	{
 		pathlen = STRLEN(pathptr);

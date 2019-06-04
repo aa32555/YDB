@@ -11,12 +11,17 @@
  ****************************************************************/
 #include "mdef.h"
 
+#ifdef __APPLE__
+#include <sys/param.h>
+#include <sys/mount.h>
+#else
 #include <sys/statfs.h>
+#endif
 #ifdef _AIX
 #include <sys/vmount.h>	/* needed for MNT_NFS */
 #endif
 
-#if defined( __linux__) || defined(__CYGWIN__)
+#if defined( __linux__) || defined(__CYGWIN__) || defined(__APPLE__)
 /* Define NFS_SUPER_MAGIC. This should ideally include <linux/nfs_fs.h> for NFS_SUPER_MAGIC.
  * However, this header file doesn't seem to be standard and gives lots of
  * compilation errors and hence defining again here.  The constant value
@@ -35,7 +40,7 @@ boolean_t is_fstype_nfs(int fd)
 	is_nfs = FALSE;
 	if (0 != fstatfs(fd, &buf))
 		return is_nfs;
-#	if defined(__linux__) || defined(__CYGWIN__)
+#	if defined(__linux__) || defined(__CYGWIN__) || defined(__APPLE__)
 	is_nfs = (NFS_SUPER_MAGIC == buf.f_type);
 #	elif defined(_AIX)
 	is_nfs = (MNT_NFS == buf.f_vfstype);

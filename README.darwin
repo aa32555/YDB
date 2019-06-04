@@ -1,0 +1,38 @@
+# Prerequisetes
+
+1. Install homebrew (see http://brew.sh for more info): `/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"`
+2. Install build tools: `brew install cmake icu4c libconfig libgcrypt gpgme openssl pkg-config wget`
+3. Make sure the libicu headers are linked into the correct place: `brew link icu4c --force`
+Note: if you get a linking error from homebrew change the permissions on /usr/local/include and /usr/local/lib to allow your user to write to the directory:
+```
+sudo chmod ugo+rw /usr/local/include
+sudo chmod ugo+rw /usr/local/lib
+```
+4. Download and install objconv: `mkdir objconv && cd objconv && curl -sO https://www.agner.org/optimize/objconv.zip && unzip objconv.zip && mkdir source && cd source && unzip source.zip && ./build.sh && cp objconv /usr/local/bin`
+5. Update sysctl settings. Open `/etc/sysctl.conf` in your favorite text editor and add/modify the following lines
+```
+kern.sysv.shmmax=134217728
+kern.sysv.shmmin=1
+kern.sysv.shmseg=64
+kern.sysv.shmall=393216
+```
+6. Update sysctl settings now:
+```
+sudo sysctl -w kern.sysv.shmmax=134217728
+sudo sysctl -w kern.sysv.shmmin=1
+sudo sysctl -w kern.sysv.shmseg=64
+sudo sysctl -w kern.sysv.shmall=393216
+```
+
+# Compile
+Now normal build instructions can be taken `cmake -D CMAKE_INSTALL_PREFIX:PATH=$PWD ../ && make -j `grep -c ^processor /proc/cpuinfo` && make install`
+
+# Install
+Normal installation instructions can be followed: `cd yottadb_r* && ./ydbinstall --force-install --keep-obj
+
+# FAQ
+
+OS X Mojave has moved the normal system header files around to install them to the typical *nix place:
+```
+sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /
+```

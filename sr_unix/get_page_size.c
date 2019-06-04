@@ -17,7 +17,7 @@ GBLDEF int4	gtm_os_page_size;
 
 void get_page_size(void)
 {
-	gtm_os_page_size = getpagesize();
+	gtm_os_page_size = sysconf(_SC_PAGESIZE);
 
 	return;
 }

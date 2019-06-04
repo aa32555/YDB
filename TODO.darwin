@@ -1,0 +1,5 @@
+# Todo list for Mac OS X Port
+
+ * Assembler macros for sigsetjmp and label jump g_msf.si.
+ * Mach-O object files (done)(ld to create dynamic libraries doesn't work though)
+ * Shared autolink routine libraries don't work b/c of mprotect issue on shared memory.

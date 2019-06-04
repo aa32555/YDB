@@ -38,11 +38,19 @@ MBSTART {							\
 #define	ICU_LIBFLAGS		(RTLD_NOW | RTLD_GLOBAL)
 
 #define	ICU_LIBNAME_ROOT	"libicuio"
-#define YOTTADB_IMAGE_NAME	"libyottadb.so"
-#define	ICU_LIBNAME_EXT		"so"
 #ifndef LIBRARY_PATH_MAX
 #define	LIBRARY_PATH_MAX GTM_PATH_MAX
 #endif
+
+#if defined(__APPLE__)
+#	define YOTTADB_IMAGE_NAME	"libyottadb.dylib"
+#	define ICU_LIBNAME_EXT		"dylib"
+#	define APPLE_ICU_LIB_NAME	"libicucore.dylib"
+#else
+#	define YOTTADB_IMAGE_NAME	"libyottadb.so"
+#	define ICU_LIBNAME_EXT		"so"
+#endif
+
 #define	ICU_LIBNAME		ICU_LIBNAME_ROOT "." ICU_LIBNAME_EXT
 
 #define	GTM_PLUGIN_FMT_SHORT	"%s/plugin/"

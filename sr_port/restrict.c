@@ -76,6 +76,15 @@
 #define AUDIT_OPT_OPREAD		"RD"
 #define AUDIT_OPT_OPREAD_LEN		STR_LIT_LEN(AUDIT_OPT_OPREAD)
 
+/* in APPLE the st_mtim is renamed as st_mtimespec in the status struct	*/
+#ifdef __APPLE__
+#define RTIME				rTime.st_mtimespec
+#define FTIME				fTime.st_mtimespec
+#else
+#define RTIME				rTime.st_mtim
+#define FTIME				fTime.st_mtim
+#endif
+
 GBLDEF	struct restrict_facilities	restrictions;
 GBLDEF	boolean_t			restrict_initialized;
 
@@ -121,12 +130,12 @@ error_def(ERR_APDINITFAIL);
 			rts_error_csa(CSA_ARG(NULL) VARLSTCNT(8) ERR_SYSCALL, 5,					\
 				LEN_AND_LIT("PUT_FLNAME_IN_MAPPING_FILE() stat() for " RESTRICT_FILENAME), CALLFROM,	\
 				errno);											\
-		rmtime = rTime.st_mtim;											\
+		rmtime = RTIME;												\
 		if (-1 == Stat(FPATH, &fTime))										\
 			rts_error_csa(CSA_ARG(NULL) VARLSTCNT(8) ERR_SYSCALL, 5,					\
 				LEN_AND_LIT("PUT_FLNAME_IN_MAPPING_FILE() stat() for " COMM_FILTER_FILENAME), CALLFROM,	\
 				errno);											\
-		fmtime = fTime.st_mtim;											\
+		fmtime = FTIME;												\
 		/* Check if restrict.txt file modification time (rmtime) is newer than					\
 		 * filter_commands.tab file modification time (fmtime). If so, recreate filter_commands.tab.		\
 		 */													\

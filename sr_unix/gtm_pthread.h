@@ -16,7 +16,9 @@
 
 #include <pthread.h>	/* BYPASSOK(gtm_pthread.h) */
 
+#ifndef __APPLE__
 #define PTHREAD_MUTEX_ROBUST_SUPPORTED		((_POSIX_C_SOURCE >= 200809L) && !defined(_AIX))
 #define PTHREAD_MUTEX_CONSISTENT_SUPPORTED	((_POSIX_C_SOURCE >= 200809L) && !defined(_AIX))
+#endif
 
 #endif

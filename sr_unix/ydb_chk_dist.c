@@ -54,6 +54,11 @@
 #include "have_crit.h"
 #include "gtm_post_startup_check_init.h"
 
+#ifdef __APPLE__
+/* Import to get access to _NSGetExecutablePath */
+# include <mach-o/dyld.h>
+#endif
+
 GBLREF	char		ydb_dist[YDB_PATH_MAX];
 GBLREF	boolean_t	ydb_dist_ok_to_use;
 
@@ -104,7 +109,17 @@ int ydb_chk_dist(char *image)
 		rts_error_csa(CSA_ARG(NULL) VARLSTCNT(1) ERR_YDBDISTUNDEF);
 	}
 	/* Get currently running executable */
+	#if defined(__APPLE__)
+	uint32_t size = YDB_PATH_MAX;
+	char image_path[YDB_PATH_MAX];
+	if (_NSGetExecutablePath(image_path, &size) < 0)
+	{
+		rts_error_csa(CSA_ARG(NULL) VARLSTCNT(3) ERR_DISTPATHMAX, 1, YDB_DIST_PATH_MAX); /* Error return from _NSGetExecutablePath */
+	}
+	nbytes = SNPRINTF(image_real_path, YDB_PATH_MAX, image_path);
+	#elif defined(__linux__)
 	nbytes = SNPRINTF(image_real_path, YDB_PATH_MAX, PROCSELF);
+	#endif
 	if ((0 > nbytes) || (nbytes >= YDB_PATH_MAX))
 		rts_error_csa(CSA_ARG(NULL) VARLSTCNT(3) ERR_DISTPATHMAX, 1, YDB_DIST_PATH_MAX); /* Error return from SNPRINTF */
 	/* Create the comparison path (ydb_dist + '/' + exename + '\0') and compare it to image_real_path */
