@@ -94,7 +94,8 @@ else()
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -fPIC ")
 endif()
 # There was a bogus warning involving iosocket_close.c which we could not address and believe to be a GCC bug.
-# Therefore, we have disabled the -Wmaybe-uninitialized warning until the bug is fixed
+# Therefore, we have disabled the -Wmaybe-uninitialized warning until that bug plus many others that make this warning
+# largely unusable are fixed.
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsigned-char -Wmissing-prototypes -Wmaybe-uninitialized -Wreturn-type -Wpointer-sign")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsigned-char -Wmissing-prototypes -Wno-maybe-uninitialized -Wreturn-type -Wpointer-sign")
 # Add flags for warnings that we want and don't want.
