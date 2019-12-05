@@ -797,15 +797,12 @@ if [ "Y" = $ydb_encplugin ] ; then
 	. ${ydb_installdir}/ydb_env_set
 	mkdir enc_tmp
 	cd enc_tmp
-	sudo tar -xf ${ydb_installdir}/plugin/gtmcrypt/source.tar
+	sudo tar -xf ${ydb_installdir}/plugin/ydbcrypt/source.tar
 	sudo ydb_dist=${ydb_installdir} make -j `grep -c ^processor /proc/cpuinfo`
 	sudo ydb_dist=${ydb_installdir} make install
 	. ${ydb_installdir}/ydb_env_unset
 	cd ..
 	sudo rm -R enc_tmp
-	# rename gtmcrypt to ydbcrypt and create a symbolic link for backward compatibility
-	mv ${ydb_installdir}/plugin/gtmcrypt ${ydb_installdir}/plugin/ydbcrypt
-	ln -s ${ydb_installdir}/plugin/ydbcrypt ${ydb_installdir}/plugin/gtmcrypt
 fi
 
 if [ "Y" = $ydb_zlib ] ; then

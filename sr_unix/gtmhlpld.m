@@ -3,6 +3,9 @@
 ; Copyright (c) 2002-2017 Fidelity National Information		;
 ; Services, Inc. and/or its subsidiaries. All rights reserved.	;
 ;								;
+; Copyright (c) 2019 YottaDB LLC and/or its subsidiaries.	;
+; All rights reserved.						;
+;								;
 ;	This source code contains the intellectual property	;
 ;	of its copyright holder(s), and is made available	;
 ;	under a license.  If you do not know the terms of	;
@@ -43,7 +46,7 @@ gtmload	;
  	quit
 err	;
 	set $ztrap=""
-	u 0 w !,"Error in GT.M help load utility."
+	u 0 w !,"Error in YottaDB help load utility."
 	set file="gtmhlpld.dmp"
 	open file:newversion
 	use file
@@ -56,4 +59,3 @@ UCASE(string)
 	set lo="abcdefghijklmnopqrstuvwxyz"
 	set up="ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	quit $translate(string,lo,up)
-

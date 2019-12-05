@@ -3,7 +3,7 @@
 # Copyright (c) 2014-2018 Fidelity National Information		#
 # Services, Inc. and/or its subsidiaries. All rights reserved.	#
 #								#
-# Copyright (c) 2018 YottaDB LLC and/or its subsidiaries.	#
+# Copyright (c) 2018-2019 YottaDB LLC and/or its subsidiaries.	#
 # All rights reserved.						#
 #								#
 #	This source code contains the intellectual property	#
@@ -48,8 +48,8 @@ endif
 
 set script_stat = 0
 foreach hlp (${hlpdir}/*.hlp)
-	# Extract the HLP file name and fix-up the mumps to gtm
-	set prefix=${hlp:t:r:s/mumps/gtm/}
+	# Extract the HLP file name and fix-up the mumps to ydb
+	set prefix=${hlp:t:r:s/mumps/ydb/}
 
 	# If the HLP files are newer than the help database create a new one, otherwise skip it
 	if ( -C ${hlp} > -C $ydb_dist/${prefix}help.dat ) then
@@ -73,7 +73,7 @@ GDE_in_help
 
 	if ($status) then
 		@ script_stat++
-		do_log echo "genreatehelp-E-hlp, Error creating GLD for ${hlp}"
+		do_log echo "generatehelp-E-hlp, Error creating GLD for ${hlp}"
 		continue
 	endif
 

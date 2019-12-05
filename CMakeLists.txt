@@ -821,12 +821,12 @@ foreach(ydb_chset "" "UTF-8")
 endforeach()
 
 #-----------------------------------------------------------------------------
-set(gtm_hlp mumps.hlp)
+set(ydb_hlp mumps.hlp)
 set(gde_hlp gde.hlp)
 set(mupip_hlp mupip.hlp)
 set(dse_hlp dse.hlp)
 set(lke_hlp lke.hlp)
-foreach(help gtm gde mupip dse lke)
+foreach(help ydb gde mupip dse lke)
   set(CMAKE_CONFIGURABLE_FILE_CONTENT
     "Change -segment DEFAULT -block=2048 -file=\$ydb_dist/${help}help.dat
 Change -region DEFAULT -record=1020 -key=255 -qdbrundown -nostats
@@ -871,12 +871,12 @@ endforeach()
 if (GTMDefinedTypesInit${defined_types_tail}_found)
 add_custom_command(
   OUTPUT GTMDEFINEDTYPESTODB.o
-  DEPENDS gtmhelp.dat gtmhelp.gld GTMDefinedTypesInit${defined_types_tail}.m ${YDB_BINARY_DIR}/gtmhelp.dat_noro
+  DEPENDS ydbhelp.dat ydbhelp.gld GTMDefinedTypesInit${defined_types_tail}.m ${YDB_BINARY_DIR}/ydbhelp.dat_noro
   COMMAND ${CMAKE_COMMAND} -E copy GTMDefinedTypesInit${defined_types_tail}.m ${YDB_BINARY_DIR}/GTMDefinedTypesInit.m
   COMMAND ${CMAKE_COMMAND}
     -D ydb_dist=${YDB_BINARY_DIR}
     -D ydb_routines=.
-    -D ydb_gbldir=${YDB_BINARY_DIR}/gtmhelp
+    -D ydb_gbldir=${YDB_BINARY_DIR}/ydbhelp
     -D mumps=$<TARGET_FILE:yottadb>
     -D "args=-run;GTMDEFINEDTYPESTODB"
     -P ${YDB_SOURCE_DIR}/sr_unix/mumps.cmake
@@ -885,7 +885,7 @@ add_custom_command(
 list(APPEND files_to_place GTMDEFINEDTYPESTODB.o)
 endif(GTMDefinedTypesInit${defined_types_tail}_found)
 
-foreach(help gtm gde mupip dse lke)
+foreach(help ydb gde mupip dse lke)
   set(CMAKE_CONFIGURABLE_FILE_CONTENT
     "SET -ACC=MM -READ_ONLY -reg \"*\"
 exit")
@@ -910,7 +910,7 @@ exit")
     list(APPEND targets_to_run ${YDB_BINARY_DIR}/${help}help.dat_ro)
 endforeach()
 
-foreach(help gtm gde mupip dse lke)
+foreach(help ydb gde mupip dse lke)
   set(CMAKE_CONFIGURABLE_FILE_CONTENT
     "SET -ACC=MM -NOREAD_ONLY -reg \"*\"
 exit")
@@ -1002,4 +1002,3 @@ string(TIMESTAMP BUILD_TIMESTAMP "%Y%m%d %H:%M")
 
 # Make the build timestamp available to a C program (release_name.h)
 add_definitions("-DYDB_RELEASE_STAMP=\"${BUILD_TIMESTAMP}\"")
-

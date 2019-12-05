@@ -3,7 +3,7 @@
  * Copyright (c) 2013-2018 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2019 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -31,7 +31,7 @@ error_def(ERR_YDBDISTUNVERIF);
 #define MUMPS_CMD_STRING_SIZE	8 + YDB_PATH_MAX
 #define EXEC_MUMPS		"%s/mumps"
 #define HELP_CMD_STRING_SIZE	256 + YDB_PATH_MAX
-#define EXEC_GTMHELP		"do ^GTMHELP(\"%s\",\"%s/%shelp.gld\")",
+#define EXEC_GTMHELP		"do ^YDBHELP(\"%s\",\"%s/%shelp.gld\")",
 
 #define UTIL_HELP_IMAGES	5
 /* We need the first two entries for compatibility */
@@ -78,4 +78,3 @@ void util_help(void)
 	if (0 != rc)
 		rts_error_csa(NULL, VARLSTCNT(5) ERR_TEXT, 2, RTS_ERROR_TEXT("HELP command error"), rc);
 }
-

@@ -3,6 +3,9 @@
 ; Copyright (c) 2002-2018 Fidelity National Information		;
 ; Services, Inc. and/or its subsidiaries. All rights reserved.	;
 ;								;
+; Copyright (c) 2019 YottaDB LLC and/or its subsidiaries.	;
+; All rights reserved.						;
+;								;
 ;	This source code contains the intellectual property	;
 ;	of its copyright holder(s), and is made available	;
 ;	under a license.  If you do not know the terms of	;
@@ -18,7 +21,7 @@ gtmhelp(subtopic,gbldir)
 	use $principal:nocenable				; do as soon as there's hope of undoing it, ie, after 2 prior lines
 	set pio=$zwrite($io)					; in case of an early error
 	new $etrap						; also inportant to get in place
-	set $etrap="zgoto "_$zlevel_":error^GTMHELP"		; the code below sets up pio to restore the original $P state
+	set $etrap="zgoto "_$zlevel_":error^YDBHELP"		; the code below sets up pio to restore the original $P state
 	set:$io'=IO(1) IO(0)=$io				; now capture $P state - IO(0) means there' a device other than $P
 	; Capture the existing $principal's state to restore on exit
 	set tmp="$principal:("_$select(zshow("D",1)["NOCENE":"no",1:"")_"cenable"
@@ -28,8 +31,8 @@ gtmhelp(subtopic,gbldir)
 	set pio=tmp_")"
 	; Override the exception handler
 	if zshow("D",1)["TERMINAL" do
-	. use $principal:(ctrap=$char(3):exception="zgoto "_$zlevel_":again:$zstatus[""CTRAP"","_$zlevel_":error^GTMHELP")
-	else  use $principal:(exception="zgoto "_$zlevel_":error^GTMHELP")
+	. use $principal:(ctrap=$char(3):exception="zgoto "_$zlevel_":again:$zstatus[""CTRAP"","_$zlevel_":error^YDBHELP")
+	else  use $principal:(exception="zgoto "_$zlevel_":error^YDBHELP")
 	set $zgbldir=gbldir
 again	set:$data(COUNT) subtopic=""				; <CTRL-C> comes back to here and clears any topic
 	kill (%gbldir,IO,pio,subtopic)				; X-NEW is evil, but performance is not an issue here
@@ -156,7 +159,7 @@ qualifiers(ref)							; qualifier lister
 	;
 error								; Error handler called by $etrap
 	if ($zstatus'["IOEOF") do				; EOF is not a "real" error
-	. write !,"Error in GT.M help utility - look at ",$zjobexam("gtmhelpdmp")," for additional information",!
+	. write !,"Error in YottaDB help utility - look at ",$zjobexam("gtmhelpdmp")," for additional information",!
 	. quit
 	use @pio,IO(1)						; restore $P state and original $IO
 	set $ecode=""						; caller loses error trace, but generally called by direct mode

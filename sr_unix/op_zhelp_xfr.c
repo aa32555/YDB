@@ -2,7 +2,7 @@
  *								*
  * Copyright 2001, 2013 Fidelity Information Services, Inc	*
  *								*
- * Copyright (c) 2018 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2019 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -20,8 +20,8 @@
 
 static mval com 	= DEFINE_MVAL_STRING(MV_STR, 0 , 0 , 1 , (char *) "," , 0 , 0 );
 static mval rpar 	= DEFINE_MVAL_STRING(MV_STR, 0 , 0 , 1 , (char *) ")" , 0 , 0 );
-static mval dlib 	= DEFINE_MVAL_STRING(MV_STR, 0 , 0 , SIZEOF("$ydb_dist/gtmhelp.gld") - 1 ,
-					 (char *) "$ydb_dist/gtmhelp.gld" , 0 , 0 );
+static mval dlib 	= DEFINE_MVAL_STRING(MV_STR, 0 , 0 , SIZEOF("$ydb_dist/ydbhelp.gld") - 1 ,
+					 (char *) "$ydb_dist/ydbhelp.gld" , 0 , 0 );
 
 GBLREF spdesc stringpool;
 
@@ -38,8 +38,8 @@ void op_zhelp_xfr(mval *subject, mval *lib)
 	flush_pio();
 	action = push_mval(subject);
 	action->mvtype = 0;
-	action->str.len = SIZEOF("D ^GTMHELP(") - 1;
-	action->str.addr = "D ^GTMHELP(";
+	action->str.len = SIZEOF("D ^YDBHELP(") - 1;
+	action->str.addr = "D ^YDBHELP(";
 	s2pool(&action->str);
 	action->mvtype = MV_STR;
 

@@ -48,6 +48,24 @@ else
 	deliver_gtcm_gnp="no"
 fi
 
+# Rename gtm* files to ydb*
+mv gtmgblstat.xc ydbgblstat.xc
+mv gtm_sizeof.h ydb_sizeof.h
+mv gtm_common_defs.h ydb_common_defs.h
+mv gtm_strings.h ydb_strings.h
+mv gtm_limits.h ydb_limits.h
+mv gtm_stdlib.h ydb_stdlib.h
+mv gtm_descript.h ydb_descript.h
+mv gtm_string.h ydb_string.h
+mv gtmxc_types.h ydbxc_types.h
+mv gtm_stdio.h ydb_stdio.h
+mv GTMHELP.m YDBHELP.m
+mv GTMDEFINEDTYPESTODB.m YDBDEFINEDTYPESTODB.m
+mv GTMHLPLD.m YDBHLPLD.m
+mv GTMDefinedTypesInitDebug.m YDBDefinedTypesInitDebug.m
+mv GTMTHREADGBLASM.m YDBTHREADGBLASM.m
+mv GTMDefinedTypesInitRelease.m YDBDefinedTypesInitRelease.m
+
 # create symbolic links if utf8 directory exists.  Ignore the "file exists" errors for the .o files
 # which exist in both directories.
 
@@ -493,7 +511,7 @@ if [ -f $file ]; then
 	fi
 fi
 # Install the .cshrc and .profile files
-for i in gdedefaults gtmgblstat.xc
+for i in gdedefaults ydbgblstat.xc
 do
 	if [ -e $i ]; then
 		cp -p $i $ydbdist
@@ -510,6 +528,8 @@ do
 		chown $owner $ydbdist/$i
 	fi
 done
+
+
 
 # Install the normal scripts
 for i in $nscripts
@@ -538,12 +558,38 @@ do
 	fi
 done
 
+
+
 # Install other individual files
 for i in  $ofiles
 do
 	cp -p $i $ydbdist
 	chown $owner $ydbdist/$i
 done
+
+# Add symbolic links for the renamed gtm* files
+ln -s ydb_sizeof.h $ydbdist/gtm_sizeof.h
+ln -s ydb_common_defs.h $ydbdist/gtm_common_defs.h
+ln -s ydb_strings.h $ydbdist/gtm_strings.h
+ln -s ydb_limits.h $ydbdist/gtm_limits.h
+ln -s ydb_stdlib.h $ydbdist/gtm_stdlib.h
+ln -s ydbhelp.gld $ydbdist/gtmhelp.gld
+ln -s ydb_descript.h $ydbdist/gtm_descript.h
+ln -s ydb_string.h $ydbdist/gtm_string.h
+ln -s ydbxc_types.h $ydbdist/gtmxc_types.h
+ln -s ydb_stdio.h $ydbdist/gtm_stdio.h
+if [ "$doutf8" -ne 0 ]; then
+	ln -s ydb_sizeof.h $ydbdist/utf8/gtm_sizeof.h
+	ln -s ydb_common_defs.h $ydbdist/utf8/gtm_common_defs.h
+	ln -s ydb_strings.h $ydbdist/utf8/gtm_strings.h
+	ln -s ydb_limits.h $ydbdist/utf8/gtm_limits.h
+	ln -s ydb_stdlib.h $ydbdist/utf8/gtm_stdlib.h
+	ln -s ydbhelp.gld $ydbdist/utf8/gtmhelp.gld
+	ln -s ydb_descript.h $ydbdist/utf8/gtm_descript.h
+	ln -s ydb_string.h $ydbdist/utf8/gtm_string.h
+	ln -s ydbxc_types.h $ydbdist/utf8/gtmxc_types.h
+	ln -s ydb_stdio.h $ydbdist/utf8/gtm_stdio.h
+fi
 
 # For linux systems, attempt to execute the chcon command to allow use of the libyottadb shared library. This
 # command is required on many modern SELinux based systems but depends on the filesystem in use (requires context
@@ -625,10 +671,32 @@ EOF
 	rm $plugin_gtmcrypt/README
 fi
 
+# Rename gtmcrypt to ydbcrypt
+mv $ydbdist/plugin/gtmcrypt $ydbdist/plugin/ydbcrypt
+
 # Install GDE, GTMHELP, and all the percent routines
 cp -p *.o *.m $ydbdist
 if [ "N" = $ydb_deprecated ] ; then
 	rm $ydbdist/_DSEWRAP.m
+fi
+
+# Add symbolic links from gtm to ydb as needed
+ln -s YDBHELP.m $ydbdist/GTMHELP.m
+ln -s YDBDEFINEDTYPESTODB.m $ydbdist/GTMDEFINEDTYPESTODB.m
+ln -s YDBHLPLD.m $ydbdist/GTMHLPLD.m
+ln -s YDBDefinedTypesInitDebug.m $ydbdist/GTMDefinedTypesInitDebug.m
+ln -s ydbgblstat.xc $ydbdist/gtmgblstat.xc
+ln -s YDBTHREADGBLASM.m $ydbdist/GTMTHREADGBLASM.m
+ln -s YDBDefinedTypesInitRelease.m $ydbdist/GTMDefinedTypesInitRelease.m
+ln -s ydbcrypt $ydbdist/plugin/gtmcrypt
+if [ "$doutf8" -ne 0 ]; then
+	ln -s YDBHELP.m $ydbdist/utf8/GTMHELP.m
+	ln -s YDBDEFINEDTYPESTODB.m $ydbdist/utf8/GTMDEFINEDTYPESTODB.m
+	ln -s YDBHLPLD.m $ydbdist/utf8/GTMHLPLD.m
+	ln -s YDBDefinedTypesInitDebug.m $ydbdist/utf8/GTMDefinedTypesInitDebug.m
+	ln -s ydbgblstat.xc $ydbdist/utf8/gtmgblstat.xc
+	ln -s YDBTHREADGBLASM.m $ydbdist/utf8/GTMTHREADGBLASM.m
+	ln -s YDBDefinedTypesInitRelease.m $ydbdist/utf8/GTMDefinedTypesInitRelease.m
 fi
 
 # Install a mirror image (using soft links) of $ydbdist under $ydbdist/utf8 if this platform can support "UTF-8" mode.
@@ -677,8 +745,33 @@ if [ "$resp" = "Y" -o "$resp" = "y" ] ; then
 	$echo ""
 	$echo "Creating lowercase versions of the MUMPS routines."
 	(cd $ydbdist; ./lowerc_cp *.m)
+	# Remove lowercase versions of gtm routines and replace with symbolic links
+	rm $ydbdist/gtmhelp.m
+	ln -s ydbhelp.m $ydbdist/gtmhelp.m
+	rm $ydbdist/gtmhlpld.m
+	ln -s ydbhlpld.m $ydbdist/gtmhlpld.m
+	rm $ydbdist/gtmdefinedtypesinitrelease.m
+	ln -s ydbdefinedtypesinitrelease.m $ydbdist/gtmdefinedtypesinitrelease.m
+	rm $ydbdist/gtmdefinedtypesinitdebug.m
+	ln -s ydbdefinedtypesinitdebug.m $ydbdist/gtmdefinedtypesinitdebug.m
+	rm $ydbdist/gtmdefinedtypestodb.m
+	ln -s ydbdefinedtypestodb.m $ydbdist/gtmdefinedtypestodb.m
+	rm $ydbdist/gtmthreadgblasm.m
+	ln -s ydbthreadgblasm.m $ydbdist/gtmthreadgblasm.m
 	if [ "$doutf8" -ne 0 ]; then
 		(cd $ydbdist/utf8; ./lowerc_cp *.m)
+		rm $ydbdist/utf8/gtmhelp.m
+		ln -s ydbhelp.m $ydbdist/utf8/gtmhelp.m
+		rm $ydbdist/utf8/gtmhlpld.m
+		ln -s ydbhlpld.m $ydbdist/utf8/gtmhlpld.m
+		rm $ydbdist/utf8/gtmdefinedtypesinitrelease.m
+		ln -s ydbdefinedtypesinitrelease.m $ydbdist/utf8/gtmdefinedtypesinitrelease.m
+		rm $ydbdist/utf8/gtmdefinedtypesinitdebug.m
+		ln -s ydbdefinedtypesinitdebug.m $ydbdist/utf8/gtmdefinedtypesinitdebug.m
+		rm $ydbdist/utf8/gtmdefinedtypestodb.m
+		ln -s ydbdefinedtypestodb.m $ydbdist/utf8/gtmdefinedtypestodb.m
+		rm $ydbdist/utf8/gtmthreadgblasm.m
+		ln -s ydbthreadgblasm.m $ydbdist/utf8/gtmthreadgblasm.m
 	fi
 fi
 
@@ -857,14 +950,21 @@ fi
 strip $ydbdist/gtmsecshr > /dev/null 2>&1
 strip $tgtmsecshrdir/gtmsecshr > /dev/null 2>&1
 
+mv $ydbdist/gtmsecshr $ydbdist/ydbsecshr
+mv $ydbdist/gtmsecshrdir $ydbdist/ydbsecshrdir
+ln -s ydbsecshr $ydbdist/gtmsecshr
+ln -s ydbsecshrdir $ydbdist/gtmsecshrdir
+
+
 if [ -d $ydbdist/utf8 ]; then
 
 	# Delete the gtmsecshr symlink
 	if [ -f $ydbdist/utf8/gtmsecshr -o -h $ydbdist/utf8/gtmsecshr ]; then
 		rm -f $ydbdist/utf8/gtmsecshr
 	fi
-	ln $ydbdist/gtmsecshr $ydbdist/utf8/gtmsecshr || \
-		echo ln $ydbdist/gtmsecshr $ydbdist/utf8/gtmsecshr
+	ln $ydbdist/ydbsecshr $ydbdist/utf8/ydbsecshr || \
+			echo ln $ydbdist/ydbsecshr $ydbdist/utf8/ydbsecshr
+	ln -s ydbsecshr $ydbdist/utf8/gtmsecshr
 
 	# Delete the gtmsecshrdir symlink
 	if [ -f $ydbdist/utf8/gtmsecshrdir -o -h $ydbdist/utf8/gtmsecshrdir ]; then
@@ -874,7 +974,8 @@ if [ -d $ydbdist/utf8 ]; then
 	chmod 0500 $ydbdist/utf8/gtmsecshrdir
 	ln $ydbdist/gtmsecshrdir/gtmsecshr $ydbdist/utf8/gtmsecshrdir/gtmsecshr || \
 		echo ln $ydbdist/gtmsecshrdir/gtmsecshr $ydbdist/utf8/gtmsecshrdir/gtmsecshr
-
+	mv $ydbdist/utf8/gtmsecshrdir $ydbdist/utf8/ydbsecshrdir
+	ln -s ydbsecshrdir $ydbdist/utf8/gtmsecshrdir
 fi
 
 # change group ownership of wrapper if group restricted
