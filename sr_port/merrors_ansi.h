@@ -1535,4 +1535,5 @@ const static readonly int error_ansi[] = {
 	   0,	/* APDCONNFAIL */
 	   0,	/* APDLOGFAIL */
 	   0,	/* STATSDBMEMERR */
+	   0,	/* JOBEXAMBEGIN */
 	};

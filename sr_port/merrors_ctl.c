@@ -1537,6 +1537,7 @@ LITDEF	err_msg merrors[] = {
 	{ "APDCONNFAIL", "Audit Principal Device failed to connect to audit logger", 0 },
 	{ "APDLOGFAIL", "Audit Principal Device failed to log activity", 0 },
 	{ "STATSDBMEMERR", "Process attempted to create stats block in statistics database !AD and received SIGBUS--invalid physical address. Check file system space.", 2 },
+	{ "JOBEXAMBEGIN", "YottaDB process !UL initated job examine to !AD", 3 },
 };
 
 
@@ -1575,7 +1576,7 @@ GBLDEF	err_ctl merrors_ctl = {
 	246,
 	"GTM",
 	&merrors[0],
-	1520,
+	1521,
 	&merrors_undocarr[0],
 	26
 };

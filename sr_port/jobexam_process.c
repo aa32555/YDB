@@ -61,6 +61,7 @@ LITREF	mval		literal_zero;
 error_def(ERR_GTMASSERT);
 error_def(ERR_GTMASSERT2);
 error_def(ERR_GTMCHECK);
+error_def(ERR_JOBEXAMBEGIN);
 error_def(ERR_JOBEXAMDONE);
 error_def(ERR_JOBEXAMFAIL);
 error_def(ERR_MEMORY);
@@ -195,6 +196,9 @@ void jobexam_dump(mval *dump_filename_arg, mval *dump_file_spec, char *fatal_fil
 	/* Call $ZPARSE processing to fill in any blanks, expand concealed logicals, etc. It is the callers
 	 * responsibility to make sure garbage collection knows about the value in the returned filespec.
 	 */
+#	ifdef DEBUG
+	send_msg_csa(CSA_ARG(NULL) VARLSTCNT(5) ERR_JOBEXAMBEGIN, 3, process_id, dump_filename_arg->str.len, dump_filename_arg->str.addr);
+#	endif
 	op_fnzparse(dump_filename_arg, &empty_str_mval, &def_file_name, &empty_str_mval, &no_conceal_op, dump_file_spec);
 	/* If this call is for the creation of a fatal error file (which would be the case if process_exiting is set), the
 	 * mval we have for dump_file_spec is not protected from potential stringpool garbage collections. In that case,
@@ -212,6 +216,9 @@ void jobexam_dump(mval *dump_filename_arg, mval *dump_file_spec, char *fatal_fil
 	parms.str.addr = (char *)dumpable_error_dump_file_parms;
 	parms.str.len = SIZEOF(dumpable_error_dump_file_parms);
 	/* Open, use, and zshow into new file, then close and reset current io device */
+#	ifdef DEBUG
+	send_msg_csa(CSA_ARG(NULL) VARLSTCNT(5) ERR_JOBEXAMBEGIN, 3, process_id, dump_file_spec->str.len, dump_file_spec->str.addr);
+#	endif
 	op_open(dump_file_spec, &parms, (mval *)&literal_zero, 0);
 	op_use(dump_file_spec, &parms);
 	zshowops.mvtype = MV_STR;

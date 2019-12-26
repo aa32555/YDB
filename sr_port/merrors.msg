@@ -1703,6 +1703,7 @@ APDINITFAIL	<Audit Principal Device failed to initialize audit information>/erro
 APDCONNFAIL	<Audit Principal Device failed to connect to audit logger>/error/fao=0!/ansi=0
 APDLOGFAIL	<Audit Principal Device failed to log activity>/error/fao=0!/ansi=0
 STATSDBMEMERR	<Process attempted to create stats block in statistics database !AD and received SIGBUS--invalid physical address. Check file system space.>/error/fao=2!/ansi=0
+JOBEXAMBEGIN	<YottaDB process !UL initiated job examine to !AD>/info/fao=3!/ansi=0
 !
 ! If there are UNUSEDMSG* lines unused for more than one year and at least two non-patch releases, use them before adding new lines.
 !
