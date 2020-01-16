@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2017-2019 YottaDB LLC and/or its subsidiaries.*
+ * Copyright (c) 2017-2020 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -44,3 +44,4 @@
 #define YDB_ERR_THREADEDAPINOTALLOWED -151027946
 #define YDB_ERR_SIMPLEAPINOTALLOWED -151027954
 #define YDB_ERR_STAPIFORKEXEC -151027962
+#define YDB_ERR_JANSSONDLNOOPEN -151027970

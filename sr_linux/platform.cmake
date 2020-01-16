@@ -3,7 +3,7 @@
 # Copyright (c) 2013-2018 Fidelity National Information		#
 # Services, Inc. and/or its subsidiaries. All rights reserved.	#
 #								#
-# Copyright (c) 2017-2019 YottaDB LLC and/or its subsidiaries.	#
+# Copyright (c) 2017-2020 YottaDB LLC and/or its subsidiaries.	#
 # All rights reserved.						#
 #								#
 # Copyright (c) 2017-2018 Stephen L Johnson.			#
@@ -196,10 +196,14 @@ set(libyottadb_link "${libyottadb_link} -Wl,-u,ydb_ci_tab_switch")
 set(libyottadb_link "${libyottadb_link} -Wl,-u,ydb_ci_tab_switch_t")
 set(libyottadb_link "${libyottadb_link} -Wl,-u,ydb_data_s")
 set(libyottadb_link "${libyottadb_link} -Wl,-u,ydb_data_st")
+set(libyottadb_link "${libyottadb_link} -Wl,-u,ydb_decode_s")
+set(libyottadb_link "${libyottadb_link} -Wl,-u,ydb_decode_st")
 set(libyottadb_link "${libyottadb_link} -Wl,-u,ydb_delete_excl_s")
 set(libyottadb_link "${libyottadb_link} -Wl,-u,ydb_delete_excl_st")
 set(libyottadb_link "${libyottadb_link} -Wl,-u,ydb_delete_s")
 set(libyottadb_link "${libyottadb_link} -Wl,-u,ydb_delete_st")
+set(libyottadb_link "${libyottadb_link} -Wl,-u,ydb_encode_s")
+set(libyottadb_link "${libyottadb_link} -Wl,-u,ydb_encode_st")
 set(libyottadb_link "${libyottadb_link} -Wl,-u,ydb_file_id_free")
 set(libyottadb_link "${libyottadb_link} -Wl,-u,ydb_file_id_free_t")
 set(libyottadb_link "${libyottadb_link} -Wl,-u,ydb_file_is_identical")
