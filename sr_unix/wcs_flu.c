@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2018 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018-2019 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -559,7 +559,7 @@ boolean_t wcs_flu(uint4 options)
 							gtm_putmsg_csa(CSA_ARG(csa) VARLSTCNT(7) ERR_WAITDSKSPACE, 4,
 								   process_id, to_wait, DB_LEN_STR(reg), wtstart_or_wtfini_errno);
 						}
-						hiber_start(1000);
+						hiber_start(1 * (uint8)NANOSECS_IN_SEC);
 						to_wait--;
 						wtstart_or_wtfini_errno = wcs_wtstart(reg, n_bts, NULL, NULL);	/* Flush it all */
 						CLEAR_WIP_QUEUE_IF_NEEDED(asyncio, wtstart_or_wtfini_errno, cnl, crwipq, reg, ret);

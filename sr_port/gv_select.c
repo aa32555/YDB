@@ -3,6 +3,9 @@
  * Copyright (c) 2001-2017 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
+ * Copyright (c) 2020 YottaDB LLC and/or its subsidiaries.	*
+ * All rights reserved.						*
+ *								*
  *	This source code contains the intellectual property	*
  *	of its copyright holder(s), and is made available	*
  *	under a license.  If you do not know the terms of	*
@@ -398,7 +401,7 @@ STATICFNDEF void gv_select_reg(void *ext_hash, boolean_t freeze, int *reg_max_re
 			}
 			while (REG_ALREADY_FROZEN == region_freeze(gv_cur_region, TRUE, FALSE, FALSE, FALSE, TRUE))
 			{
-				hiber_start(1000);
+				hiber_start(1 * (uint8)NANOSECS_IN_SEC);
 				if (mu_ctrly_occurred || mu_ctrlc_occurred)
 				{
 					gtm_putmsg_csa(CSA_ARG(cs_addrs) VARLSTCNT(1) ERR_FREEZECTRL);

@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018-2019 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -675,7 +675,7 @@ trans_num t_end(srch_hist *hist1, srch_hist *hist2, trans_num ctn)
 			assert(!cnl->freezer_waited_for_kip
 				|| (inctn_bmp_mark_free_gtm != inctn_opcode) && (inctn_bmp_mark_free_mu_reorg != inctn_opcode));
 			while (FROZEN_HARD(csa))
-				hiber_start(1000);
+				hiber_start(1 * (uint8)NANOSECS_IN_SEC);
 			assert(tmp_jnlpool == jnlpool);
 		}
 	} else

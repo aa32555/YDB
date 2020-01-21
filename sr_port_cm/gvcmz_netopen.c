@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2015 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2017-2019 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2017-2020 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -172,7 +172,7 @@ struct CLB *gvcmz_netopen(struct CLB *c, cmi_descriptor *node, cmi_descriptor *t
 		status = cmi_open(c);
 		if (!CMI_ERROR(status))
 			break;
-		hiber_start_wait_any(10);
+		hiber_start_wait_any(10 * (uint8)NANOSECS_IN_MSEC);
 	}
 #elif defined(UNIX)
 	c->nod.addr = malloc(node->len);

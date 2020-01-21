@@ -3,6 +3,9 @@
  * Copyright (c) 2001-2017 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
+ * Copyright (c) 2020 YottaDB LLC and/or its subsidiaries.	*
+ * All rights reserved.						*
+ *								*
  *	This source code contains the intellectual property	*
  *	of its copyright holder(s), and is made available	*
  *	under a license.  If you do not know the terms of	*
@@ -47,7 +50,7 @@ void getjobname(void)
 		 * condition GTM-8455 fixes.
 		 */
 		kill(process_id, SIGTERM);
-		hiber_start(20 * 1000);			/* Wait up to 20 secs - don't use wait_any as the heartbeat timer
+		hiber_start(20 * (uint8)NANOSECS_IN_SEC);			/* Wait up to 20 secs - don't use wait_any as the heartbeat timer
 							 * will kill this wait in 0-7 seconds or so.
 							 */
 		/* We sent, we waited, wait expired - weird - funky condition is for identification purposes (to identify the

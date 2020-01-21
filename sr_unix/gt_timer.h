@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2018 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018-2019 YottaDB LLC and/or its subsidiaries. *
+ * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries. *
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -219,8 +219,8 @@ void		add_uint8_to_abs_time(ABS_TIME *atps, uint8 ival, ABS_TIME *atpd);
 void		cancel_timer(TID tid);
 void		cancel_unsafe_timers(void);
 void		clear_timers(void);
-void		hiber_start(uint4 hiber);
-void		hiber_start_wait_any(uint4 hiber);
+void		hiber_start(uint8 hiber);
+void		hiber_start_wait_any(uint8 hiber);
 void		init_timers(void);
 void		gtm_start_timer(TID tid, int4 time_to_expir, void(* handler)(), int4 data_length, void *handler_data);
 void		start_timer(TID tid, uint8 time_to_expir, void(* handler)(), int4 data_length, void *handler_data);

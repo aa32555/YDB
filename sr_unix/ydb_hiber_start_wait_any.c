@@ -1,6 +1,6 @@
 /****************************************************************
  *								*
- * Copyright (c) 2018-2019 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -22,11 +22,9 @@
 GBLREF	boolean_t	simpleThreadAPI_active;
 #endif
 
-/* Simple YottaDB wrapper for gtm_hiber_start_wait_any() */
+/* Simple YottaDB wrapper for hiber_start_wait_any() */
 int	ydb_hiber_start_wait_any(unsigned long long sleep_nsec)
 {
-	int			sleepms;
-	unsigned long long	sleep_msec, max_time_nsec;
 	boolean_t		error_encountered;
 	DCL_THREADGBL_ACCESS;
 
@@ -48,9 +46,7 @@ int	ydb_hiber_start_wait_any(unsigned long long sleep_nsec)
 	ISSUE_TIME2LONG_ERROR_IF_NEEDED(sleep_nsec);
 	assert(!simpleThreadAPI_active);	/* or else an INVAPIMODE error would have been issued in VERIFY_NON_THREADED_API */
 	assert(MAXPOSINT4 >= (sleep_nsec / NANOSECS_IN_MSEC));	/* Or else a TIME2LONG error would have been issued above */
-	sleep_msec = (sleep_nsec / NANOSECS_IN_MSEC);
-	sleepms = (int)sleep_msec;
-	hiber_start_wait_any(sleepms);
+	hiber_start_wait_any(sleep_nsec);
 	LIBYOTTADB_DONE;
 	REVERT;
 	return YDB_OK;

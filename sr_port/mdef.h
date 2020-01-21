@@ -760,7 +760,7 @@ void m_usleep(int useconds);
 #ifdef UNIX
 #	define SHORT_SLEEP(x) {assert(1000 > (x)); m_usleep((x) * 1000);}
 #else
-#	define SHORT_SLEEP(x) hiber_start(x);
+#	define SHORT_SLEEP(x) hiber_start(x * (uint8)NANOSECS_IN_MSEC);
 #endif
 
 #ifdef UNIX
@@ -829,8 +829,9 @@ void m_usleep(int useconds);
  * causes the SIGARLM handler to be silently deleted on Solaris systems (through Solaris 9 at least).
  * This leads to lost timer pops and has the potential for system hangs.
  */
-#define LONG_SLEEP(X)		hiber_start((X) * 1000)
-#define LONG_SLEEP_MSEC(X)	hiber_start(X)
+#define LONG_SLEEP(X)		hiber_start((X) * (uint8)NANOSECS_IN_SEC)
+#define LONG_SLEEP_MSEC(X)	hiber_start(X * (uint8)NANOSECS_IN_MSEC)
+#define LONG_SLEEP_NSEC(X)	hiber_start(X)
 
 #define OS_PAGE_SIZE		gtm_os_page_size
 #define OS_PAGE_SIZE_DECLARE	GBLREF int4 gtm_os_page_size;

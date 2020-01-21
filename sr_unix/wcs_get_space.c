@@ -3,7 +3,7 @@
  * Copyright (c) 2007-2018 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018-2019 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -167,7 +167,7 @@ bool	wcs_get_space(gd_region *reg, int needed, cache_rec_ptr_t cr)
 							gtm_putmsg_csa(CSA_ARG(csa) VARLSTCNT(7) ERR_WAITDSKSPACE, 4,
 								process_id, to_wait, DB_LEN_STR(reg), save_errno);
 						}
-						hiber_start(1000);
+						hiber_start(1 * (uint8)NANOSECS_IN_SEC);
 						to_wait--;
 						JNL_ENSURE_OPEN_WCS_WTSTART(csa, reg, needed, NULL, TRUE, save_errno);
 						if (cnl->wc_in_free >= needed)

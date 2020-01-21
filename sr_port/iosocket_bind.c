@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2018 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018-2019 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -202,7 +202,7 @@ boolean_t iosocket_bind(socket_struct *socketptr, uint8 nsec_timeout, boolean_t 
 			}
 			if (no_time_left)
 				return FALSE;
-			hiber_start(100);
+			hiber_start(100 * (uint8)NANOSECS_IN_MSEC);
 			close(socketptr->sd);
 			if (-1 == (socketptr->sd = socket(ai_ptr->ai_family,ai_ptr->ai_socktype,
 									  ai_ptr->ai_protocol)))

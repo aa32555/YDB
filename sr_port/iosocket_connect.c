@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2018 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018-2019 YottaDB LLC and/or its subsidiaries. *
+ * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries. *
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -500,7 +500,7 @@ boolean_t iosocket_connect(socket_struct *sockptr, uint8 nsec_timeout, boolean_t
 			assertpro(FALSE);      /* Should *never* return from outofband_action */
 			return FALSE;   /* For the compiler.. */
 		}
-		hiber_start(100);
+		hiber_start(100 * (uint8)NANOSECS_IN_MSEC);
 	} while (res < 0);
 
 	sockptr->state = socket_connected;

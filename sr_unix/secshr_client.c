@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2018 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2017-2019 YottaDB LLC and/or its subsidiaries. *
+ * Copyright (c) 2017-2020 YottaDB LLC and/or its subsidiaries. *
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -114,39 +114,39 @@ const static char readonly *secshrstart_error_code[] = {
 #define MAX_COMM_ATTEMPTS		4	/* 1 to start secshr, 2 maybe slow, 3 maybe really slow, 4 outside max */
 #define CLIENT_ACK_TIMER		(5 * (uint8)NANOSECS_IN_SEC)
 
-#define START_SERVER										\
-{												\
-	int	arraysize, errorindex;								\
-												\
-	if (0 != (create_server_status = create_server()))					\
-	{											\
-		assert(ARRAYSIZE(secshrstart_error_code) == (LASTEXITCODE + 1));		\
-		errorindex = create_server_status;						\
-		if ((0 > errorindex) || (LASTEXITCODE < errorindex))				\
-			errorindex = LASTEXITCODE;						\
-		assert(0 <= errorindex);							\
-		assert(ARRAYSIZE(secshrstart_error_code) > errorindex);				\
+#define START_SERVER												\
+{														\
+	int	arraysize, errorindex;										\
+														\
+	if (0 != (create_server_status = create_server()))							\
+	{													\
+		assert(ARRAYSIZE(secshrstart_error_code) == (LASTEXITCODE + 1));				\
+		errorindex = create_server_status;								\
+		if ((0 > errorindex) || (LASTEXITCODE < errorindex))						\
+			errorindex = LASTEXITCODE;								\
+		assert(0 <= errorindex);									\
+		assert(ARRAYSIZE(secshrstart_error_code) > errorindex);						\
 		gtm_putmsg_csa(CSA_ARG(NULL) VARLSTCNT(9) ERR_GTMSECSHRSTART, 3, RTS_ERROR_TEXT("Client"),	\
-			process_id, ERR_TEXT, 2,						\
-			RTS_ERROR_STRING(secshrstart_error_code[errorindex]));			\
-		if (FATALFAILURE(create_server_status))						\
-		{										\
-			gtmsecshr_sock_cleanup(CLIENT);						\
-			return create_server_status;						\
-		}										\
-		/* For transient failures we will continue after printing out message */	\
-	}											\
-	hiber_start(500); /* half-a-second to allow server to come up */			\
+			process_id, ERR_TEXT, 2,								\
+			RTS_ERROR_STRING(secshrstart_error_code[errorindex]));					\
+		if (FATALFAILURE(create_server_status))								\
+		{												\
+			gtmsecshr_sock_cleanup(CLIENT);								\
+			return create_server_status;								\
+		}												\
+		/* For transient failures we will continue after printing out message */			\
+	}													\
+	hiber_start(500 * (uint8)NANOSECS_IN_MSEC); /* half-a-second to allow server to come up */		\
 }
 
-#define SETUP_FOR_RECV										\
-{												\
-	recv_ptr = (char *)&mesg;								\
-	recv_len = SIZEOF(mesg);								\
-	client_timer_popped = FALSE;								\
-	recv_complete = FALSE;									\
-	save_errno = 0;										\
-	start_timer(timer_id, CLIENT_ACK_TIMER, client_timer_handler, 0, NULL);			\
+#define SETUP_FOR_RECV												\
+{														\
+	recv_ptr = (char *)&mesg;										\
+	recv_len = SIZEOF(mesg);										\
+	client_timer_popped = FALSE;										\
+	recv_complete = FALSE;											\
+	save_errno = 0;												\
+	start_timer(timer_id, CLIENT_ACK_TIMER, client_timer_handler, 0, NULL);					\
 }
 
 error_def(ERR_YDBDISTUNVERIF);
@@ -475,7 +475,7 @@ int create_server(void)
 			gtm_putmsg_csa(CSA_ARG(NULL) VARLSTCNT(10) ERR_GTMSECSHRSTART, 3, RTS_ERROR_TEXT("Client"), process_id,
 				   ERR_TEXT,  2, RTS_ERROR_TEXT("Failed to fork off gtmsecshr"), errno);
 			/* Sleep for a while and hope a subsequent fork will succeed */
-			hiber_start(1000);
+			hiber_start(1000 * (uint8)NANOSECS_IN_MSEC);
 		}
 		for (; !status ;)
 		{

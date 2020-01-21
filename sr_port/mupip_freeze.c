@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2017 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -212,7 +212,7 @@ void	mupip_freeze(void)
 		{
 			if (REG_ALREADY_FROZEN == freeze_ret)
 			{
-				hiber_start(1000);
+				hiber_start(1 * (uint8)NANOSECS_IN_SEC);
 				if (INTERRUPTED)
 					break;
 			} else if (REG_HAS_KIP == freeze_ret)

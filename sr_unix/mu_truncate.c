@@ -3,7 +3,7 @@
  * Copyright (c) 2012-2017 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2019 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2019-2020 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -328,7 +328,7 @@ boolean_t mu_truncate(int4 truncate_percent)
 		rel_crit(gv_cur_region);
 		while (FROZEN(cs_data) || IS_REPL_INST_FROZEN)
 		{
-			hiber_start(1000);
+			hiber_start(1 * (uint8)NANOSECS_IN_SEC);
 			if (FROZEN_CHILLED(cs_addrs) && CHILLED_AUTORELEASE(cs_addrs))
 				break;
 		}
@@ -502,4 +502,3 @@ STATICFNDEF int4 bml_find_busy_recycled(int4 hint, uchar_ptr_t base_addr, int4 b
 	}
 	return -1;
 }
-

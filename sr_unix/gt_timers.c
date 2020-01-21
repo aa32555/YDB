@@ -4,7 +4,7 @@
  * Copyright (c) 2001-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2017-2019 YottaDB LLC and/or its subsidiaries. *
+ * Copyright (c) 2017-2020 YottaDB LLC and/or its subsidiaries. *
  * All rights reserved.						*
  *								*
  * Copyright (c) 2018 Stephen L Johnson.			*
@@ -327,10 +327,22 @@ void sys_get_curr_time(ABS_TIME *atp)
 	clock_gettime(CLOCK_MONOTONIC, atp);
 }
 
-/* Start hibernating by starting a timer and waiting for it. */
-void hiber_start(uint4 hiber)
+/* Wrapper for hiber_start that takes a value in ms for backward compatibility */
+void gtm_hiber_start(ydb_uint_t mssleep)
 {
-	SLEEP_USEC((long long)(hiber * 1000LL), !outofband);	/* Second parameter is passed as "!outofband" so we
+	hiber_start(mssleep * (uint8)NANOSECS_IN_MSEC);
+}
+
+/* Wrapper for hiber_start_wait_any that takes a value in ms for backward compatibility */
+void gtm_hiber_start_wait_any(ydb_uint_t mssleep)
+{
+	hiber_start_wait_any(mssleep * (uint8)NANOSECS_IN_MSEC);
+}
+
+/* Start hibernating by starting a timer and waiting for it. */
+void hiber_start(uint8 hiber)
+{
+	NANOSLEEP(hiber, !outofband);	/* Second parameter is passed as "!outofband" so we
 								 * return from macro if ever an outofband event occurs
 								 * (e.g. MUPIP INTRPT i.e. SIGUSR1 signal etc.).
 								 * Otherwise we keep restarting the sleep on an EINTR.
@@ -338,9 +350,9 @@ void hiber_start(uint4 hiber)
 }
 
 /* Hibernate by starting a timer and waiting for it or any other timer to pop. */
-void hiber_start_wait_any(uint4 hiber)	/* "hiber" is in milli-seconds */
+void hiber_start_wait_any(uint8 hiber)	/* "hiber" is in milli-seconds */
 {
-	SLEEP_USEC((long long)(hiber * 1000LL), FALSE);	/* FALSE passed so we return if an EINTR occurs
+	NANOSLEEP(hiber, FALSE);	/* FALSE passed so we return if an EINTR occurs
 							 * instead of restarting wait.
 							 */
 }

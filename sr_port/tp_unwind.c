@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2017 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2017-2019 YottaDB LLC and/or its subsidiaries. *
+ * Copyright (c) 2017-2020 YottaDB LLC and/or its subsidiaries. *
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -81,7 +81,7 @@ GBLREF	int		tprestart_state;	/* When triggers restart, multiple states possible.
 		 * macro to after the TPUNWND_WBOX_TEST, rebuild and re-run test to see it explode.				 \
 		 */														 \
 		kill(process_id, SIGTERM);											 \
-		hiber_start(20 * 1000);			/* Wait up to 20 secs - don't use wait_any as the heartbeat timer	 \
+		hiber_start(20 * (uint8)NANOSECS_IN_SEC);			/* Wait up to 20 secs - don't use wait_any as the heartbeat timer	 \
 							 * will kill this wait in 0-7 seconds or so.				 \
 							 */									 \
 		/* We sent, we waited, wait expired - weird - funky condition is for identification purposes (to identify the	 \

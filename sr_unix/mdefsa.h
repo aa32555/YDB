@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2018 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018-2019 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -53,7 +53,5 @@ MBSTART {							\
 /* Prefix GT.M callback functions with "gtm_" */
 #define GTM_PREFIX(func)	gtm_##func
 #define cancel_timer		GTM_PREFIX(cancel_timer)
-#define hiber_start		GTM_PREFIX(hiber_start)
-#define hiber_start_wait_any	GTM_PREFIX(hiber_start_wait_any)
 
 #endif /* MDEFSA_included */

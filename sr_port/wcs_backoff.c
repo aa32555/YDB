@@ -2,7 +2,7 @@
  *								*
  * Copyright 2001, 2012 Fidelity Information Services, Inc	*
  *								*
- * Copyright (c) 2018 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -36,44 +36,27 @@ void wcs_backoff(unsigned int sleepfactor)
 	 *   if (count) wcs_backoff(count);
 	 */
 
-#	if defined(VMS)
-	int4		day;
-	double		randfloat;
-#	endif
 	static int4	seed = 0;
-	uint4		sleep_ms;
+	uint8		sleep_ns;
 
 	assert(sleepfactor);
 	if (0 == sleepfactor)
 		return;
 	if (sleepfactor > MAXSLPTIME)
 		sleepfactor = MAXSLPTIME;
-#	ifdef UNIX
 	if (0 == seed)
 	{
 		init_rand_table();
 		seed = 1;
 	}
-	sleep_ms = ((uint4)(get_rand_from_table() % sleepfactor));
-#	elif defined(VMS)
-	if (0 == seed)				/* Seed random number generator */
-	{
-		lib$day(&day, 0, &seed);
-		seed *= process_id;
-		srandom(seed);
-	}
-	randfloat = ((double)random()) / RAND_MAX;
- 	sleep_ms = ((uint4)(sleepfactor * randfloat));
-#	else
-#	error "Unsupported platform"
-#	endif
-	if (0 == sleep_ms)
+	sleep_ns = ((uint8)(get_rand_from_table() % sleepfactor) * NANOSECS_IN_MSEC);
+	if (0 == sleep_ns)
 		return;				/* We have no wait this time */
-	if (1000 > sleep_ms)			/* Use simpler sleep for shorties */
+	if ((uint8)NANOSECS_IN_SEC > sleep_ns)			/* Use simpler sleep for shorties */
 	{
-		SHORT_SLEEP(sleep_ms);
+		SHORT_SLEEP(sleep_ns / NANOSECS_IN_MSEC);
 	}
 	else
-		hiber_start(sleep_ms);		/* Longer sleeps use brute force */
+		hiber_start(sleep_ns);		/* Longer sleeps use brute force */
 	return;
 }

@@ -2,7 +2,7 @@
  *								*
  * Copyright 2001 Sanchez Computer Associates, Inc.		*
  *								*
- * Copyright (c) 2017 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2017-2020 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -45,7 +45,7 @@ void cmi_idle(uint4 hiber)
 	SIGPROCMASK(SIG_SETMASK, &oset, NULL, rc);
 	if (!posted)
 	{
-		hiber_start_wait_any(hiber);
+		hiber_start_wait_any(hiber * (uint8)NANOSECS_IN_MSEC);
 		SIGPROCMASK(SIG_BLOCK, &ntd_root->mutex_set, &oset, rc);
 		cmj_housekeeping();
 		SIGPROCMASK(SIG_SETMASK, &oset, NULL, rc);

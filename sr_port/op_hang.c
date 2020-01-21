@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2017 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018-2019 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -94,9 +94,9 @@ error_def(ERR_SYSCALL);
  */
 void op_hang(mval* num)
 {
-	int		ms;
+	uint8		ns;
 #	ifdef DEBUG
-	int		orig_ms;
+	uint8		orig_ns;
 #	endif
 	double		tmp;
 	mv_stent	*mv_zintcmd;
@@ -105,27 +105,27 @@ void op_hang(mval* num)
 	DCL_THREADGBL_ACCESS;
 
 	SETUP_THREADGBL_ACCESS;
-	ms = 0;
+	ns = 0;
 	MV_FORCE_NUM(num);
 	if (num->mvtype & MV_INT)
 	{
 		if (0 < num->m[1])
 		{
 			assert(MV_BIAS >= 1000);	/* if formats change overflow may need attention */
-			ms = num->m[1] * (1000 / MV_BIAS);
+			ns = num->m[1] * (1000 / MV_BIAS) * (uint8)NANOSECS_IN_MSEC;
 		}
 	} else if (0 == num->sgn) 		/* if sign is not 0 it means num is negative */
 	{
-		tmp = mval2double(num) * (double)1000;
-		ms = ((double)MAXPOSINT4 >= tmp) ? (int)tmp : (int)MAXPOSINT4;
+		tmp = mval2double(num) * (double)NANOSECS_IN_SEC;
+		ns = ((double)YDB_MAX_TIME_NSEC >= tmp) ? (uint8)tmp : (uint8)YDB_MAX_TIME_NSEC;
 	}
-	DEBUG_ONLY(orig_ms = ms);
-	if (ms)
+	DEBUG_ONLY(orig_ns = ns);
+	if (ns)
 	{
-		if ((TREF(tpnotacidtime)).m[1] < ms)
+		if (((TREF(tpnotacidtime)).m[1] * (uint8)NANOSECS_IN_MSEC) < ns)
 			TPNOTACID_CHECK(HANGSTR);
 #		if defined(DEBUG)
-		if (WBTEST_ENABLED(WBTEST_DEFERRED_TIMERS) && (3 > ydb_white_box_test_case_count) && (123000 == ms))
+		if (WBTEST_ENABLED(WBTEST_DEFERRED_TIMERS) && (3 > ydb_white_box_test_case_count) && ((123000 * (uint8)NANOSECS_IN_MSEC) == ns))
 		{	/* LONG_SLEEP messes with signals */
 			DEFER_INTERRUPTS(INTRPT_NO_TIMER_EVENTS, prev_intrpt_state);
 			DBGFPF((stderr, "OP_HANG: will sleep for 20 seconds\n"));
@@ -134,13 +134,13 @@ void op_hang(mval* num)
 			ENABLE_INTERRUPTS(INTRPT_NO_TIMER_EVENTS, prev_intrpt_state);
 			return;
 		}
-		if (WBTEST_ENABLED(WBTEST_BREAKMPC)&& (0 == ydb_white_box_test_case_count) && (999 == ms))
+		if (WBTEST_ENABLED(WBTEST_BREAKMPC)&& (0 == ydb_white_box_test_case_count) && ((999 * (uint8)NANOSECS_IN_MSEC) == ns))
 		{
 			frame_pointer->old_frame_pointer->mpc = (unsigned char *)GTM64_ONLY(0xdeadbeef12345678)
 				NON_GTM64_ONLY(0xdead1234);
 			return;
 		}
-		if (WBTEST_ENABLED(WBTEST_UTIL_OUT_BUFFER_PROTECTION) && (0 == ydb_white_box_test_case_count) && (999 == ms))
+		if (WBTEST_ENABLED(WBTEST_UTIL_OUT_BUFFER_PROTECTION) && (0 == ydb_white_box_test_case_count) && ((999 * (uint8)NANOSECS_IN_MSEC) == ns))
 		{	/* Upon seeing a .999s hang this white-box test launches a timer that pops with a period of
 		 	 * UTIL_OUT_SYSLOG_INTERVAL and prints a long message via util_out_ptr.
 			 */
@@ -151,18 +151,16 @@ void op_hang(mval* num)
 		sys_get_curr_time(&cur_time);
 		mv_zintcmd = find_mvstent_cmd(ZINTCMD_HANG, restart_pc, restart_ctxt, FALSE);
 		if (!mv_zintcmd)
-			add_int_to_abs_time(&cur_time, ms, &end_time);
+			add_uint8_to_abs_time(&cur_time, ns, &end_time);
 		else
 		{	/* See later comment about "xf_restartpc" on why the below assert is valid */
-			assert(ms == mv_zintcmd->mv_st_cont.mvs_zintcmd.ms);
+			assert((ns / NANOSECS_IN_MSEC) == mv_zintcmd->mv_st_cont.mvs_zintcmd.ms);
 			end_time = mv_zintcmd->mv_st_cont.mvs_zintcmd.end_or_remain;
 			cur_time = sub_abs_time(&end_time, &cur_time);	/* get remaining time to sleep */
 			if (0 <= cur_time.tv_sec)
-				ms = (int4)(cur_time.tv_sec * MILLISECS_IN_SEC +
-					    /* Round up in order to prevent premature timeouts */
-					    DIVIDE_ROUND_UP(cur_time.tv_nsec, NANOSECS_IN_MSEC));
+				ns = ((uint8)(cur_time.tv_sec * NANOSECS_IN_SEC) + cur_time.tv_nsec);
 			else
-				ms = 0;		/* all done */
+				ns = 0;		/* all done */
 			/* restore/pop previous zintcmd_active[ZINTCMD_HANG] hints */
 			TAREF1(zintcmd_active, ZINTCMD_HANG).restart_pc_last = mv_zintcmd->mv_st_cont.mvs_zintcmd.restart_pc_prior;
 			TAREF1(zintcmd_active, ZINTCMD_HANG).restart_ctxt_last
@@ -176,16 +174,16 @@ void op_hang(mval* num)
 				mv_zintcmd->mv_st_cont.mvs_zintcmd.command = ZINTCMD_NOOP;
 				mv_zintcmd->mv_st_cont.mvs_zintcmd.restart_pc_check = NULL;
 			}
-			if (0 == ms)
+			if (0 == ns)
 				return;		/* done HANGing */
 		}
-		hiber_start(ms);
+		hiber_start(ns);
 	} else	/* the rel_quant below seems legitimate */
 		rel_quant();
 	if (outofband)
 	{
 		PUSH_MV_STENT(MVST_ZINTCMD);
-		DEBUG_ONLY(mv_chain->mv_st_cont.mvs_zintcmd.ms = orig_ms);
+		DEBUG_ONLY(mv_chain->mv_st_cont.mvs_zintcmd.ms = (int)(orig_ns / NANOSECS_IN_MSEC));
 		/* Note that "end_time" is uninitialized in case "ms" is 0 but it is okay since when it is restored,
 		 * we are guaranteed that the post-interrupt invocation of "op_hang" (after the jobinterrupt is handled)
 		 * will use the restored "end_time" only if "ms" (which will have the exact same value as the pre-interrupt

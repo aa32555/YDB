@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2018 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018-2019 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -89,8 +89,8 @@ error_def(ERR_LOCKTIMINGINTP);
 #define LOCKTIMESTR		"LOCK"
 #define ZALLOCTIMESTR		"ZALLOCATE"
 #define MAX_WARN_STR_ARG_LEN	256
-#define LOCK_SELF_WAKE_START	1	/* sleep   1 msec at start before checking if wakeup was sent by lock holder */
-#define LOCK_SELF_WAKE_MAX	128	/* sleep 128 msec at max before checking if wakeup was sent by lock holder */
+#define LOCK_SELF_WAKE_START	1 * (uint8)NANOSECS_IN_MSEC	/* sleep   1 msec at start before checking if wakeup was sent by lock holder */
+#define LOCK_SELF_WAKE_MAX	128 * (uint8) NANOSECS_IN_MSEC	/* sleep 128 msec at max before checking if wakeup was sent by lock holder */
 
 /* We made these messages seperate functions because we did not want to do the MAXSTR_BUFF_DECL(buff) declaration in op_lock2,
  * because  MAXSTR_BUFF_DECL macro would allocate a huge stack every time op_lock2 is called.
@@ -173,7 +173,7 @@ int	op_lock2_common(uint8 timeout, unsigned char laflag) /* timeout is in nanose
 	unsigned char		action;
 	ABS_TIME		cur_time, end_time, remain_time;
 	mv_stent		*mv_zintcmd;
-	uint4			sleep_msec;
+	uint8			sleep_nsec;
 	DCL_THREADGBL_ACCESS;
 
 	SETUP_THREADGBL_ACCESS;
@@ -295,7 +295,7 @@ int	op_lock2_common(uint8 timeout, unsigned char laflag) /* timeout is in nanose
 			assert(have_crit(CRIT_HAVE_ANY_REG));
 			tp_warning(pvt_ptr2);
 		}
-		sleep_msec = LOCK_SELF_WAKE_START;	/* start at LOCK_SELF_WAKE_START msec and double it
+		sleep_nsec = LOCK_SELF_WAKE_START;	/* start at LOCK_SELF_WAKE_START msec and double it
 							 * upto LOCK_SELF_WAKE_MAX msec and then cycle back.
 							 */
 		for (;;)
@@ -350,10 +350,10 @@ int	op_lock2_common(uint8 timeout, unsigned char laflag) /* timeout is in nanose
 			 * in mlk_shrblk_find. If mlk_lock is invoked for the second (or higher) time in op_lock2 for the
 			 * same lock resource, "mlk_shrblk_find" assumes a sleep has happened in between two locking attempts.
 			 */
-			hiber_start_wait_any(sleep_msec);
-			sleep_msec = sleep_msec * 2;
-			if (LOCK_SELF_WAKE_MAX <= sleep_msec)
-				sleep_msec = LOCK_SELF_WAKE_START;
+			hiber_start_wait_any(sleep_nsec);
+			sleep_nsec = sleep_nsec * 2;
+			if (LOCK_SELF_WAKE_MAX <= sleep_nsec)
+				sleep_nsec = LOCK_SELF_WAKE_START;
 			/* Every reattempt at a blocking lock needs crit which could be a bottleneck. So minimize reattempts.
 			 * The "blk_sequence" check below serves that purpose. If the sequence number is different between
 			 * the shared and private copies, it means the lock state in shared memory has changed since last we

@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2018 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018-2019 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -535,7 +535,7 @@ void dse_chng_fhead(void)
 			{
 				while (REG_ALREADY_FROZEN == region_freeze(gv_cur_region, TRUE, override, FALSE, FALSE, FALSE))
 				{
-					hiber_start(1000);
+					hiber_start(1 * (uint8)NANOSECS_IN_SEC);
 					if (util_interrupt)
 					{
 						gtm_putmsg_csa(CSA_ARG(cs_addrs) VARLSTCNT(1) ERR_FREEZECTRL);

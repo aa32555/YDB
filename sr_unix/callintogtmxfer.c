@@ -2,7 +2,7 @@
  *								*
  * Copyright 2001, 2014 Fidelity Information Services, Inc	*
  *								*
- * Copyright (c) 2018-2019 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -23,6 +23,7 @@
 #include "gt_timer.h"
 #include "have_crit.h"
 #include "ydb_logicals.h"
+#include "gtmxc_types.h"
 
 typedef	int	(*int_fptr)();
 
@@ -31,8 +32,8 @@ typedef	int	(*int_fptr)();
  */
 GBLDEF int (*callintogtm_vectortable[])()=
 {
-	(int_fptr)hiber_start,
-	(int_fptr)hiber_start_wait_any,
+	(int_fptr)gtm_hiber_start,
+	(int_fptr)gtm_hiber_start_wait_any,
 	(int_fptr)gtm_start_timer,
 	(int_fptr)cancel_timer,
 	(int_fptr)malloc,

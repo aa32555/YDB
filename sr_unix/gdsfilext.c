@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2018 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -128,7 +128,7 @@ STATICFNDEF int extend_wait_for_write(unix_db_info *udi, int blk_size, off_t new
 	{
 		if ((to_wait == cs_data->wait_disk_space) || (to_wait % to_msg == 0))
 			ISSUE_WAITDSKSPACE(to_wait, wait_period, send_msg_csa);
-		hiber_start(1000);
+		hiber_start(1 * (uint8)NANOSECS_IN_SEC);
 		to_wait--;
 		save_errno = db_write_eof_block(udi, udi->fd, blk_size, new_eof, &(TREF(dio_buff)));
 	} while ((to_wait > 0) && (ENOSPC == save_errno));
@@ -265,7 +265,7 @@ uint4	 gdsfilext(uint4 blocks, uint4 filesize, boolean_t trans_in_prog)
 			rel_crit(gv_cur_region);
 			while (FROZEN(cs_data) || IS_REPL_INST_FROZEN)
 			{
-				hiber_start(1000);
+				hiber_start(1 * (uint8)NANOSECS_IN_SEC);
 				if (FROZEN_CHILLED(cs_addrs) && CHILLED_AUTORELEASE(cs_addrs))
 					break;
 			}
@@ -390,7 +390,7 @@ uint4	 gdsfilext(uint4 blocks, uint4 filesize, boolean_t trans_in_prog)
 			{
 				if ((to_wait == cs_data->wait_disk_space) || (to_wait % to_msg == 0))
 					ISSUE_WAITDSKSPACE(to_wait, wait_period, send_msg_csa);
-				hiber_start(1000);
+				hiber_start(1 * (uint8)NANOSECS_IN_SEC);
 				to_wait--;
 				save_errno = posix_fallocate(fd, old_size, new_size - old_size);
 			} while ((to_wait > 0) && (ENOSPC == save_errno));
