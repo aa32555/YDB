@@ -315,7 +315,7 @@ int	ydb_call_variadic_plist_func(ydb_vplist_func cgfunc, uintptr_t cvplist);	/* 
 int	ydb_child_init(void *param);
 int	ydb_ci(const char *c_rtn_name, ...);				/* Call-in interface */
 int	ydb_cip(ci_name_descriptor *ci_info, ...);			/* Slightly faster "ydb_ci" */
-int	ydb_ci_tab_open(char *fname, uintptr_t *ret_value);
+int	ydb_ci_tab_open(const char *fname, uintptr_t *ret_value);
 int	ydb_ci_tab_switch(uintptr_t new_handle, uintptr_t *ret_old_handle);
 int	ydb_exit(void);
 int	ydb_file_id_free(ydb_fileid_ptr_t fileid);
