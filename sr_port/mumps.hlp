@@ -58,12 +58,12 @@
 
    In the YottaDB programming environment, source routines are generated and
    stored as standard UNIX files. They are created and edited with standard
-   UNIX text editors. YottaDB accepts source lines of up to 8192 bytes. When
-   YottaDB encounters a line with a length greater than 8192 bytes in a source
+   UNIX text editors. YottaDB accepts source lines of up to 32K bytes. When
+   YottaDB encounters a line with a length greater than 32K bytes in a source
    file, it emits a %YDB-W-LSEXPECTED warning. This warning identifies cases
-   where a line greater than 8192 bytes is split into multiple lines, which
+   where a line greater than 32K bytes is split into multiple lines, which
    causes statements beyond the character prior to the limit to execute
-   irrespective of any starting IF, ELSE or FOR commands. The 8192 byte limit
+   irrespective of any starting IF, ELSE or FOR commands. The 32K byte limit
    applies to XECUTE command arguments and Direct Mode input as well.
 
    YottaDB is designed to work with the operating system utilities and enhances
@@ -120,7 +120,7 @@
 2 Copyright
    Copyright
 
-   Copyright 1987 - 2003, 2013 - 2018
+   Copyright 1987 - 2003, 2013 - 2019
 
    Fidelity National Information Services, Inc. and/or its subsidiaries. All
    rights reserved.
@@ -2919,7 +2919,7 @@
    execute the command. When the timeout is zero (0), M makes a single
    attempt to complete the command.
 
-   YottaDB caps the maximum timeout to 999,999.999 seconds (about 11.5 days),
+   YottaDB caps the maximum timeout to 2,147,483,647 seconds (about 24.8 days),
    and converts values greater than the maximum timeout to that cap. When a
    command has a timeout, M maintains the $TEST intrinsic special variable as
    the command completes. If the command completes successfully, M sets $TEST
@@ -4039,7 +4039,7 @@
    within the expression act in sequence to maintain the naked reference. The
    "FULL_BOOLEAN" and "SIDE_EFFECTS" compiler settings modify this behavior
    if you desire YottaDB to provide side effects it would otherwise bypass due
-   to short-circiuting of Boolean expressions.
+   to short-circuiting of Boolean expressions.
 
 3 Examples
    Examples
@@ -4243,6 +4243,18 @@
 
    This passes three values (TYPE, PRNTR, and WAITIM) to the new job, which
    starts at the label PRINTLABELS of the current routine.
+
+   Example:
+
+   set jout="serverjob.mjo"
+   set jerr="serverjob.mje"
+   job @("check(a,b):(OUTPUT="""_jout_""":ERROR="""_jerr_""")")
+
+
+   This passes two values (a and b) to the new job, which starts at the label
+   check of the current routine. It also specifies that the stdout of the
+   jobbed process to be the file name stored in the local variable jout and
+   stderr to be the file name stored in the local variable jerr.
 
    Example:
 
@@ -5157,14 +5169,14 @@
    VIEW "NOLOGNONTP" turns off the logging of NONTPRESTART messages to the
    operator log.
 
-   VIEW "LOGNONTP"[=intexpr] turns on logging of NONTPRESTART messages to the
+   VIEW "LOGNONTP"[:intexpr] turns on logging of NONTPRESTART messages to the
    operator log. If no intexpr is specified, YottaDB uses the value of
    environment variable ydb_nontprestart_log_delta, if it is defined, and one
    otherwise (that is, every transaction restart will be logged). A negative
    value of intexpr turns off the logging of NONTPRESTART messages.
 
    Note that it is not possible to perform the operations of
-   ydb_nontprestart_log_first with VIEW "LOGNONTP"[=intexpr].
+   ydb_nontprestart_log_first with VIEW "LOGNONTP"[:intexpr].
 
 4 LOGTPRESTART
    LOGTPRESTART
@@ -5176,14 +5188,14 @@
    VIEW "NOLOGTPRESTART" turns off the logging of TPRESTART messages to the
    operator log.
 
-   VIEW "LOGTPRESTART"[=intexpr] turns on logging of TPRESTART messages to
+   VIEW "LOGTPRESTART"[:intexpr] turns on logging of TPRESTART messages to
    the operator log. If no intexpr is specified, YottaDB uses the value of
    environment variable ydb_tprestart_log_delta, if it is defined, and one
    otherwise (that is, every transaction restart will be logged). A negative
    value of intexpr turns off the logging of TPRESTART messages.
 
    Note that it is not possible to perform the operations of
-   ydb_tprestart_log_first with VIEW "LOGTPRESTART"[=intexpr].
+   ydb_tprestart_log_first with VIEW "LOGTPRESTART"[:intexpr].
 
 4 LV_GCOL
    LV_GCOL
@@ -6741,13 +6753,13 @@
    BTD : # of database Block Transitions to Dirty
    CAT : Critical section Total Acquisitions successes
    CFE : Critical section Failed (blocked) acquisition total caused by Epochs
-   CFS : Critical section Failed (blocked) acquisition sum of Squares
+   CFS : Duplicate of CFE
    CFT : Critical section Failed (blocked) acquisition Total
-   CQS : Critical section acquisition Queued sleeps sum of Squares
-   CQT : Critical section acquisition Queued sleeps Total
+   CQS* : Critical section acquisition Queued sleeps sum of Squares
+   CQT* : Critical section acquisition Queued sleeps Total
    CTN : Current Transaction Number of the database for the last committed read-write transaction (TP and non-TP)
-   CYS : Critical section acquisition processor Yields sum of Squares
-   CYT : Critical section acquisition processor Yields Total
+   CYS* : Critical section acquisition processor Yields sum of Squares
+   CYT* : Critical section acquisition processor Yields Total
    DEX : # of Database file EXtentions
    DFL : # of Database FLushes of the entire set of dirty global buffers in shared memory to disk
    DFS : # of times a process does an fsync of the database file. For example: a) after writing an epoch journal record, b) as part of database file extension c) during database rundown d) as part of mupip reorg -truncate etc.
@@ -6799,6 +6811,7 @@
    ZTR : # of ZTRigger command operations
 
    [NT]B[WR] mnemonics are satisfied by either disk access or, for databases that use the BG (buffered global) access method, global buffers in shared memory.
+   GT.M maintains the counters of the mnemonics marked with a * on AIX. On Linux, GT.M does not currently increment the counters of these mnemonics but retains them in the ZSHOW output for backward compatibility.
 
    When $PRINCIPAL input and output are different devices, ZSHOW "D" shows
    them as separate items identified as 0 for input and 0-out for output.
@@ -6960,6 +6973,7 @@
    $Y=20
    $ZA=0
    $ZALLOCSTOR=671584
+   $ZAUDIT=0
    $ZB=""
    $ZCHSET="M"
    $ZCLOSE=0
@@ -6990,12 +7004,13 @@
    $ZQUIT=0
    $ZREALSTOR=694280
    $ZRELDATE="20180614 00:33"
-   $ZROUTINES=". /home/user/.yottadb/r1.28_x86_64/o*(/home/user/.yottadb/r1.28_x86_64/r /home/user/.yottadb/r) /usr/local/lib/yottadb/r128/libyottadbutil.so"
+   $ZROUTINES=". /home/user/.yottadb/r1.30_x86_64/o*(/home/user/.yottadb/r1.30_x86_64/r /home/user/.yottadb/r) /usr/local/lib/yottadb/r130/libyottadbutil.so"
    $ZSOURCE=""
    $ZSTATUS=""
    $ZSTEP="B"
    $ZSTRPLLIM=0
    $ZSYSTEM=0
+   $ZTIMEOUT=-1
    $ZTDATA=0
    $ZTDELIM=""
    $ZTEXIT=""
@@ -8892,9 +8907,12 @@
    |                   |              | for the region .                    |
    |-------------------+--------------+-------------------------------------|
    |                   |              | Acquires and releases a critical    |
-   | "PROBECRIT"       | region       | section for the region (the         |
-   |                   |              | "probe"), returning a string with   |
-   |                   |              | the following fields:               |
+   |                   |              | section for the region (the         |
+   |                   |              | "probe"), returning a string        |
+   | "PROBECRIT"       | region       | containing following fields, some   |
+   |                   |              | of of which always have zero (0)    |
+   |                   |              | values because they are no longer   |
+   |                   |              | used:                               |
    |-------------------+--------------+-------------------------------------|
    |                   |              | Name of the region(s) holding the   |
    |                   |              | specified gvn.                      |
@@ -11540,6 +11558,12 @@
    can help identify storage related problems. YottaDB does not permit
    $ZALLOCSTOR to be SET or NEWed.
 
+2 $ZAUDit
+   $ZAUDit
+
+   $ZAUDIT contains a boolean value that indicates whether Audit Principal
+   Device is enabled. YottaDB does not permit $ZAUDIT to be SET or NEWed.
+
 2 $ZB
    $ZB
 
@@ -11695,7 +11719,12 @@
    $ZCstatus
 
    $ZC[STATUS] holds the value of the status code for the last compilation
-   performed by a ZCOMPILE command.
+   performed by a ZCOMPILE command. One (1) indicates a clean compilation, a
+   positive number greater than one is an error code you can turn into text
+   with $ZMESSAGE(), and a negative number is a negated error code that
+   indicates YottaDB was not able to produce an object file. The error details
+   appear in the compilation output, so $ZCSTATUS typically contains the code
+   for ERRORSUMMARY.
 
    YottaDB does not permit the SET command to modify $ZSTATUS.
 
@@ -11831,9 +11860,12 @@
    command). SET $ZGBLDIR="" causes YottaDB to assign $ZGBLDIR to the
    translation of ydb_gbldir if that environment variable is defined. If it is
    not defined, then SET $ZGBLDIR="" causes YottaDB to construct a file name
-   using the name $ydb_gbldir.gld in the current directory. YottaDB permits
-   $ZGBLDIR to be NEW'd. A $ZGBLDIR value may include an environment
-   variable.
+   using the name $ydb_gbldir.gld in the current directory.  NEWing $ZGBLDIR is
+   the same as SET $ZGBLDIR="", which as just noted may change its value. For
+   code that immediately SETs $ZGBLDIR after NEW'ng it that behavior doesn't
+   matter, but without an associated SET, such a change may seem
+   counterintuitive. A $ZGBLDIR value may include an environment variable.
+
 
    SETting $ZGBLDIR also causes YottaDB to attempt to open the specified file.
    If the file name is invalid or the file is inaccessible, YottaDB triggers an
@@ -11883,16 +11915,6 @@
    The SET command attempts to change the value of $ZGBLDIR to test.gld.
    Because the file does not exist, YottaDB reports an error and does not change
    the value of $ZGBLDIR.
-
-   **Caution**
-
-   Attempting to restore an inaccessible initial Global Directory that has
-   been NEW'd, can cause an error.
-
-  Note
-
-   Attempting to restore an inaccessible initial Global Directory that has
-   been NEW'd, can cause an error.
 
 2 $ZHorolog
    $ZHorolog
@@ -11995,11 +12017,12 @@
    that depends on the event. For CTRAP characters and ZMAXTPTIME, YottaDB uses
    the $ETRAP or $ZTRAP vectors described in more detail in the Error
    Processing chapter. For INTRPT and $ZTEXit, it XECUTEs the interrupt
-   handler code placed in $ZINTERRUPT. If $ZINTERRUPT is an empty string,
-   nothing is done in response to a MUPIP INTRPT. The default value of
+   handler code placed in $ZINTERRUPT. If $ZINTERRUPT is an empty string, the
+   process ignores any MUPIP INTRPT directed at it. The default value of
    $ZINTERRUPT is "IF $ZJOBEXAM()" which redirects a dump of ZSHOW "*" to a
-   file and reports each such occasion to the operator log. For CTRL+C with
-   CENABLE, it enters Direct Mode to give the programmer control.
+   file and reports each such occasion to the operator log. For <CTRL-C> with
+   CENABLE, it enters Direct Mode to give the programmer control. Without
+   CENABLE or CTRAP, YottaDB ignores <CTRL-C> on a $PRINCIPAL terminal.
 
    YottaDB recognizes most of these events when they occur but transfers control
    to the interrupt vector at the start of each M line, at each iteration of
@@ -12009,8 +12032,9 @@
    (unless zero timeout,) WRITE /WAIT for SOCKETs, and READ for terminals,
    SOCKETs, FIFOs, and PIPEs. If +$ZTEXIT evaluates to a truth value at the
    outermost TCOMMIT or TROLLBACK, YottaDB XECUTEs $ZINTERRUPT after completing
-   the commit or rollback. CTRAP characters are recognized when they are
-   typed on OpenVMS but when they are read on UNIX.
+   the commit or rollback. Except for <CTRL-C> YottaDB recognizes CTRAP
+   characters when READ. CTRAP characters other than <CTRL-C> tend to be
+   limited by terminal configuration.
 
    If an interrupt event occurs in a long running external call (for example,
    waiting in a message queue), YottaDB recognizes the event but makes the
@@ -12025,6 +12049,7 @@
    specify USE without any deviceparameters. Any attempt to do IO on a device
    which was actively doing IO when the interrupt was recognized may result
    in a ZINTERCURSEIO error.
+
 
    Example:
 
@@ -12059,17 +12084,17 @@
 
    If an error occurs while compiling the $ZINTERRUPT code, the error handler
    is not invoked (the error handler is invoked if an error occurs while
-   executing the $ZINTERRUPT code), YottaDB sends the YDB-ERRWZINTR message and
+   executing the $ZINTERRUPT code), YottaDB sends the YDB-E-ERRWZINTR message and
    the compiler error message to the operator log facility. If the YottaDB
    process is at a direct mode prompt or is executing a direct mode command
-   (for example, a FOR loop), YottaDB sends also sends the YDB-ERRWZINTR error
+   (for example, a FOR loop), YottaDB sends also sends the YDB-E-EERRWZINTR error
    message to the user console along with the compilation error. In both
    cases, the interrupted process resumes execution without performing any
    action specified by the defective $ZINTERRUPT vector.
 
    If YottaDB encounters an error during creation of the interrupt handler's
    stack frame (before transferring control to the application code specified
-   by the vector), that error is prefixed with a YDB-ERRWZINTR error. The
+   by the vector), that error is prefixed with a YDB-E-ERRWZINTR error. The
    error handler then executes normal error processing associated with the
    interrupted routine.
 
@@ -12089,6 +12114,71 @@
    (forcing the interrupting party to try again), or use local variables that
    are not restored by a TRESTART to defer the interrupt action until after
    the final TCOMMIT.
+
+   The interrupt handler is executed by YottaDB when on a statement boundary or
+   on an appropriate boundary in a potentially long running COMMAND (in the
+   same place as YottaDB recognizes <CTRL-C>). If a YottaDB process is in a long
+   running external call (for example; waiting in a message queue) YottaDB does
+   not have sufficient control of the process state to immediately drive the
+   interrupt handler. YottaDB recognizes the interrupt request and drives the
+   handler after the external call returns to YottaDB and the process reaches an
+   appropriate execution boundary.
+
+   Since sending an interrupt signal requires the sender to have appropriate
+   permissions from UNIX, the use of the interrupt facility itself does not
+   present any inherent security exposures. Nonetheless, because the dump
+   files created by the default action contain the values of every local
+   variable in the context at the time they are made, inappropriate access to
+   the dump files could constitute a security exposure. Make sure the design
+   and implementation of any interrupt logic includes careful consideration
+   to security issues.
+
+   If an error occurs while compiling the $ZINTERRUPT code, the action taken
+   depends on the process state at the time the interrupt was received and
+   the error handler is not invoked (the error handler is invoked if an error
+   occurs while executing the $ZINTERRUPT code). If the YottaDB process is at a
+   direct mode prompt or is executing a direct mode command (for example, a
+   FOR loop), the error message is sent to the user console along with the
+   ERRWZINTR error (refer to the YottaDB Messages and Recovery Procedures Manual).
+   In addition, the ERRWZINTR error is also sent to the operator log facility.
+   IF the process is not at a direct mode prompt or executing a direct mode
+   command, the ERRWZINTR message and the compiler error message are sent to
+   the operator log facility and nothing is displayed on the user's console.
+   In both cases, the interrupted process resumes execution.
+
+   If an error occurs during execution of the interrupt handler's stack frame
+   (before it calls anything), that error is prefixed with the ERRWZINTR
+   error. The error handler then executes normal error processing associated
+   with the module that was interrupted. Any other errors that occur in code
+   called by the interrupt handler are handled by normal error handling.
+
+   **Note**
+
+   The interrupt handler does not operate "outside" the current M environment
+   but rather within the environment of the process.
+
+   If a TP transaction is in progress (0<$TLEVEL), updates to globals are not
+   safe since a TP restart can be signaled at any time prior to the
+   transaction being committed - even after the interrupt handler returns. A
+   TP restart reverses all global updates and unwinds the M stack so it is as
+   if the interrupt never occurred. The interrupt handler is not redriven as
+   part of a transaction restart. Referencing (reading) globals inside an
+   interrupt handler can trigger a TP restart if a transaction is active.
+   When programming interrupt handling, either discard interrupts when
+   0<$TLEVEL (forcing the interrupting party to try again), or use local
+   variables that are not restored by a TRESTART to defer the interrupt
+   action until after the final TCOMMIT.
+
+   Note that it is possible for the interrupt handler to be executed while
+   the process executing the M routine is holding the critical section for
+   one or more regions. Use of this feature may create temporary hangs or
+   pauses while the interrupt handler executes. For the default case where
+   the interrupt handler uses $ZJOBEXAM() to create a dump, the pause
+   duration depends on the number of local variables in the process at the
+   time of the dump and on the speed of the disk being written to. The dumps
+   are slower on a network-mounted disk than on a disk directly connected to
+   the local system. Any interrupt driven code should be designed to account
+   for this issue.
 
 2 $ZINInterrupt
    $ZINInterrupt
@@ -12530,7 +12620,7 @@
 2 $ZRELdate
    $ZRELdate
 
-   $ZRELDATE provides the UTC date / time of the build GT.M build in the form
+   $ZRELDATE provides the UTC date / time of the YottaDB build in the form
    YYYYMMDD 24:60 (using $ZDATE() notation). While $ZVERSION is probably a
    better identifier for most uses, $ZRELDATE may be a helpful alternative
    for those testing pre-release builds.
@@ -12890,20 +12980,20 @@
    $ZQuit
 
    $ZQUIT indicates whether the functionality associated with the
-   gtm_zquit_anyway environment variable is enabled. If the environment
-   variable gtm_zquit_anyway is defined and evaluates to 1 or any
-   case-independent string or leading substrings of "TRUE" or "YES", GT.M
+   ydb_zquit_anyway environment variable is enabled. If the environment
+   variable ydb_zquit_anyway is defined and evaluates to 1 or any
+   case-independent string or leading substrings of "TRUE" or "YES", YottaDB
    sets $ZQUIT to 1 and executes code of the form QUIT <expr< as if it were
    SET <tmp>=<expr> QUIT:$QUIT tmp QUIT, where <tmp> is a temporary local
-   variable in the GT.M runtime system that is not visible to the application
+   variable in the YottaDB runtime system that is not visible to the application
    code. The value of $ZQUIT is a compile time setting, that is it can be set
    during run-time but it has no effect on the behavior existing object code
    - it only effects code generated by auto-ZLINK or the ZCOMPILE command.
    This setting has no effect on late bound code such as that in XECUTE
    arguments, $ETRAP, $ZTRAP device EXCEPTIONS.
 
-   If gtm_zquit_anyway is not defined or evaluates to 0 or any
-   case-independent string or leading substrings of "FALSE" or "NO", GT.M set
+   If ydb_zquit_anyway is not defined or evaluates to 0 or any
+   case-independent string or leading substrings of "FALSE" or "NO", YottaDB sets
    $ZQUIT to 0 executes QUIT <expr> as specified by the standard. This
    feature is helpful when you want to run a block of code both as a routine
    and as an extrinsic function. Consider the following example:
@@ -12913,7 +13003,7 @@
      write "Hello ",expr1,!
      quit
 
-   When the gtm_zquit_anyway functionality is diabled, extrinsic function
+   When the ydb_zquit_anyway functionality is diabled, extrinsic function
    invocations return an error as per the standard.
 
    YDB>write $zquit
@@ -12922,7 +13012,7 @@
    Hello jdoe
      %GTM-E-QUITARGREQD, Quit from an extrinsic must have an argument
 
-   However, if you enable the gtm_zquit_anyway feature, extrinsic function
+   However, if you enable the ydb_zquit_anyway feature, extrinsic function
    invocations do not return an error.
 
    YDB>write $zquit
@@ -13172,19 +13262,19 @@
 
      o The optional timeout in seconds specifies with millisecond accuracy
        how long from the current time the timer interrupts the process. If
-       the specified timeout is negative, GT.M cancels the timer. If the
-       timeout is zero, GT.M treats it as it would a DO of the vector.
+       the specified timeout is negative, YottaDB cancels the timer. If the
+       timeout is zero, YottaDB treats it as it would a DO of the vector.
      o The optional labelref specifies a code vector defining a fragment of M
-       code to which GT.M transfers control as if with a DO when the timeout
+       code to which YottaDB transfers control as if with a DO when the timeout
        expires. If the timeout is missing, the assignment must start with a
        colon and only changes the vector, and in this case, if the timeout is
-       the empty string, GT.M removes any current vector.
+       the empty string, YottaDB removes any current vector.
 
-   Note that GT.M only recognizes interrupts such as from $ZTIMEOUT at points
+   Note that YottaDB only recognizes interrupts such as from $ZTIMEOUT at points
    where it can properly resume operation, such as the beginning of a line,
    when waiting on a command with a timeout, or when starting a FOR
    iteration. When a timeout occurs, if the last assignment specified no
-   vector, GT.M uses the current $ETRAP or $ZTRAP. GT.M rejects an attempted
+   vector, YottaDB uses the current $ETRAP or $ZTRAP. YottaDB rejects an attempted
    KILL of $ZTIMeout with the VAREXPECTED error and an attempted NEW of
    $ZTIMeout with the SVNONEW error.
 
@@ -14902,7 +14992,9 @@
 
    Sockets can be attached and detached from the collection of sockets
    associated with a device. Detached sockets belong to a pseudo-device
-   called the "socketpool". A process can detach a socket from a device and
+   called the "socketpool". SOCKET devices use "YGTMSOCKETPOOL" to identify
+   the socket pool; an attempt OPEN a device of that name produces a
+   DEVNAMERESERVED error. A process can detach a socket from a device and
    later attach it to the same device or another device.
 
    **Caution**
@@ -15435,9 +15527,10 @@
    $ydb_dist/mumps -r start^server
 
    When start^server begins, the $PRINCIPAL device is the current device
-   connected a socket and $KEY contains "ESTABLISHED|socket_handle|
-   remote_ip_address". In most cases, a USE command near the beginning of the
-   routine sets various device parameters such as delimiters.
+   which is the incoming connection and $KEY contains
+   "ESTABLISHED|socket_handle| remote_ip_address". In most cases, a USE
+   command near the beginning of the routine sets various device parameters
+   such as delimiters.
 
    The ZSHOW "D" command reports available information on both the local and
    remote sides of a TCP socket including local and remove addresses and
@@ -17098,7 +17191,9 @@
    a device, YottaDB issues a run-time exception. The device does not have to be
    the current device, that is $IO.
 
-   The <CTRL> characters are ASCII 0 though 31.
+   The <CTRL> characters are ASCII 0 though 31. However terminal
+   configuration may prevent of most <CTRL> characters from ever reaching
+   YottaDB's CTRAP facility.
 
    For example, the command U $P:CTRAP=$C(26,30,7,19) sets a trap for the
    ASCII characters <SUB>, <RS>, <BEL> and <DC3>.
@@ -18632,10 +18727,10 @@
    libyottadb.h also includes definitions for the following entry points
    exported from libyottadb:
 
-   void gtm_hiber_start(ydb_uint_t mssleep);
-   void gtm_hiber_start_wait_any(ydb_uint_t mssleep)
-   void gtm_start_timer(ydb_tid_t tid, ydb_int_t time_to_expir, void (*handler)(), ydb_int_t hdata_len, void \*hdata);
-   void gtm_cancel_timer(ydb_tid_t tid);
+   void ydb_hiber_start(ydb_uint_t mssleep);
+   void ydb_hiber_start_wait_any(ydb_uint_t mssleep)
+   void ydb_start_timer(ydb_tid_t tid, ydb_int_t time_to_expir, void (*handler)(), ydb_int_t hdata_len, void \*hdata);
+   void ydb_cancel_timer(ydb_tid_t tid);
 
    where:
 
@@ -18646,9 +18741,9 @@
      * hdata_len - 0 or length of data to pass to handler as a parameter
      * hdata - NULL or address of data to pass to handler as a parameter
 
-   gtm_hiber_start() always sleeps until the time expires;
-   gtm_hiber_start_wait_any() sleeps until the time expires or an interrupt
-   by any signal (including another timer). gtm_start_timer() starts a timer
+   ydb_hiber_start() always sleeps until the time expires;
+   ydb_hiber_start_wait_any() sleeps until the time expires or an interrupt
+   by any signal (including another timer). ydb_start_timer() starts a timer
    but returns immediately (no sleeping) and drives the given handler when
    time expires unless the timer is canceled.
 
@@ -22033,7 +22128,6 @@ Appendix A. M Coding Standards - Do's and Don'ts
            alias containers. Lines containing SET $ZWRTACn=<value> are no-ops
            unless they have a preceding SET $ZWRTAC="" and an alias container
            variable association. In the ZWRITE or ZSHOW "V" output of an
-           alias container, SET $ZWRTAC lines appear in the order that GT.M
-           expects for restoration. FIS can change the use of $ZWRTAC in GT.M
-           at any time.
+           alias container, SET $ZWRTAC lines appear in the order that YottaDB
+           expects for restoration.
 

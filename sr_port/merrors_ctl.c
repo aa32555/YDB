@@ -1,6 +1,6 @@
 /****************************************************************
  *								*
- * Copyright (c) 2001-2019 Fidelity National Information	*
+ * Copyright (c) 2001-2020 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
  * Copyright (c) 2017-2020 YottaDB LLC and/or its subsidiaries.*
@@ -140,7 +140,7 @@ LITDEF	err_msg merrors[] = {
 	{ "JNLINVALID", "!AD is not a valid journal file !/ for database file: !AD", 4 },
 	{ "MBXWRTONLY", "Mailbox is write only, cannot read from it", 0 },
 	{ "MEMORY", "Central memory exhausted during request for !UJ bytes from 0x!XJ", 2 },
-	{ "UNUSEDMSG305", "MTBLKTOOBIG last used in V6.3-003 Dec. 2017", 0 },
+	{ "DONOBLOCK", "Argumentless DO not followed by a block", 0 },
 	{ "UNUSEDMSG306", "MTBLKTOOSM last used in V6.3-003 Dec. 2017", 0 },
 	{ "UNUSEDMSG307", "MTFIXRECSZ last used in V6.3-003 Dec. 2017", 0 },
 	{ "UNUSEDMSG308", "MTIS last used in V6.3-003 Dec. 2017", 0 },
@@ -159,7 +159,7 @@ LITDEF	err_msg merrors[] = {
 	{ "NOTPRINCIO", "Output currently directed to device !AD", 2 },
 	{ "NOTTOEOFONPUT", "Not positioned to EOF on write (sequential organization only)", 0 },
 	{ "NOZBRK", "No zbreak at that location", 0 },
-	{ "NULSUBSC", "!AD Null subscripts are not allowed for current region", 2 },
+	{ "NULSUBSC", "!AD null subscripts are not allowed for database file: !AD", 4 },
 	{ "NUMOFLOW", "Numeric overflow", 0 },
 	{ "PARFILSPC", "Parameter: !AD  file specification: !AD", 4 },
 	{ "PATCLASS", "Illegal character class for pattern code", 0 },
@@ -1132,7 +1132,7 @@ LITDEF	err_msg merrors[] = {
 	{ "UNUSEDMSG1296", "GTMERREXIT nixed in r1.20 because it is a VMS only error", 0 },
 	{ "INVMEMRESRV", "Could not allocate YottaDB memory reserve (!AD)", 2 },
 	{ "OPCOMMISSED", "!UL errors and !UL MBFULLs sending prior operator messages", 2 },
-	{ "COMMITWAITSTUCK", "Pid !UL timed out after waiting !UL minute(s) for !UL concurrent YottaDB process(es) to finish commits in database file !AD", 5 },
+	{ "COMMITWAITSTUCK", "Pid !UL waited !UL minute(s) for !UL concurrent YottaDB process(es) to finish commits in database file !AD", 5 },
 	{ "COMMITWAITPID", "Pid !UL waited !UL minute(s) for pid !UL to finish commits to block 0x!XL in database file !AD", 6 },
 	{ "UPDREPLSTATEOFF", "Error replicating global ^!AD as it maps to database !AD which has replication turned OFF", 4 },
 	{ "LITNONGRAPH", "M standard requires graphics in string literals; found non-printable: $ZCHAR(!AD)", 2 },
@@ -1537,6 +1537,8 @@ LITDEF	err_msg merrors[] = {
 	{ "APDCONNFAIL", "Audit Principal Device failed to connect to audit logger", 0 },
 	{ "APDLOGFAIL", "Audit Principal Device failed to log activity", 0 },
 	{ "STATSDBMEMERR", "Process attempted to create stats block in statistics database !AD and received SIGBUS--invalid physical address. Check file system space.", 2 },
+	{ "BUFSPCDELAY", "Request for !UL blocks in region !AD delayed", 3 },
+	{ "AIOQUEUESTUCK", "Waited !UL minutes for AIO work queue to complete (cr = !XL)", 2 },
 };
 
 
@@ -1575,7 +1577,8 @@ GBLDEF	err_ctl merrors_ctl = {
 	246,
 	"GTM",
 	&merrors[0],
-	1520,
+	1522,
 	&merrors_undocarr[0],
 	26
 };
+

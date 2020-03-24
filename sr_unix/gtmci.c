@@ -1,6 +1,6 @@
 /****************************************************************
  *								*
- * Copyright (c) 2001-2018 Fidelity National Information	*
+ * Copyright (c) 2001-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
  * Copyright (c) 2017-2020 YottaDB LLC and/or its subsidiaries. *
@@ -200,7 +200,7 @@ callin_entry_list *ci_find_rtn_entry(ci_tab_entry_t *ci_tab, const char *call_na
 
 /* Java-specific version of call-in handler. */
 int ydb_cij(const char *c_rtn_name, char **arg_blob, int count, int *arg_types, unsigned int *io_vars_mask,
-		unsigned int *has_ret_value)
+	    unsigned int *has_ret_value)
 {
 	callin_entry_list	*entry;
 	ci_tab_entry_t		*ci_tab;
@@ -1027,30 +1027,6 @@ int ydb_jinit()
 }
 #endif
 
-#ifdef _AIX
-/* If libyottadb was loaded via (or on account of) dlopen() and is later unloaded via dlclose()
- * the exit handler on AIX and HPUX still tries to call the registered atexit() handler causing
- * 'problems'. AIX 5.2 and later have the below unatexit() call to unregister the function if
- * our exit handler has already been called. Linux and Solaris don't need this, looking at the
- * other platforms we support to see if resolutions can be found. This routine will be called
- * by the OS when libyottadb is unloaded. Specified with the -binitfini loader option on AIX
- * to be run when the shared library is unloaded. 06/2007 SE
- */
-void gtmci_cleanup(void)
-{	/* This code is only for callin cleanup */
-	if (MUMPS_CALLIN != invocation_mode)
-		return;
-	/* If we have already run the exit handler, no need to do so again */
-	if (ydb_init_complete)
-	{
-		ydb_exit_handler();
-		ydb_init_complete = FALSE;
-	}
-	/* Unregister exit handler .. AIX only for now */
-	unatexit(gtm_exit_handler);
-}
-#endif
-
 /* The java plug-in has some very direct references to some of these routines that
  * cannot be changed by the pre-processor so for now, we have some stub routines
  * that take care of the translation. These routines are exported along with their
@@ -1066,6 +1042,7 @@ ydb_status_t gtm_init()
 {
 	return ydb_init();
 }
+
 #ifdef GTM_PTHREAD
 ydb_status_t gtm_jinit()
 {
@@ -1073,6 +1050,7 @@ ydb_status_t gtm_jinit()
 	return ydb_init();
 }
 #endif
+
 ydb_status_t gtm_exit()
 {
 	return ydb_exit();

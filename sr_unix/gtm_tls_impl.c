@@ -1,6 +1,6 @@
 /****************************************************************
  *								*
- * Copyright (c) 2013-2018 Fidelity National Information	*
+ * Copyright (c) 2013-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
  * Copyright (c) 2018-2019 YottaDB LLC and/or its subsidiaries.	*
@@ -184,6 +184,11 @@ STATICDEF struct gtm_ssl_options gtm_ssl_options_list[] =
 #ifdef	SSL_OP_NO_TLSv1_2
 	DEFINE_SSL_OP(SSL_OP_NO_TLSv1_2),
 #endif
+/*	Special case for NO_TLSv1_3 so defined for pre OpenSSL 1.1.1 */
+#ifndef	SSL_OP_NO_TLSv1_3
+#	define SSL_OP_NO_TLSv1_3	0x0
+#endif
+	DEFINE_SSL_OP(SSL_OP_NO_TLSv1_3),
 #ifdef	SSL_OP_NO_TLSv1_1
 	DEFINE_SSL_OP(SSL_OP_NO_TLSv1_1),
 #endif
@@ -539,6 +544,8 @@ gtm_tls_ctx_t *gtm_tls_init(int version, int flags)
 		return NULL;
 	}
 	SSL_CTX_set_options(ctx, DEPRECATED_SSLTLS_PROTOCOLS);
+	if (0 != SSL_OP_NO_TLSv1_3)
+		SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1_3);	/* until changes made to handle TLSv1.3 ciphers */
 	/* Read the configuration file for more configuration parameters. */
 	cfg = &gtm_tls_cfg;
 	config_init(cfg);

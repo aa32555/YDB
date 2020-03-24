@@ -1,6 +1,6 @@
 /****************************************************************
  *								*
- * Copyright (c) 2001-2018 Fidelity National Information	*
+ * Copyright (c) 2001-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
  * Copyright (c) 2018-2019 YottaDB LLC and/or its subsidiaries.	*
@@ -34,7 +34,6 @@
 #include "jnl.h"		/* needed for tp.h */
 #include "gdskill.h"		/* needed for tp.h */
 #include "buddy_list.h"		/* needed for tp.h */
-#include "hashtab_int4.h"	/* needed for tp.h */
 #include "tp.h"			/* needed for T_BEGIN_READ_NONTP_OR_TP macro */
 
 #include "t_end.h"		/* prototypes */
@@ -349,7 +348,7 @@ enum cdb_sc gvcst_root_search(boolean_t donot_restart)
 		{
 			assert(NULL != global_collation_mstr.addr);
 			GET_GVT_COLL_INFO(gv_target, (uchar_ptr_t)global_collation_mstr.addr,
-								(int)(rlen - (hdr_len + SIZEOF(block_id))), dummy_ret);
+					  (int)(rlen - (hdr_len + SIZEOF(block_id))), dummy_ret);
 		} else if (gv_target->act_specified_in_gld)
 		{	/* Global directory specified a collation. Directory tree did not specify any non-zero collation.
 			 * So global directory prevails.

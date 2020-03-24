@@ -1,6 +1,6 @@
 /****************************************************************
  *								*
- * Copyright (c) 2001-2018 Fidelity National Information	*
+ * Copyright (c) 2001-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
  * Copyright (c) 2017-2019 YottaDB LLC and/or its subsidiaries. *
@@ -276,6 +276,8 @@ int4 gds_rundown(boolean_t cleanup_udi)
 	CANCEL_DB_TIMERS(reg, csa, canceled_dbsync_timer);
 	we_are_last_user = FALSE;
 	inst_is_frozen = IS_REPL_INST_FROZEN && REPL_ALLOWED(csa->hdr);
+	if (FREEZE_LATCH_HELD(csa))
+		rel_latch(&cnl->freeze_latch);
 	if (!csa->persistent_freeze)
 		region_freeze(reg, FALSE, FALSE, FALSE, FALSE, FALSE);
 	if (!csa->lock_crit_with_db && LOCK_CRIT_HELD(csa))
@@ -585,7 +587,7 @@ int4 gds_rundown(boolean_t cleanup_udi)
 					/* Since "wcs_flu" failed, set wc_blocked to TRUE if not already set. */
 					if (!cnl->wc_blocked)
 					{
-						SET_TRACEABLE_VAR(cnl->wc_blocked, TRUE);
+						SET_TRACEABLE_VAR(cnl->wc_blocked, WC_BLOCK_RECOVER);
 						BG_TRACE_PRO_ANY(csa, wcb_gds_rundown2);
 						send_msg_csa(CSA_ARG(csa) VARLSTCNT(8) ERR_WCBLOCKED, 6,
 								LEN_AND_LIT("wcb_gds_rundown2"), process_id, &csa->ti->curr_tn,

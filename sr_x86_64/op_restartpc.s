@@ -1,9 +1,9 @@
 #################################################################
 #								#
-# Copyright (c) 2007-2015 Fidelity National Information 	#
+# Copyright (c) 2007-2019 Fidelity National Information		#
 # Services, Inc. and/or its subsidiaries. All rights reserved.	#
 #								#
-# Copyright (c) 2017 YottaDB LLC and/or its subsidiaries.	#
+# Copyright (c) 2017-2019 YottaDB LLC and/or its subsidiaries.	#
 # All rights reserved.						#
 #								#
 #	This source code contains the intellectual property	#
@@ -17,8 +17,6 @@
 	.include "g_msf.si"
 
 	.data
-	.extern	restart_pc
-	.extern restart_ctxt
 	.extern frame_pointer
 
 	.text
@@ -32,10 +30,10 @@
 ENTRY op_restartpc
 	movq	(%rsp), %rax
 	subq	$6, %rax 				# XFER call size is constant
-	movq	%rax, restart_pc(%rip)
-	movq	frame_pointer(%rip), %rax
-	movq	msf_ctxt_off(%rax), %r11
-	movq	%r11, restart_ctxt(%rip)
+	movq	frame_pointer(%rip), %r11
+	movq	%rax, msf_restart_pc_off(%r11)
+	movq	msf_ctxt_off(%r11), %rax
+	movq	%rax, msf_restart_ctxt_off(%r11)
 	ret
 # Below line is needed to avoid the ELF executable from ending up with an executable stack marking.
 # This marking is not an issue in Linux but is in Windows Subsystem on Linux (WSL) which does not enable executable stack.
