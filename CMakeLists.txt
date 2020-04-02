@@ -636,6 +636,7 @@ file(GLOB m_files_sr_unix RELATIVE ${YDB_SOURCE_DIR}/sr_unix ${YDB_SOURCE_DIR}/s
 file(GLOB m_files_sr_x86_64 RELATIVE ${YDB_SOURCE_DIR}/sr_x86_64 ${YDB_SOURCE_DIR}/sr_x86_64/*.m)
 file(GLOB m_files_sr_armv7l RELATIVE ${YDB_SOURCE_DIR}/sr_armv7l ${YDB_SOURCE_DIR}/sr_armv7l/*.m)
 file(GLOB m_files_sr_aarch64 RELATIVE ${YDB_SOURCE_DIR}/sr_aarch64 ${YDB_SOURCE_DIR}/sr_aarch64/*.m)
+file(GLOB m_files_sr_riscv RELATIVE ${YDB_SOURCE_DIR}/sr_riscv ${YDB_SOURCE_DIR}/sr_riscv/*.m)
 file(GLOB m_files_sr_i386 RELATIVE ${YDB_SOURCE_DIR}/sr_i386 ${YDB_SOURCE_DIR}/sr_i386/*.m)
 file(GLOB mpt_files_sr_port RELATIVE ${YDB_SOURCE_DIR}/sr_port ${YDB_SOURCE_DIR}/sr_port/*.mpt)
 file(GLOB mpt_files_sr_unix RELATIVE ${YDB_SOURCE_DIR}/sr_unix ${YDB_SOURCE_DIR}/sr_unix/*.mpt)
