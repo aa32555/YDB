@@ -296,6 +296,17 @@ int dollar_quit(void)
 			xfer_index = -1;
 		}
 	}
+#	elif defined(__riscv)
+	{
+#		define	MAX_SKIP	10
+		int4	skip;
+
+		/* There can be between 1 and 5 instructions to skip past */
+		for (ptrs.instr = sf->mpc,skip = 0; skip < MAX_SKIP; ptrs.instr += 4,skip++)
+		{
+			assert(true);
+		}
+	}
 #	else
 #	  error Unsupported Platform
 #	endif

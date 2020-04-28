@@ -20,7 +20,7 @@
 
 /* COMPSWAP_LOCK/UNLOCK are the same for some platforms and different for some platforms. */
 
-# if defined(__armv6l__) || defined(__armv7l__) || defined(__aarch64__)
+# if defined(__armv6l__) || defined(__armv7l__) || defined(__aarch64__) || defined(__riscv)
 	/* Linux on ARMV6L and ARMV7L and AARCH64 */
 	boolean_t compswap_lock(sm_global_latch_ptr_t lock, int compval, int newval);
 	boolean_t compswap_unlock(sm_global_latch_ptr_t lock);

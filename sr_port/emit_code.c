@@ -456,13 +456,13 @@ short *emit_vax_inst (short *inst, oprtype **fst_opr, oprtype **lst_opr)
 					ARM_ONLY(GEN_CMP_REG_IMM(reg, 0));
 					if (VXI_BLBC == sav_in)
 					{
-						X86_64_OR_ARM_ONLY(emit_jmp(GENERIC_OPCODE_BEQ, &inst, 0));
-						NON_X86_64_OR_ARM_ONLY(emit_jmp(GENERIC_OPCODE_BLBC, &inst, reg));
+						X86_64_OR_ARM_OR_RISCV_ONLY(emit_jmp(GENERIC_OPCODE_BEQ, &inst, 0));
+						NON_X86_64_OR_ARM_OR_RISCV_ONLY(emit_jmp(GENERIC_OPCODE_BLBC, &inst, reg));
 					} else
 					{
 						assert(VXI_BLBS == sav_in);
-						X86_64_OR_ARM_ONLY(emit_jmp(GENERIC_OPCODE_BNE, &inst, 0));
-						NON_X86_64_OR_ARM_ONLY(emit_jmp(GENERIC_OPCODE_BLBS, &inst, reg));
+						X86_64_OR_ARM_OR_RISCV_ONLY(emit_jmp(GENERIC_OPCODE_BNE, &inst, 0));
+						NON_X86_64_OR_ARM_OR_RISCV_ONLY(emit_jmp(GENERIC_OPCODE_BLBS, &inst, reg));
 					}
 					break;
 				case VXI_BRB:
