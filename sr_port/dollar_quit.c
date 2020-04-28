@@ -36,6 +36,8 @@
 #  include "arm.h"
 #elif defined(__aarch64__)
 #  include "aarch64.h"
+#elif defined(__riscv)
+#  include "riscv.h"
 #endif
 
 GBLREF	int	process_exiting;

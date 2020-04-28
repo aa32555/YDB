@@ -22,6 +22,7 @@
 
 #include "riscv_registers.h"
 #include "riscv_gtm_registers.h"
+#include "riscv.h"
 
 void	emit_base_offset_load(int base, int offset);
 void	emit_base_offset_addr(int base, int offset);
