@@ -70,7 +70,7 @@ void mupip_cvtgbl(void)
 	uint4	        begin, cli_status, end, max_rec_size;
 	unsigned char	buff[MAX_ONERROR_VALUE_LEN];
 	unsigned short	fn_len, len;
-	boolean_t	ignore_chset;
+	boolean_t	ignore_chset, headless = FALSE;
 
 	DCL_THREADGBL_ACCESS;
 	SETUP_THREADGBL_ACCESS;
@@ -175,7 +175,11 @@ void mupip_cvtgbl(void)
 
 	if (cli_present("IGNORECHSET") == CLI_PRESENT)
 		ignore_chset = TRUE;
-	file_format = get_load_format(&line1_ptr, &line3_ptr, &line1_len, &line3_len, &max_rec_size, &utf8, &dos, ignore_chset); /* from header */
+	file_format = get_load_format(&line1_ptr, &line3_ptr, &line1_len, &line3_len, &max_rec_size, &utf8, &dos, ignore_chset, &headless);
+	if (headless) { /* start reading from the start of the file if the file is a headless file */
+		file_input_close();
+		file_input_init(fn, fn_len, IOP_EOL);
+	}
 	if (MU_FMT_GOQ == file_format)
 		mupip_exit(ERR_LDBINFMT);
 	if ((BADZCHSET == utf8) || (0 >= line1_len))
@@ -190,7 +194,7 @@ void mupip_cvtgbl(void)
 	{	/* If the command speficies a format see if it matches the label */
 		len = SIZEOF(buff);
 		if (!cli_get_str("FORMAT", (char *)buff, &len))
-			go_load(begin, end, (unsigned char *)line1_ptr, line3_ptr, line3_len, max_rec_size, file_format, dos);
+			go_load(begin, end, (unsigned char *)line1_ptr, line3_ptr, line3_len, max_rec_size, file_format, dos, headless); //headless required in go_load
 		else
 		{
 		        lower_to_upper(buff, buff, len);
@@ -198,7 +202,7 @@ void mupip_cvtgbl(void)
 			{	/* If the label did not determine a format let them specify ZWR and they can sort out the result */
 				if ((MU_FMT_ZWR == file_format) || (MU_FMT_UNRECOG == file_format))
 					go_load(begin, end, (unsigned char *)line1_ptr, line3_ptr, line3_len, max_rec_size,
-						MU_FMT_ZWR, dos);
+						MU_FMT_ZWR, dos, headless);
 				else
 					mupip_exit(ERR_LDBINFMT);
 			} else if (!STRNCMP_LIT_LEN(buff, "BINARY", len))
@@ -211,7 +215,7 @@ void mupip_cvtgbl(void)
 			{	/* If the label did not determine a format let them specify GO and they can sort out the result */
 				if ((MU_FMT_GO == file_format) || (MU_FMT_UNRECOG == file_format))
 					go_load(begin, end, (unsigned char *)line1_ptr, line3_ptr, line3_len, max_rec_size,
-						MU_FMT_GO, dos);
+						MU_FMT_GO, dos,headless);
 				else
 					mupip_exit(ERR_LDBINFMT);
 			} else if (!STRNCMP_LIT_LEN(buff, "GOQ", len))
@@ -231,7 +235,7 @@ void mupip_cvtgbl(void)
 		if (MU_FMT_BINARY == file_format)
 			bin_load(begin, end, line1_ptr, line1_len);
 		else if ((MU_FMT_ZWR == file_format) || (MU_FMT_GO == file_format))
-			go_load(begin, end, (unsigned char *)line1_ptr, line3_ptr, line3_len, max_rec_size, file_format, dos);
+			go_load(begin, end, (unsigned char *)line1_ptr, line3_ptr, line3_len, max_rec_size, file_format, dos, headless);
 		else
 		{
 			assert(MU_FMT_UNRECOG == file_format);
@@ -244,12 +248,13 @@ void mupip_cvtgbl(void)
 /* Make an attempt to discover the input file format based on its content principally the label */
 
 int get_load_format(char **line1_ptr, char **line3_ptr, int *line1_len, int *line3_len, uint4 *max_rec_size, int *utf8_extract,
-		int *dos, boolean_t ignore_chset)
+		int *dos, boolean_t ignore_chset, boolean_t *headless)
 {
 	char	*c, *c1, *ctop, *line1, *line2, *line3, *ptr;
 	int	len, line2_len, ret;
+	char *l1, *l2;
 	mval	v;
-	uint4	max_io_size;
+ 	uint4	max_io_size;
 
 	max_io_size = MAX_IO_BLOCK_SIZE - 1;				/* label gets less room */
 	*max_rec_size = MAX_STRLEN + ZWR_EXP_RATIO(MAX_KEY_SZ);		/* go for max to avoid interaction with the regex stuff */
@@ -296,14 +301,6 @@ int get_load_format(char **line1_ptr, char **line3_ptr, int *line1_len, int *lin
 			}
 		}
 	}
-	c1 = line1 + *line1_len;
-	*c1-- = 0;				/* null terminate the line to keep util_out_print happy */
-	if (*dos = ('\r' == *c1))		/* WARNING assignment */
-	{	/* [cariage] return before the <LF> / new line - we'll need to keep stripping them off */
-		*line1_len -= 1;
-		*c1 = 0;			/* null terminate earlier to keep util_out_print happy */
-	}
-	util_out_print("!AD", TRUE, *line1_len, line1);
 	if ((0 == line2_len) || (c == ctop))
 	{	/* need to get at least some more of 2nd line */
 		ptr = line2 + line2_len;
@@ -317,20 +314,20 @@ int get_load_format(char **line1_ptr, char **line3_ptr, int *line1_len, int *lin
 			gtm_putmsg_csa(CSA_ARG(NULL) VARLSTCNT(1) ERR_MAXSTRLEN);
 		}
 	}
-	if (0 >= line2_len)
-		return MU_FMT_GOQ;
-	/* we have 2 label lines to work with */
-	line2_len -= *dos;
-	c1 = line2 + line2_len;
-	*c1 = 0;	/* null terminate the line to keep regex in bounds */
-	util_out_print("!AD", TRUE, line2_len, line2);
-	if (gtm_regex_perf("ZWR", line2))
+	/* Checking at line 2 information we can say if it doesn't contain header information incase of GO and ZWR */
+	if (gtm_regex_perf("ZWR", line2)) {
 		ret = MU_FMT_ZWR;		/* settle for any ZWR in the second line of the label */
+		*headless = FALSE;
+	}
 	if ((MU_FMT_UNRECOG == ret) &&
-			gtm_regex_perf("(GT.M )?[0-9]{2}[-]([A-Z]{3})[-][0-9]{4}[ ]{1,2}[0-9]{2}[:][0-9]{2}[:][0-9]{2}", line2))
+			gtm_regex_perf("(GT.M )?[0-9]{2}[-]([A-Z]{3})[-][0-9]{4}[ ]{1,2}[0-9]{2}[:][0-9]{2}[:][0-9]{2}", line2)) {
 		ret = MU_FMT_GO;	/* GT.M DD-MON-YEAR  24:60:SS used by MUPIP EXTRACT & %GO */
-	if ((MU_FMT_UNRECOG == ret) && gtm_regex_perf("GLO", line2))
+		*headless = FALSE;
+	}
+	if ((MU_FMT_UNRECOG == ret) && gtm_regex_perf("GLO", line2)) {
 		ret = MU_FMT_GO;	/* settle for any GLO in the second line of the label */
+		*headless = FALSE;
+	}
 	for (c = line2 + line2_len + 1, ctop = c + *line3_len, c1 = line3; c < ctop; c++)
 	{	/* if the first 2 lines were really short, move to other buffer looking for a line 3 terminator */
 		if ('\n' == *c)
@@ -340,6 +337,7 @@ int get_load_format(char **line1_ptr, char **line3_ptr, int *line1_len, int *lin
 		} else
 			*c1 = *c;
 	}
+
 	if (c == ctop)
 	{	/* get all or some of line 3 - the first non-label line */
 		ptr = line3 + *line3_len;
@@ -364,11 +362,47 @@ int get_load_format(char **line1_ptr, char **line3_ptr, int *line1_len, int *lin
 		*line3_len = 0;
 		ret = MU_FMT_GOQ;	/* abusing this value to mean not working, as we can't discover GOQ */
 	}
+
+	// line1 and line2 check ret unrecog or goq ensures that there is no header information, line3 doesn't have any say on header information
+	if (MU_FMT_GOQ == ret || MU_FMT_UNRECOG == ret)
+	{
+		*headless = TRUE;
+		util_out_print("Warning No header information found", TRUE);
+		l1 = malloc(*max_rec_size);
+		l2 = malloc(*max_rec_size);
+		memcpy(l1, line1, *line1_len); /* Copying exact line1 value to check if it is a go or zwr format value */
+	        memcpy(l2, line2, line2_len);  /* Copying exact line2 value to check if it is a go or zwr format value */
+		// First regex - global variable Second Regex - Value
+		if(gtm_regex_perf("\\^[%A-Za-z][0-9A-Za-z]*(\\(.*\\))?$", l1) && gtm_regex_perf("^(\".*\"|-?([0-9]+|[0-9]*\\.[0-9]+))$",  l2))
+			ret = MU_FMT_GO;
+		else if (gtm_regex_perf("\\^[%A-Za-z][0-9A-Za-z]*(\\(.*\\))?=(\".*\"|-?([0-9]+|[0-9]*\\.[0-9]+))$", l1)
+				&& gtm_regex_perf("\\^[%A-Za-z][0-9A-Za-z]*(\\(.*\\))?=(\".*\"|-?([0-9]+|[0-9]*\\.[0-9]+))$", l2))
+			ret = MU_FMT_ZWR;
+	}
+
+	/* Line 3 check to identify the type of message. This doesn't ensure that a file is with or without header information*/
 	if ((MU_FMT_UNRECOG == ret) && *line3_len && gtm_regex_perf("\\^[%A-Za-z][0-9A-Za-z]*(\\(.*\\))?$", line3))
 		ret = MU_FMT_GO;	/* gvn only */
 	if ((MU_FMT_UNRECOG == ret) && *line3_len
 			&& gtm_regex_perf("\\^[%A-Za-z][0-9A-Za-z]*(\\(.*\\))?=(\".*\"|-?([0-9]+|[0-9]*\\.[0-9]+))$", line3))
 		ret = MU_FMT_ZWR;	 /* gvn=val */
+	if (!*headless)
+	{ /* Only print the header incase you know that there is a header present */
+		c1 = line1 + *line1_len - 1;
+		if (*dos = ('\r' == *c1))		/* WARNING assignment */
+		{	/* [cariage] return before the <LF> / new line - we'll need to keep stripping them off */
+			*line1_len -= 1;
+			*c1 = 0;			/* null terminate earlier to keep util_out_print happy */
+		}
+		util_out_print("!AD", TRUE, *line1_len, line1);
+		if (0 >= line2_len)
+			return MU_FMT_GOQ;
+		/* we have 2 label lines to work with */
+		line2_len -= *dos;
+		c1 = line2 + line2_len;
+		*c1 = 0;	/* null terminate the line to keep regex in bounds */
+		util_out_print("!AD", TRUE, line2_len, line2);
+	}
 	if ((MU_FMT_UNRECOG != ret) && (!ignore_chset))
 	{
 		*utf8_extract = gtm_regex_perf("UTF-8", line1);

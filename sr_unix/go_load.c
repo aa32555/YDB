@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2018 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -16,7 +16,6 @@
 #include "mdef.h"
 
 #include "gtm_string.h"
-
 #include "stringpool.h"
 #include "stp_parms.h"
 #include "gdsroot.h"
@@ -152,7 +151,7 @@ STATICFNDEF boolean_t get_mname_from_key(char *ptr, int key_length, char *key, g
 }
 
 void go_load(uint4 begin, uint4 end, unsigned char *rec_buff, char *line3_ptr, int line3_len, uint4 max_rec_size, int fmt,
-	int dos)
+	int dos, boolean_t headless)
 {
 	boolean_t	format_error = FALSE, hasht_ignored = FALSE, hasht_gbl = FALSE;
 	boolean_t	is_setextract, mu_load_error = FALSE, switch_db, go_format_val_read;
@@ -171,12 +170,24 @@ void go_load(uint4 begin, uint4 end, unsigned char *rec_buff, char *line3_ptr, i
 		assert((MU_FMT_GO == fmt) || (MU_FMT_ZWR == fmt));
 		mupip_exit(ERR_LOADFILERR);
 	}
-	if (begin < 3)
-		begin = 3;
+
 	ptr = line3_ptr;
-	len = line3_len;
+	if (headless == 1)
+	{
+		begin = 1;
+		iter = 0;  /* this ensures that the go_get fetches data */
+		len = 0;
+	}
+	else
+	{
+		if (begin  <3)
+			begin = 3;
+		iter = 3;
+		len = line3_len;
+	}
+
 	go_format_val_read = FALSE;
-	for (iter = 3; iter < begin; iter++)
+	for (;iter < begin; iter++)
 	{
 		len = go_get(&ptr, 0, max_rec_size);
 		if (len < 0)	/* The IO device has signalled an end of file */
