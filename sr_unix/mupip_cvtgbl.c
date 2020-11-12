@@ -176,7 +176,9 @@ void mupip_cvtgbl(void)
 	if (cli_present("IGNORECHSET") == CLI_PRESENT)
 		ignore_chset = TRUE;
 	file_format = get_load_format(&line1_ptr, &line3_ptr, &line1_len, &line3_len, &max_rec_size, &utf8, &dos, ignore_chset, &headless);
-	if (headless) { /* start reading from the start of the file if the file is a headless file */
+	if (headless)
+	{
+		/* start reading from the start of the file if the file is a headless file */
 		file_input_close();
 		file_input_init(fn, fn_len, IOP_EOL);
 	}
@@ -252,21 +254,35 @@ int get_load_format(char **line1_ptr, char **line3_ptr, int *line1_len, int *lin
 {
 	char	*c, *c1, *ctop, *line1, *line2, *line3, *ptr;
 	int	len, line2_len, ret;
-	char *l1, *l2;
+	char 	*l1, *l2;
 	mval	v;
  	uint4	max_io_size;
 
 	max_io_size = MAX_IO_BLOCK_SIZE - 1;				/* label gets less room */
 	*max_rec_size = MAX_STRLEN + ZWR_EXP_RATIO(MAX_KEY_SZ);		/* go for max to avoid interaction with the regex stuff */
 	line1 = *line1_ptr = malloc(*max_rec_size);			/* no corresponding free; released at MUPIP termination */
+	line2 = malloc(*max_rec_size);
 	line3 = *line3_ptr = malloc(*max_rec_size);			/*  ditto */
-	*line1_len = file_input_read_xchar(line1, CHAR_TO_READ_LINE1_BIN);
+	ptr = line1;
+
+	*line1_len = go_get(&ptr, 0, max_io_size);
+	*(line1 + *line1_len) = '\n';
+	*line1_len+=1;
 	*dos = *line3_len = *utf8_extract = 0;
 	ret = MU_FMT_UNRECOG;		/* actually means as yet undetermined; used to decide if still trying to find a format */
 	if (0 >= *line1_len)
 		return MU_FMT_GOQ;
 	if (0 == STRNCMP_LIT(line1 + 6, "BINARY")) /* If file is binary do not look further */
 		return MU_FMT_BINARY;
+
+	/**line2_len = go_get(&ptr, 0, max_io_size);*/
+	/**(line2 + *line2_len) = '\n';*/
+	/**line2_len+=1;	*/
+
+	/**line3_len = go_get(&ptr, 0, max_io_size);*/
+	/**(line3 + *line3_len) = '\n';*/
+	/*line3_len+=1;*/
+
 	for (line2_len = 0, c = line1, ctop = c + *line1_len; c < ctop; c++)
 	{	/* that 1st read is fixed length, so look for a terminator */
 		if ('\n' == *c)
