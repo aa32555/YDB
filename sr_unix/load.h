@@ -48,10 +48,10 @@
 void		bin_load(uint4 begin, uint4 end, char *line1_ptr, int line1_len);
 void		go_call_db(int routine, char *parm1, int parm2, int val_off1, int val_len1);
 int		go_get(char **in_ptr, int max_len, uint4 max_rec_size);
-void		go_load(uint4 begin, uint4 end, unsigned char *recbuf, char *line3_ptr, int line3_len, uint4 max_rec_size, int fmt,
+void		go_load(uint4 begin, uint4 end, unsigned char *recbuf, char *line1_ptr, char *line2_ptr, char *line3_ptr, int line1_len, int line2_len, int line3_len, uint4 max_rec_size, int fmt,
 			int dos, boolean_t headless);
 void		goq_load(void);
-int		get_load_format(char **line1_ptr, char **line3_ptr, int *line1_len, int *line3_len, uint4 *max_rec_size,
+int		get_load_format(char **line1_ptr, char **line2_ptr, char **line3_ptr, int *line1_len, int *line2_len, int *line3_len, uint4 *max_rec_size,
 			int *utf8_extract, int *dos, boolean_t ignore_chset, boolean_t *headless);
 boolean_t	gtm_regex_perf(const char *rexpr, char *str_buff);
 

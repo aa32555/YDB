@@ -150,7 +150,7 @@ STATICFNDEF boolean_t get_mname_from_key(char *ptr, int key_length, char *key, g
 	return TRUE;
 }
 
-void go_load(uint4 begin, uint4 end, unsigned char *rec_buff, char *line3_ptr, int line3_len, uint4 max_rec_size, int fmt,
+void go_load(uint4 begin, uint4 end, unsigned char *rec_buff, char *line1_ptr, char *line2_ptr, char *line3_ptr, int line1_len, int line2_len, int line3_len, uint4 max_rec_size, int fmt,
 	int dos, boolean_t headless)
 {
 	boolean_t	format_error = FALSE, hasht_ignored = FALSE, hasht_gbl = FALSE;
@@ -171,16 +171,16 @@ void go_load(uint4 begin, uint4 end, unsigned char *rec_buff, char *line3_ptr, i
 		mupip_exit(ERR_LOADFILERR);
 	}
 
-	ptr = line3_ptr;
 	if (headless == 1)
 	{
+		ptr = line1_ptr;
 		begin = 1;
 		iter = 0;  /* this ensures that the go_get fetches data */
 		len = 0;
 	}
 	else
 	{
-		if (begin  <3)
+		if (begin  < 3)
 			begin = 3;
 		iter = 3;
 		len = line3_len;
@@ -228,7 +228,7 @@ void go_load(uint4 begin, uint4 end, unsigned char *rec_buff, char *line3_ptr, i
 			util_out_print(0, TRUE);
 			mu_ctrlc_occurred = FALSE;
 		}
-		if ((iter > begin) && (0 > (len = go_get(&ptr, MAX_STRLEN, max_rec_size) - dos)))	/* WARNING assignment */
+		if ((iter > begin) && (!headless || (iter >= 3 && headless)) && (0 > (len = go_get(&ptr, MAX_STRLEN, max_rec_size) - dos)))	/* WARNING assignment */
 			break;
 		if (mupip_error_occurred)
 		{
@@ -405,6 +405,12 @@ void go_load(uint4 begin, uint4 end, unsigned char *rec_buff, char *line3_ptr, i
 				max_subsc_len = gv_currkey->end + 1;
 			if (max_data_len < len)
 			        max_data_len = len;
+
+		}
+		if (headless && iter - 1 == 0) { 	/* offseting for increment of iter */
+			ptr = line2_ptr;
+		} else if (headless && iter - 1 == 1) {
+			ptr = line3_ptr;
 		}
 		key_count++;
 	}
