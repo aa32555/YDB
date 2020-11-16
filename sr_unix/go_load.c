@@ -173,13 +173,14 @@ void go_load(uint4 begin, uint4 end, unsigned char *rec_buff, char *line1_ptr, c
 
 	if (headless == 1)
 	{
+		/* no need to specify begin here as this will be the value received from the parameter */
 		ptr = line1_ptr;
-		begin = 1;
-		iter = 0;  /* this ensures that the go_get fetches data */
-		len = 0;
+		iter = 1;  /* this ensures that the go_get fetches data */
+		len = line1_len;
 	}
 	else
 	{
+		ptr = line3_ptr;
 		if (begin  < 3)
 			begin = 3;
 		iter = 3;
@@ -228,7 +229,7 @@ void go_load(uint4 begin, uint4 end, unsigned char *rec_buff, char *line1_ptr, c
 			util_out_print(0, TRUE);
 			mu_ctrlc_occurred = FALSE;
 		}
-		if ((iter > begin) && (!headless || (iter >= 3 && headless)) && (0 > (len = go_get(&ptr, MAX_STRLEN, max_rec_size) - dos)))	/* WARNING assignment */
+		if ((iter > begin) && (!headless || (iter >3 && headless)) && (0 > (len = go_get(&ptr, MAX_STRLEN, max_rec_size) - dos)))	/* WARNING assignment */
 			break;
 		if (mupip_error_occurred)
 		{
@@ -323,6 +324,13 @@ void go_load(uint4 begin, uint4 end, unsigned char *rec_buff, char *line1_ptr, c
 			if (max_data_len < des.len)
 			        max_data_len = des.len;
 			des.len = 0;
+			if (headless && iter == 1) {
+				ptr = line2_ptr;
+				len = line2_len;
+			} else {
+				ptr = line3_ptr;
+				len = line3_len;
+			}
 		} else
 		{
 			ISSUE_TRIGDATAIGNORE_IF_NEEDED(len, ptr, hasht_gbl, hasht_ignored);
@@ -388,7 +396,11 @@ void go_load(uint4 begin, uint4 end, unsigned char *rec_buff, char *line1_ptr, c
 				iter--;	/* Decrement as didn't load key */
 				break;
 			}
-			if (0 > (len = go_get(&ptr, 0, max_rec_size) - dos))		/* WARNING assignment */
+			if (headless && iter == 2) {
+				ptr  = line2_ptr;
+				len = line2_len;
+			}
+			else if (0 > (len = go_get(&ptr, 0, max_rec_size) - dos))		/* WARNING assignment */
 			        break;
 			if (mupip_error_occurred)
 			{
@@ -405,12 +417,11 @@ void go_load(uint4 begin, uint4 end, unsigned char *rec_buff, char *line1_ptr, c
 				max_subsc_len = gv_currkey->end + 1;
 			if (max_data_len < len)
 			        max_data_len = len;
+			if (headless && iter == 2) {
+				ptr = line3_ptr;
+				len = line3_len;
+			}
 
-		}
-		if (headless && iter - 1 == 0) { 	/* offseting for increment of iter */
-			ptr = line2_ptr;
-		} else if (headless && iter - 1 == 1) {
-			ptr = line3_ptr;
 		}
 		key_count++;
 	}
