@@ -267,13 +267,13 @@ int get_load_format(char **line1_ptr, char **line2_ptr, char **line3_ptr, int *l
 	{	/* that 1st read is fixed length, so look for a terminator */
 		if ('\n' == *c)
 		{	/* found a terminator */
-			line2 = c + 1;
+			line2 = *line2_ptr = c + 1;
 			*line2_len = *line1_len - (line2 - line1); /* subtraction of ptrs line2 - line1 gives number of elements in the first line */
 			*line1_len -= (*line2_len + 1); /* line1_len initially contained all elements subtracting to get value of actual line1_len */
 			break;
 		}
 	}
-	if (c == ctop)
+	if (c == ctop) /* If new line \n character between line1 and line2 not found */
 	{	/* did not find a terminator - read some more of 1st line */
 		ptr = c;
 		if (0 <= (len = go_get(&ptr, 0, max_io_size)))		/* WARNING assignment */
@@ -284,21 +284,21 @@ int get_load_format(char **line1_ptr, char **line2_ptr, char **line3_ptr, int *l
 			gtm_putmsg_csa(CSA_ARG(NULL) VARLSTCNT(1) ERR_MAXSTRLEN);
 		}
 		*line2_len = 0;
-		line2 = line1 + *line1_len;
+		line2 = *line2_ptr = line1 + *line1_len;  /* This also makes sense to have lin2 after end of line1. @TODO I am not sure if this is line1_len + 1 or just line1 */
 	} else if (*line2_len)
 	{	/* If line1 length is actually < 12 chars, the buffer has characters from line2 as well */
 		for (c = line2, ctop = c + *line2_len; c < ctop; c++)
 		{	/* look for a line 2 terminator */
 			if ('\n' == *c)
 			{	/* found a terminator */
-				*line3_len = *line2_len - (c - line2 + 1);
-				*line2_len = c - line2;
+				*line3_len = *line2_len - (c - line2 + 1); /* Total Length - Size Line-2 */
+				*line2_len = c - line2; /* This makes sense because you previously assigned line2 in line 270  */
 				line3 = c + 1;
 				break;
 			}
 		}
 	}
-	if ((0 == *line2_len) || (c == ctop))
+	if ((0 == *line2_len) || (c == ctop)) /* If the new line character between line2 and line3 not found */
 	{	/* need to get at least some more of 2nd line */
 		ptr = line2 + *line2_len;
 		if (0 < (len = go_get(&ptr, 0, max_io_size)))		/* WARNING assignment */
@@ -331,8 +331,8 @@ int get_load_format(char **line1_ptr, char **line2_ptr, char **line3_ptr, int *l
 		{	/* found a terminator */
 			*line3_len = c1 - line3;
 			break;
-		} else
-			*c1 = *c;
+		}// else
+		//	*c1 = *c;
 	}
 
 	if (c == ctop)
