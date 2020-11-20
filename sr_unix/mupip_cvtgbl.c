@@ -246,7 +246,7 @@ void mupip_cvtgbl(void)
 int get_load_format(char **line1_ptr, char **line2_ptr, char **line3_ptr, int *line1_len, int *line2_len, int *line3_len, uint4 *max_rec_size, int *utf8_extract,
 		int *dos, boolean_t ignore_chset, boolean_t *headless)
 {
-	char	*c, *c1, *ctop, *line1, *line2, *line3, *ptr;
+	char	*c, *c1, *ctop, *line1, *line2, *line3, *ptr, *l1, *l2;
 	int	len, ret;
 	mval	v;
  	uint4	max_io_size;
@@ -293,7 +293,7 @@ int get_load_format(char **line1_ptr, char **line2_ptr, char **line3_ptr, int *l
 			{	/* found a terminator */
 				*line3_len = *line2_len - (c - line2 + 1); /* Total Length - Size Line-2 */
 				*line2_len = c - line2; /* This makes sense because you previously assigned line2 in line 270  */
-				line3 = c + 1;
+				line3 = *line3_ptr = c + 1;
 				break;
 			}
 		}
@@ -365,11 +365,15 @@ int get_load_format(char **line1_ptr, char **line2_ptr, char **line3_ptr, int *l
 	{
 		*headless = TRUE;
 		util_out_print("Warning No header information found", TRUE);
+		l1 = malloc(*max_rec_size);
+		l2 = malloc(*max_rec_size);
+		memcpy(l1, line1, *line1_len); /* Copying exact line1 value to check if it is a go or zwr format value. Required for headless case*/
+		memcpy(l2, line2, *line2_len); /* Copying exact line2 value to check if it is a go or zwr format value. Required for headless case */
 		// First regex - global variable Second Regex - Value
-		if(gtm_regex_perf("\\^[%A-Za-z][0-9A-Za-z]*(\\(.*\\))?$", line1) && gtm_regex_perf("^(\".*\"|-?([0-9]+|[0-9]*\\.[0-9]+))$",  line2))
+		if(gtm_regex_perf("\\^[%A-Za-z][0-9A-Za-z]*(\\(.*\\))?$", l1) && gtm_regex_perf("^(\".*\"|-?([0-9]+|[0-9]*\\.[0-9]+))$",  l2))
 			ret = MU_FMT_GO;
-		else if (gtm_regex_perf("\\^[%A-Za-z][0-9A-Za-z]*(\\(.*\\))?=(\".*\"|-?([0-9]+|[0-9]*\\.[0-9]+))$", line1)
-				&& gtm_regex_perf("\\^[%A-Za-z][0-9A-Za-z]*(\\(.*\\))?=(\".*\"|-?([0-9]+|[0-9]*\\.[0-9]+))$", line2))
+		else if (gtm_regex_perf("\\^[%A-Za-z][0-9A-Za-z]*(\\(.*\\))?=(\".*\"|-?([0-9]+|[0-9]*\\.[0-9]+))$", l1)
+				&& gtm_regex_perf("\\^[%A-Za-z][0-9A-Za-z]*(\\(.*\\))?=(\".*\"|-?([0-9]+|[0-9]*\\.[0-9]+))$", l2))
 			ret = MU_FMT_ZWR;
 	} else {
 		/* Line 3 check to identify the type of message. This doesn't ensure that a file is with or without header information*/
