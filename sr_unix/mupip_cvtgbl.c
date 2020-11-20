@@ -269,7 +269,7 @@ int get_load_format(char **line1_ptr, char **line2_ptr, char **line3_ptr, int *l
 		{	/* found a terminator */
 			line2 = *line2_ptr = c + 1;
 			*line2_len = *line1_len - (line2 - line1); /* subtraction of ptrs line2 - line1 gives number of elements in the first line */
-			*line1_len -= (*line2_len + 1); /* line1_len initially contained all elements subtracting to get value of actual line1_len */
+			*line1_len -= (*line2_len + 1); /* line1_len initially contained all elements read and not just line1_len. Subtracting line2_len to get value of actual line1_len */
 			break;
 		}
 	}
@@ -284,7 +284,7 @@ int get_load_format(char **line1_ptr, char **line2_ptr, char **line3_ptr, int *l
 			gtm_putmsg_csa(CSA_ARG(NULL) VARLSTCNT(1) ERR_MAXSTRLEN);
 		}
 		*line2_len = 0;
-		line2 = *line2_ptr = line1 + *line1_len;  /* This also makes sense to have lin2 after end of line1. @TODO I am not sure if this is line1_len + 1 or just line1 */
+		line2 = *line2_ptr = line1 + *line1_len;
 	} else if (*line2_len)
 	{	/* If line1 length is actually < 12 chars, the buffer has characters from line2 as well */
 		for (c = line2, ctop = c + *line2_len; c < ctop; c++)
@@ -292,7 +292,7 @@ int get_load_format(char **line1_ptr, char **line2_ptr, char **line3_ptr, int *l
 			if ('\n' == *c)
 			{	/* found a terminator */
 				*line3_len = *line2_len - (c - line2 + 1); /* Total Length - Size Line-2 */
-				*line2_len = c - line2; /* This makes sense because you previously assigned line2 in line 270  */
+				*line2_len = c - line2;
 				line3 = *line3_ptr = c + 1;
 				break;
 			}
@@ -311,7 +311,7 @@ int get_load_format(char **line1_ptr, char **line2_ptr, char **line3_ptr, int *l
 			gtm_putmsg_csa(CSA_ARG(NULL) VARLSTCNT(1) ERR_MAXSTRLEN);
 		}
 	}
-	/* Checking at line 2 information we can say if it doesn't contain header information incase of GO and ZWR */
+	/* Checking line 2 data, we can say if it doesn't contain header information incase of GO and ZWR */
 	if (gtm_regex_perf("ZWR", line2)) {
 		ret = MU_FMT_ZWR;		/* settle for any ZWR in the second line of the label */
 		*headless = FALSE;
@@ -331,8 +331,7 @@ int get_load_format(char **line1_ptr, char **line2_ptr, char **line3_ptr, int *l
 		{	/* found a terminator */
 			*line3_len = c1 - line3;
 			break;
-		}// else
-		//	*c1 = *c;
+		}
 	}
 
 	if (c == ctop)
