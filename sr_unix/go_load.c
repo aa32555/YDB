@@ -229,7 +229,7 @@ void go_load(uint4 begin, uint4 end, unsigned char *rec_buff, char *line1_ptr, c
 			util_out_print(0, TRUE);
 			mu_ctrlc_occurred = FALSE;
 		}
-		if ((iter > begin) && (!headless || (iter >3 && headless)) && (0 > (len = go_get(&ptr, MAX_STRLEN, max_rec_size) - dos)))	/* WARNING assignment */
+		if ((iter > begin) && (!headless || (iter > 3 && headless)) && (0 > (len = go_get(&ptr, MAX_STRLEN, max_rec_size) - dos)))	/* WARNING assignment */
 			break;
 		if (mupip_error_occurred)
 		{
@@ -294,6 +294,13 @@ void go_load(uint4 begin, uint4 end, unsigned char *rec_buff, char *line1_ptr, c
 				failed_record_count++;
 				gv_target = NULL;
 				gv_currkey->base[0] = '\0';
+				if (headless && iter + failed_record_count == 1) {
+					ptr = line2_ptr;
+					len = line2_len;
+				} else if (headless && iter + failed_record_count == 3 || headless && iter + failed_record_count == 4 && iter == 2) {
+					ptr = line3_ptr;
+					len = line3_len;
+				}
 				ONERROR_PROCESS;
 			}
 			mu_load_error = FALSE;
@@ -324,10 +331,10 @@ void go_load(uint4 begin, uint4 end, unsigned char *rec_buff, char *line1_ptr, c
 			if (max_data_len < des.len)
 			        max_data_len = des.len;
 			des.len = 0;
-			if (headless && iter == 1) {
+			if (headless && iter == 1) { /* there is no need for failed_record_count here because iterator will already have increased its value when it reaches here */
 				ptr = line2_ptr;
 				len = line2_len;
-			} else {
+			} else if (headless && iter == 2) {
 				ptr = line3_ptr;
 				len = line3_len;
 			}
@@ -387,6 +394,14 @@ void go_load(uint4 begin, uint4 end, unsigned char *rec_buff, char *line1_ptr, c
 				failed_record_count++;
 				gv_target = NULL;
 				gv_currkey->base[0] = '\0';
+				if (headless && iter + failed_record_count == 2) {
+					ptr = line2_ptr;
+					len = line2_len;
+				} else if (headless && iter + failed_record_count == 4 && iter == 2 || iter + failed_record_count == 3) {
+					/* 1st pass + second_fail (iter=2 failed_record_count=1) | (1st_fail + second_fail) (iter=2 failed_record_count=2 */
+	 				ptr = line3_ptr;
+					len = line3_len;
+				}
 				ONERROR_PROCESS;
 			}
 			mu_load_error = FALSE;
@@ -417,7 +432,7 @@ void go_load(uint4 begin, uint4 end, unsigned char *rec_buff, char *line1_ptr, c
 				max_subsc_len = gv_currkey->end + 1;
 			if (max_data_len < len)
 			        max_data_len = len;
-			if (headless && iter == 2) {
+			if (headless && iter + failed_record_count == 2) {
 				ptr = line3_ptr;
 				len = line3_len;
 			}

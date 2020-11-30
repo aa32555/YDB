@@ -357,8 +357,19 @@ int get_load_format(char **line1_ptr, char **line2_ptr, char **line3_ptr, int *l
 	{
 		*line3_len = 0;
 		ret = MU_FMT_GOQ;	/* abusing this value to mean not working, as we can't discover GOQ */
-	}
+		/*for ( c = line3_ptr; c < lin3_ptr + *line3_len; c++) {*/
+			/*if (c == '\n') {*/
+				/*line4_ptr = c + 1;*/
+				/**line3_len = c - line3_ptr;*/
+				/*break;*/
+			/*}*/
+		/*}*/
 
+		/*if (c != ctop) {*/
+
+		/*}*/
+
+	}
 	// line1 and line2 check ret unrecog or goq ensures that there is no header information, line3 doesn't have any say on header information
 	if (MU_FMT_GOQ == ret || MU_FMT_UNRECOG == ret)
 	{
