@@ -32,6 +32,56 @@ etrap
 	set $etrap="set $etrap=""open """"/proc/self/fd/2"""" use """"/proc/self/fd/2"""" write $zstatus,! zshow """"*"""" zhalt 1""  goto err^"_$text(+0)
 	quit
 
+; Removes triggers and cross references for a specified global, or all globals
+;
+; Usage: DO UNXREFDATA^%YDBAIM(gbl,nsubs,sep,zpiece)
+; Parameters:
+; - gbl is the global variable name, e.g., "^ABC" for which the specified
+;   triggers are to be removed. If omitted, all xrefs and triggers for xrefs are
+;   removed.
+; - nsubs is the number of subscripts at the level for which the xref is to
+;   be removed. If unspecified or 0, all cross references for the specified
+;   global are removed.
+; - sep is the piece separator for values at that node. If unspecified, the
+;   cross reference for values of complete global nodes is removed. If sep is
+;   specified, cross references for all pieces for that global at that subscript
+;   level are removed.
+; - zpiece, when sep is specified, zpiece=1 means that cross references that
+;   use $ZPIECE() as the piece separator are to be removed, instead of $PIECE()
+UNXREFDATA(gbl,nsubs,sep,zpiece)
+	new i,xrefvar,ztout
+	set ztout=$view("ztrigger_output")
+	view "ztrigger_output":0
+	if ""=$get(gbl) do			; remove all xrefs
+	. lock +^%ydbAIMD
+	. set xrefvar="^%ydbAIMD"
+	. for  set xrefvar=$order(@xrefvar) quit:xrefvar'?1"^%ydbAIMD".AN!(""=xrefvar)  do unxrefdata(xrefvar)
+	. lock -^%ydbAIMD
+	else  if '+$get(nsubs) do		; remove all xrefs for gbl
+	. ; Xrefs are only supported for global variables
+	. set:"^"'=$zextract(gbl,1) $ecode=",U252,"
+	. lock +^%ydbAIMD(gbl)
+	. set xrefvar="^%ydbAIMD"
+	. for  set xrefvar=$order(@xrefvar) quit:xrefvar'?1"^%ydbAIMD".AN!(""=xrefvar)  do:gbl=@xrefvar unxrefdata($$XREFDATA(gbl,@xrefvar@(1),@xrefvar@(2),,1,@xrefvar@(5)))
+	. lock -^%ydbAIMD(gbl)
+	else  do unxrefdata($$XREFDATA(gbl,nsubs,$get(sep),,1,$get(zpiece)))
+	view "ztrigger_output":ztout
+	quit
+
+; This label is intended to only be called internally from UNXREFDATA(). Given
+; the name of a cross reference global, it removes the triggers used to maintain
+; the xref, and then deletes the cross reference global variable.
+unxrefdata:(xrefgbl)
+	do:$data(@xrefgbl)
+	. new i,trig
+	. lock +@xrefgbl
+	. tstart ()
+	. for i=6:1:8 set trig=@xrefgbl@(i) if $ztrigger("item","-"_$zextract(trig,2,$zlength(trig)))
+	. kill @xrefgbl
+	. tcommit
+	. lock -@xrefgbl
+	quit
+
 ; Creates triggers to maintain cross references and computes cross references
 ; for a global variable at a specified subscript level. Concurrent execution OK.
 ;
@@ -108,10 +158,9 @@ etrap
 ; Since the cross references themselves must have at least two subscripts, any
 ; node with one subscript is metadata for the cross reference.
 XREFDATA(gbl,nsubs,sep,pnum,nmonly,zpiece)
-	new i,io,j,modflag,name,newpnum,newpstr,oldpstr,stderr,sub,tmp,trigdel,trigdelx,trigprefix,trigset,trigsub,trigsuffix,z
+	new i,io,j,modflag,name,newpnum,newpstr,oldpstr,stderr,sub,tmp,trigdel,trigdelx,trigprefix,trigset,trigsub,trigsuffix,z,ztout
 	set io=$io
 	set stderr="/proc/self/fd/2" open stderr
-	view "ztrigger_output":0
 	; Extended references are not supported
 	set:""'=$qsubscript(gbl,-1) $ecode=",U254,"
 	; Xrefs are only supported for global variables
@@ -126,10 +175,19 @@ XREFDATA(gbl,nsubs,sep,pnum,nmonly,zpiece)
 	set sep=$get(sep),zpiece=+$get(zpiece),z=$select(zpiece:"z",1:"")
 	set name="^%ydbAIMD"_$zysuffix(gbl_nsubs_$select(zpiece:1,1:$select($zlength(sep):$zchset,1:"")))
 	quit:+$get(nmonly) name				; Caller only wants name
+	set ztout=$view("ztrigger_output")
+	view "ztrigger_output":0
 	; Common prefix for all triggers
 	set trigprefix="+"_gbl_"("_trigsub_") -command="
 	; Put additional trigger options like " -noisolation" here when validated
 	set trigsuffix=""
+	; As cross referencing does not require exclusivity, multiple processes
+	; can invoke XREFDATA() with the same parameters and all will run
+	; correctly to completion. The process acquires locks to ensure that
+	; XREFDATA() and UNXREFDATA() do not run concurrently. So XREFDATA()
+	; uses $JOB as a subscript to the lock resource, whereas UNXREFDATA()
+	; does not.
+	lock +(^%ydbAIMD($job),^%ydbAIMD(gbl,$job),@name@($job))
 	; Determine whether to xref pieces or entire node, and act accordingly
 	if $zlength(sep) do				; xref pieces
 	. set:'$zlength($get(pnum)) $ecode=",U250,"
@@ -145,7 +203,7 @@ XREFDATA(gbl,nsubs,sep,pnum,nmonly,zpiece)
 	. . set trigdel=trigprefix_"kill -xecute=""set p="_name_"(2) for i=2:1:$zlength("_name_"(4)) if +$zextract("_name_"(4),i) set j=i-1 kill:$data("_name_"(j,$"_z_"piece($ztoldval,p,j),"_sub_")) ^(sub"_nsubs_")"""_trigsuffix
 	. . set trigdelx=trigprefix_"zkill -xecute=""set p="_name_"(2) for i=2:1:$zlength("_name_"(4)) if +$zextract("_name_"(4),i) set j=i-1 zkill:$data("_name_"(j,$"_z_"piece($ztoldval,p,j),"_sub_"))#10 ^(sub"_nsubs_")"""_trigsuffix
 	. . for i=6:1:8 if $zlength($get(@name@(i)))&$ztrigger("item","-"_$zextract(^(i),2,$zlength(^(i))))
-	. . set @name@(4)=newpstr,^(5)=z,^(6)=trigset,^(7)=trigdel,^(8)=trigdelx
+	. . set @name=gbl,@name@(4)=newpstr,^(5)=z,^(6)=trigset,^(7)=trigdel,^(8)=trigdelx
 	. . if $ztrigger("item",trigset)&$ztrigger("item",trigdel)&$ztrigger("item",trigdelx)
 	. tcommit
 	. ; Cross reference existing nodes, if needed. Note that even if this
@@ -162,19 +220,22 @@ XREFDATA(gbl,nsubs,sep,pnum,nmonly,zpiece)
 	. . for i=2:1:$zlength(newpstr) set $zextract(oldpstr,i)=$select(+$zextract(newpstr,i):1,1:+$zextract(oldpstr,i))
 	. . set ^(3)=oldpstr
 	. . tcommit
-	else  do:11'=$data(@name)		; No piece separator specified; xref entire node
+	else  do:'$data(@name@(0))		; No piece sep; xref entire node
 	. set trigset=trigprefix_"set -xecute=""zkill:$data("_name_"($ztoldval,"_sub_"))#10 ^(sub"_nsubs_") set:'$data("_name_"($ztvalue,"_sub_")) ^(sub"_nsubs_")="""""""""""_trigsuffix
 	. set trigdel=trigprefix_"kill -xecute=""kill:$data("_name_"($ztoldval,"_sub_")) ^(sub"_nsubs_")"""_trigsuffix
 	. set trigdelx=trigprefix_"zkill -xecute=""zkill:$data("_name_"($ztoldval,"_sub_"))#10 ^(sub"_nsubs_")"""_trigsuffix
 	. tstart ()
 	. if $ztrigger("item",trigset)&$ztrigger("item",trigdel)&$ztrigger("item",trigdelx)
+	. set @name=gbl,@name@(6)=trigset,^(7)=trigdel,^(8)=trigdelx
 	. tcommit
 	. do xrefdata(name,gbl,nsubs,"","","")
 	. ; Add metadata to indicate completion
 	. tstart ()
-	. set @name=gbl,@name@(0)=$zut_" "_$job_" "_$zyrelease,^(1)=nsubs,(^(2),^(3),^(4),^(5))=""
-	. set ^(6)=trigset,^(7)=trigdel,^(8)=trigdelx
+	. set @name@(0)=$zut_" "_$job_" "_$zyrelease,^(1)=nsubs,(^(2),^(3),^(4),^(5))=""
 	. tcommit
+	; Release locks that block UNXREFDATA()
+	lock -(^%ydbAIMD($job),^%ydbAIMD(gbl,$job),@name@($job))
+	view "ztrigger_output":ztout
 	quit name
 
 ; This label is interned to only be called internally. It is the inverse of the
