@@ -9,6 +9,64 @@
 ;	the license, please stop and do not read further.	;
 ;								;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Application Independent Metadata
+;
+; Compute and maintain application independent metadata, including:
+; - Cross References
+; (Other metadata to be added)
+;
+; A design point is that the triggers used to maintain Consistency between
+; application global variable nodes and cross references is the most critical
+; code to optimize, since that code will be executed on *every single update*
+; to a cross referenced global variable. Other code should be reasonably
+; efficient, but is not as critical.
+;
+; Cross References
+;
+;   Consider a global variable whose first subscript is the year a US
+;   President assumed office and the second subscript is the year that President
+;   left office, with values such as ^USPresidents(1797,1801)="John||Adams" and
+;   ^USPresidents(1835,1839)="John|Quincy|Adams".
+;   - A call such as $$XREFDATA^%YDBAIM("^USPresidents",2,"|",3) would cross
+;     reference the third piece of node values (last names) and with the cross
+;     reference global having values such as
+;     ^%ydbAIMDWn59H4eXfRmii1N5YvuC03(3,"Adams",1797,1801)="",
+;     ^%ydbAIMDWn59H4eXfRmii1N5YvuC03(3,"Adams",1835,1839)="", and many others
+;     including ^%ydbAIMDWn59H4eXfRmii1N5YvuC03(3,"Obama",2009,2017)="".
+;   - Suppose only Presidents who left office only in the 19th century should be
+;     cross referenced. A local variable node such as cent19(2)="1801:1899" can
+;     be created, and passed by reference, and
+;     $$XREFDATA^%YDBAIM("^USPresidents",.cent19,"|",3) would produce the two
+;     cross references as the above, but in a different global variable name
+;     since the trigger signatures (see below for an explanation) would be
+;     different. Unlike the first cross reference, this would not cross
+;     reference Barack Obama who assumed office in 2009 and left in 2017.
+;   - Suppose only Presidents who assumed office in the 19th century should be
+;     cross referenced, a local variable cent19 would instead have the node
+;     cent19(1)="1801|1899" to indicate that only first subscripts should be
+;     cross referenced if they are in the 19th century, but the local variable
+;     root node cent19=2 should be set to indicate that two subscripts should be
+;     cross referenced. In this case, the call
+;     $$XREFDATA^%YDBAIMD("^USPresidents",.cent19,"|",3) would generate a cross
+;     reference that includes John Quincy Adams, but not for John Adams who assumed
+;     office in 1797, which is in the 18th century.
+;   To cross reference all three names, a call such as
+;   $$XREFDATA^%YDBAIM("^USPresidents",2,"|","1:3") would generate the following
+;   cross references for the two President Adams:
+;     ^%ydbAIMDWn59H4eXfRmii1N5YvuC03(1,"John",1797,1801)=""
+;     ^%ydbAIMDWn59H4eXfRmii1N5YvuC03(1,"John",1835,1839)=""
+;     ^%ydbAIMDWn59H4eXfRmii1N5YvuC03(2,"",1797,1801)=""
+;     ^%ydbAIMDWn59H4eXfRmii1N5YvuC03(2,"Quincy",1835,1839)=""
+;     ^%ydbAIMDWn59H4eXfRmii1N5YvuC03(3,"Adams",1797,1801)=""
+;     ^%ydbAIMDWn59H4eXfRmii1N5YvuC03(3,"Adams",1835,1839)=""
+;   Since the first President Adams record does not include a middle name, the
+;   corresponding record has an empty string ("") subscript. Any region to which
+;   ^%ydbAIMD* global variables are mapped should have NULL_SUBSCRIPTS set to
+;   ALWAYS. Since the subscripts will include pieces of global nodes, or even
+;   entire global nodes, it would be prudent to set YottaDB's maximum key size
+;   (1019 bytes) for that region.
+;
 %YDBAIM
 	; Top level entry not supported
 	do etrap		; set error trap
@@ -16,40 +74,115 @@
 	quit			; should never get here
 
 err	; Error handler
-	new stderr,tmp1,tmp2
+	new io,stderr,tmp1,tmp2
+	set io=$io
 	set tmp1=$zpiece($ecode,",",2),tmp2=$text(@tmp1)
 	set:'$zlength(tmp2) tmp2=$text(U251)
 	set stderr="/proc/self/fd/2"
 	open stderr
 	use stderr
 	write $text(+0),@$zpiece(tmp2,";",2,$zlength(tmp2,";")),!
+	use io
 	zhalt +$extract(tmp1,2,$zlength(tmp1))
+	quit
 
 ; Set error trap. The first action the error trap does is set a failsafe error
 ; trap (e.g., if $zroutines is not correct). Thereafter, it jumps to the actual
 ; error trap to print an error message and terminate, with a return code.
+;
+; Note that all external entry points NEW $ETRAP and DO etrap if $ETRAP is the
+; default error handler. This allows them to report the error messages for
+; %YDBAIM errors, instead of just reporting that $ECODE was assigned a
+; non-empty value, which the default error trap will report. If an application
+; sets an error trap ($ETRAP or $ETRAP) that will be used.
 etrap
 	set $etrap="set $etrap=""open """"/proc/self/fd/2"""" use """"/proc/self/fd/2"""" write $zstatus,! zshow """"*"""" zhalt 1""  goto err^"_$text(+0)
 	quit
 
-; Removes triggers and cross references for a specified global, or all globals
+; List metadata for a cross reference, all cross references for a global
+; variable, or all cross references
 ;
-; Usage: DO UNXREFDATA^%YDBAIM(gbl,nsubs,sep,zpiece)
+; Usage: DO LSXREFDATA^%YDBAIM(lvn[,gbl])
+; Parameters
+; - lvn is a local variable passed by reference. In that local variable, the
+;   function describes all cross references as follows:
+;   - The first subscript is the cross refence global variable name, e.g.,
+;     "^%ydbAIMDgBPWsnL76HLyVnlvsrvE19". The value of that node (i.e., with a
+;     first subscript and no second subscript) is the application global
+;     variable name, e.g., "^xyz".
+;   - Nodes with second subscripts 0 through 8 have the metadata in nodes (0)
+;     through (8) described below with XREFDATA().
+;   Nodes of lvn other than those corresponding to reported cross references
+;   remain unaltered.
+; - gbl is a global variable name. There are three cases:
+;   - It is an application global variable name, e.g., "^USPresidents". In lvn,
+;     as described above, the function returns all cross references for that
+;     global variable.
+;   - It starts with "^%ydbAIMD". In lvn, the function returns information about
+;     the specified cross reference.
+;   - It is omitted or the empty string (""). In lvn, the function returns
+;     information about all cross references.
+LSXREFDATA(lvn,gbl)
+	if "Write:(0=$STACK) ""Error occurred: "",$ZStatus,!"=$etrap new $etrap do etrap
+	new xrefvar
+	if ""=$get(gbl) do
+	. set xrefvar="^%ydbAIM"
+	. for  set xrefvar=$order(@xrefvar) quit:xrefvar'?1"^%ydbAIM".E  do lsxrefdata(.lvn,xrefvar)
+	else  if gbl'?1"^%ydbAIMD".E do
+	. set xrefvar="^%ydbAIM"
+	. for  set xrefvar=$order(@xrefvar) quit:xrefvar'?1"^%ydbAIM".E!(""=xrefvar)  do:gbl=@xrefvar lsxrefdata(.lvn,xrefvar)
+	else  do lsxrefdata(.lvn,gbl)
+	quit
+
+; Remove triggers and cross references for a specified global, or all globals.
+; The parameters for UNXREFDATA() mirror those of XREFDATA() to simplify calling
+; it to remove triggers and cross references, even though some parameters are
+; not required and are therefore ignored.
+;
+; Usage: DO UNXREFDATA^%YDBAIM(gbl,xsub,sep,pnum,nmonl,zpiece)
 ; Parameters:
 ; - gbl is the global variable name, e.g., "^ABC" for which the specified
 ;   triggers are to be removed. If omitted, all xrefs and triggers for xrefs are
 ;   removed.
-; - nsubs is the number of subscripts at the level for which the xref is to
-;   be removed. If unspecified or 0, all cross references for the specified
-;   global are removed.
-; - sep is the piece separator for values at that node. If unspecified, the
-;   cross reference for values of complete global nodes is removed. If sep is
-;   specified, cross references for all pieces for that global at that subscript
-;   level are removed.
-; - zpiece, when sep is specified, zpiece=1 means that cross references that
-;   use $ZPIECE() as the piece separator are to be removed, instead of $PIECE()
-UNXREFDATA(gbl,nsubs,sep,zpiece)
-	new i,xrefvar,ztout
+; - xsub is a specification of the subscripts in the cross reference to be
+;   removed. There are four cases:
+;   - xsub is unspecified or its root node is zero and there is no subtree. In
+;     this case, all cross references for the specified global variable are
+;     removed. In all three cases following, as the subscript specification is
+;     part of the "signature" of a cross reference, the subscript specification
+;     of xsub must match that of the trigger being removed.
+;   - xsub has a positive integer value at the root, and no subtrees ($DATA() is
+;     1): The value specifies the level (number of subscripts) of the global
+;     variable for whch the cross reference is to be removed, with all
+;     subscripts at each level in the signature of the cross reference. In this
+;     case, the actual parameter can be a literal or a variable passed by
+;     value. In both the following cases it must be passed by reference.
+;   - xsub has no value at the root, but positive integer subscripts (1), (2),
+;     (3), etc. ($DATA() is 10): The subscripts of the local variable specify
+;     the values of the global variable subscript in the signature cross
+;     referenced, using the same syntax as trigvn field of trigger definitions.
+;     The last subscript defines the level of the global variable to be cross
+;     referenced. Any omitted intervening subscript (e.g., if the local variable
+;     has nodes (1) and (3) but not (2)), means that all subscripts at that level
+;     are in the cross reference signature.
+;   - xsub has both a value at the root, as well as positive integer subscripts
+;     (($DATA() is 11): This is similar to the previous case, except that if the
+;     number at the root exceeds the last subscript, that is the level of the
+;     cross reference signature, with all global variables to be included at
+;     levels beyond those of the last local variable subscript. A value at the
+;     root smaller than the last subscript is ignored.
+;   Other cases (e.g., non integer subscripts of xsub) raise errors.
+; - sep is the piece separator for values at that node; if unspecified or the
+;   empty string, the cross reference signature is entire node values.
+; - pnum exists to allow the parameters of UNXREFDATA() to match those of
+;   XREFDATA() and is ignored.
+; - nmonly exists to allow the parameters of UNXREFDATA() to match those of
+;   XREFDATA() and is ignored.
+; - zpiece, if 1 means that $ZPIECE() was used as the piece separator instead
+;   of $PIECE(); this is part of the trigger signature.
+UNXREFDATA(gbl,xsub,sep,pnum,nmonl,zpiece)
+	if "Write:(0=$STACK) ""Error occurred: "",$ZStatus,!"=$etrap new $etrap do etrap
+	new i,nsubs,xrefvar,ztout
 	set ztout=$view("ztrigger_output")
 	view "ztrigger_output":0
 	if ""=$get(gbl) do			; remove all xrefs
@@ -57,40 +190,59 @@ UNXREFDATA(gbl,nsubs,sep,zpiece)
 	. set xrefvar="^%ydbAIMD"
 	. for  set xrefvar=$order(@xrefvar) quit:xrefvar'?1"^%ydbAIMD".AN!(""=xrefvar)  do unxrefdata(xrefvar)
 	. lock -^%ydbAIMD
-	else  if '+$get(nsubs) do		; remove all xrefs for gbl
-	. ; Xrefs are only supported for global variables
-	. set:"^"'=$zextract(gbl,1) $ecode=",U252,"
-	. lock +^%ydbAIMD(gbl)
-	. set xrefvar="^%ydbAIMD"
-	. for  set xrefvar=$order(@xrefvar) quit:xrefvar'?1"^%ydbAIMD".AN!(""=xrefvar)  do:gbl=@xrefvar unxrefdata($$XREFDATA(gbl,@xrefvar@(1),@xrefvar@(2),,1,@xrefvar@(5)))
-	. lock -^%ydbAIMD(gbl)
-	else  do unxrefdata($$XREFDATA(gbl,nsubs,$get(sep),,1,$get(zpiece)))
+	else  do
+	. set nsubs=$get(xsub,0)
+	. ; If constraints specified for subscripts, ensure all refer to
+	. ; subscripts that are integers in the range 1 through 31
+	. do:$data(xsub)\10
+	. . set i=$order(xsub(""))
+	. . set:1>i!(i\1'=i)!(31<i) $ecode=",U247,"
+	. . for  set i=$order(xsub(i)) quit:""=i  set:i\1'=i!(31<i) $ecode=",U247,"
+	. . set i=$order(xsub(""),-1)
+	. . set:i>nsubs nsubs=i
+	. set:31<nsubs $ecode=",U247,"
+	. if 'nsubs do		; remove all xrefs for gbl
+	. . ; Xrefs are only supported for global variables
+	. . set:"^"'=$zextract(gbl,1) $ecode=",U252,"
+	. . lock +^%ydbAIMD(gbl)
+	. . set xrefvar="^%ydbAIMD"
+	. . for  set xrefvar=$order(@xrefvar) quit:xrefvar'?1"^%ydbAIMD".AN!(""=xrefvar)  do:gbl=@xrefvar unxrefdata($$XREFDATA(gbl,@xrefvar@(1),@xrefvar@(2),,1,@xrefvar@(5)))
+	. . lock -^%ydbAIMD(gbl)
+	. else  do unxrefdata($$XREFDATA(gbl,nsubs,$get(sep),,1,$get(zpiece)))
 	view "ztrigger_output":ztout
 	quit
 
-; This label is intended to only be called internally from UNXREFDATA(). Given
-; the name of a cross reference global, it removes the triggers used to maintain
-; the xref, and then deletes the cross reference global variable.
-unxrefdata:(xrefgbl)
-	do:$data(@xrefgbl)
-	. new i,trig
-	. lock +@xrefgbl
-	. tstart ()
-	. for i=6:1:8 set trig=@xrefgbl@(i) if $ztrigger("item","-"_$zextract(trig,2,$zlength(trig)))
-	. kill @xrefgbl
-	. tcommit
-	. lock -@xrefgbl
-	quit
-
-; Creates triggers to maintain cross references and computes cross references
+; Create triggers to maintain cross references and compute cross references
 ; for a global variable at a specified subscript level. Concurrent execution OK.
 ;
-; Usage: $$XREFDATA^%YDBAIM(gbl,nsubs,sep,pnum,nmonly,zpiece)
+; Usage: $$XREFDATA^%YDBAIM(gbl,xsub,sep,pnum,nmonly,zpiece)
 ; Parameters:
 ; - gbl is the global variable name, e.g., "^ABC"
-; - nsubs is the number of subscripts at the level for which the xref is desired
+; - xsub is a specification of the subscripts to be cross referenced. There are
+;   three cases:
+;   - xsub has a positive integer value at the root, and no subtrees ($DATA() is
+;     1): The value specifies the level (number of subscripts) of the global
+;     variable for whch the cross reference is to be created, with all
+;     subscripts at each level to be included in the cross reference. In this
+;     case, the actual parameter can be a literal or a variable passed by
+;     value. In other cases it must be passed by reference.
+;   - xsub has no value at the root, but positive integer subscripts (1), (2),
+;     (3), etc. ($DATA() is 10): The subscripts of the local variable specify
+;     the values of the global variable subscript to be cross referenced, using
+;     the same syntax as trigvn field of trigger definitions. The last subscript
+;     defines the level of the global variable to be cross referenced. Any
+;     omitted intervening subscript (e.g., if the local variable has nodes (1)
+;     and (3) but not (2)), means that all subscripts at that level should be
+;     included in the cross reference.
+;   - xsub has both a value at the root, as well as positive integer subscripts
+;     (($DATA() is 11): This is similar to the previous case, except that if the
+;     number at the root exceeds the last subscript, that is the level of the
+;     global variable to be cross referenced, with all global variables to be
+;     included at levels beyond those of the last local variable subscript. A
+;     value at the root smaller than the last subscript is ignored.
+;   Other cases (e.g., non integer subscripts of xsub) raise errors.
 ; - sep is the piece separator for values at that node; if unspecified or the
-;   empty string, xref is for entire nodes
+;   empty string, the cross reference is for entire node values.
 ; - pnum is a semi-colon separated list of integer piece numbers for which cross
 ;   references should exist; ignored for xrefs of entire node values effectively
 ;   a no-op if pieces specified are already cross-referenced
@@ -99,37 +251,30 @@ unxrefdata:(xrefgbl)
 ; - zpiece, if 1 means that $ZPIECE() should be used as the piece separator instead
 ;   of $PIECE(); AIM can have cross references for the same nodes with both
 ;   options; the cross references are in different global variables
-; Return value: name of global variable with cross reference
-; e.g., "^%ydbAIMDZzUmfwxt80MHPiWLZNtq4"
-;
-; The function is coded so that the function tries as efficiently as possible
-; whether the cross referecing is already done. This means that it is not
-; unreasonable to just call the function to ensure that the cross reference
-; exists, without the caller first checking whether it already exists.
-; Since the function uses $PIECE(), sep is interpreted according to whether the
-; process is in M mode or UTF-8 mode.  While cross references for entire nodes
-; are the same for M and UTF-8 modes, there are separate cross references for
-; pieces of nodes.  Cross references are in global variables such as
-; ^%ydbAIMDZzUmfwxt80MHPiWLZNtq4, which are derived from a prefix of "^%ydbAIMD"
-; and a suffix of a 128-bit hash of the variable name, number of subscripts,
-; whether $ZPIECE() or $PIECE() are used to locate pieces, and, if it is
-; $PIECE(), then $ZCHSET. Thus, there are four possible xref variable names.
-;   1. xref the entire value at global variable nodes.
-;   2. xref pieces, byte-oriented piece separator - $ZPIECE()
-;   3. xref pieces, M mode, char-oriented piece separator, $PIECE()
-;   4. xref pieces, UTF-8 mode, char-oriented piece separator, $PIECE()
-; Note: 2. and 3. will result in the same cross references, but the
-; xref global variable names and trigger definitions differ.
-; As the hash is the 128-bit MurMurHash, a non-cryptographic hash with
-; excellent statistical properties, that is rendered into a valid global
-; variable name suffix with $ZYSUFFIX().
-; The subscripts of cross reference variables are:
+; Return value: name of global variable with cross reference e.g.,
+; "^%ydbAIMDZzUmfwxt80MHPiWLZNtq4". The subscripts of cross reference variables
+; are:
 ; - (pnum,value,sub[,sub]) where pnum is a positive integer for cross references
 ;   of pieces of nodes; and
 ; - (value,sub[,sub]) for cross references of entire nodes.
-; A limitation of this technique is that the values being cross referenced plus
-; the subscripts must have a total length within the limit of YottaDB global
-; keys (currently 1019 bytes).
+;
+; The function is coded so that the function tries as efficiently as possible to
+; determine whether the cross reference already exists. This means that it is
+; reasonable to just call the function to ensure that the cross reference
+; exists, without the caller first checking whether it already exists.  Since
+; the function uses $PIECE(), sep is interpreted according to whether the
+; process is in M mode or UTF-8 mode.  Cross references are in global variables
+; such as ^%ydbAIMDZzUmfwxt80MHPiWLZNtq4, which are derived from a "trigger
+; signature" derived from:
+; - the name of the global variable being cross referended
+; - the specification to match subscripts at each level of the global variable
+; - if a piece separator is specified, then also:
+;   - the piece separator
+;   - if zpiece is specified, then the digit 1
+;   - else if zpiece is not specified, $zchset
+; The global variable name of the cross reference is derived from by prefixing
+; "^%ydbAIMD" to a 128-bit MurMurHash (a non-cryptographic hash with excellent
+; statistical properties) rendered into a 22-character alphanumeric string.
 ; The approach is to first create triggers to maintain cross references, and
 ; then scan the global variable to generate cross references. This way, any
 ; global variable changes will have cross references maintained by the triggers,
@@ -137,9 +282,9 @@ unxrefdata:(xrefgbl)
 ; Consistent thereafter.  ^%ydbAIMD* global variables should be mapped to a
 ; region with NULL_SUBSCRIPTS set to EXISTING or ALWAYS.
 ; Just as cross references are metadata for application global variables,
-; metadata for the cross reference global variables are stored in the xref
-; global variables as follows:
-; - root node is the application global variable; subscripted nodes are:
+; metadata for the cross reference global variables are stored in the cross
+; reference global variables as follows:
+; - the root node is the application global variable; subscripted nodes are:
 ; - (0) space separated $zut, $job, $zyrelease
 ; - (1) number of subscripts of the application global variable xref'd
 ; - (2) piece separator, "" for an xref of entire nodes
@@ -150,30 +295,47 @@ unxrefdata:(xrefgbl)
 ;    whereas (4) identifies those for which triggers exist. If they are not
 ;    equal, it means that a process created triggers, but is still working on
 ;    cross referencing existing global nodes. It is also possible that the
-;    process has terminated. When deleting triggers.
-; - (5) 1 means $ZPIECE() should be used for pieces; default is $PIECE()
+;    process terminated, or was terminated, before completing its work.
+; - (5) 1 means $ZPIECE() was used for pieces; the default of "" is $PIECE()
 ; - (6) SET trigger for this cross reference
 ; - (7) KILL trigger for this cross reference
 ; - (8) ZKILL trigger for this cross reference
 ; Since the cross references themselves must have at least two subscripts, any
 ; node with one subscript is metadata for the cross reference.
-XREFDATA(gbl,nsubs,sep,pnum,nmonly,zpiece)
-	new i,io,j,modflag,name,newpnum,newpstr,oldpstr,stderr,sub,tmp,trigdel,trigdelx,trigprefix,trigset,trigsub,trigsuffix,z,ztout
+XREFDATA(gbl,xsub,sep,pnum,nmonly,zpiece)
+	if "Write:(0=$STACK) ""Error occurred: "",$ZStatus,!"=$etrap new $etrap do etrap
+	new i,io,j,locxsub,modflag,name,newpnum,newpstr,nsubs,oldpstr,stderr,sub,tmp,trigdel,trigdelx,trigprefix,trigset,trigsub,trigsuffix,z,ztout
 	set io=$io
 	set stderr="/proc/self/fd/2" open stderr
+	zshow "s":tmp do:"%XCMD"=$piece($get(tmp("S",$order(tmp("S",""""),-1))),"^",2) etrap
 	; Extended references are not supported
 	set:""'=$qsubscript(gbl,-1) $ecode=",U254,"
 	; Xrefs are only supported for global variables
 	set:"^"'=$zextract(gbl,1) $ecode=",U252,"
-	; Coerce number of subscripts to a number
-	set nsubs=+$get(nsubs)
-	; Must have at least one subscript to xref
-	set:+$get(nsubs)<1 $ecode=",U253,"
+	; Get number of subcripts to cross reference
+	set nsubs=$get(xsub,0)
+	; If constraints specified for subscripts, ensure all refer to
+	; subscripts that are integers in the range 1 through 31
+	do:$data(xsub)\10
+	. set i=$order(xsub(""))
+	. set:1>i!(i\1'=i)!(31<i) $ecode=",U247,"
+	. set locxsub(i)=xsub(i)
+	. for  set i=$order(xsub(i)) quit:""=i  do:xsub(i)#10
+	. . set:i\1'=i!(31<i) $ecode=",U247," do chktrgspec(xsub)
+	. . set locxsub(i)=xsub(i)
+	. set i=$order(locxsub(""),-1)
+	. set:i>nsubs nsubs=i
+	set:1>nsubs $ecode=",U253,"
+	set:31<nsubs $ecode=",U247,"
+	for i=1:1:nsubs set:'$data(locxsub(i)) locxsub(i)="*"
 	; Derive subscript specification for trigger definitions from parameters
-	set sub="sub1",trigsub="sub1=:"
-	for i=2:1:nsubs set tmp=",sub"_i,sub=sub_tmp,trigsub=trigsub_tmp_"=:"
-	set sep=$get(sep),zpiece=+$get(zpiece),z=$select(zpiece:"z",1:"")
-	set name="^%ydbAIMD"_$zysuffix(gbl_nsubs_$select(zpiece:1,1:$select($zlength(sep):$zchset,1:"")))
+	; and build string from which to derive xref variable name
+	set sub="sub1",name=locxsub(1),trigsub="sub1="_locxsub(1)
+	for i=2:1:nsubs do
+	. set name=name_locxsub(i)
+	. set tmp=",sub"_i,sub=sub_tmp,trigsub=trigsub_tmp_"="_locxsub(i)
+	set sep=$get(sep),tmp=$zlength(sep),zpiece=+$get(zpiece),z=$select(zpiece:"z",1:"")
+	set name="^%ydbAIMD"_$zysuffix(gbl_name_$select(tmp:sep_$select(zpiece:1,1:$zchset),1:""))
 	quit:+$get(nmonly) name				; Caller only wants name
 	set ztout=$view("ztrigger_output")
 	view "ztrigger_output":0
@@ -196,7 +358,7 @@ XREFDATA(gbl,nsubs,sep,pnum,nmonly,zpiece)
 	. set oldpstr=$get(@name@(4),"#"),modflag=0
 	. set newpstr=$$unravel(pnum)
 	. for i=2:1:$zlength(newpstr) set:+$zextract(oldpstr,i)'=+$zextract(newpstr,i) ($zextract(newpstr,i),modflag)=1
-	. set:modflag&($zlength(oldpstr)>$zlength(newpstr)) $zextract(newpstr,i+1,$zlength(oldpstr))=$zextract(oldpstr,i,$zlength(oldpstr))
+	. set:modflag&($zlength(oldpstr)>$zlength(newpstr)) $zextract(newpstr,i+1,$zlength(oldpstr))=$zextract(oldpstr,i+1,$zlength(oldpstr))
 	. do:modflag
 	. . set newpnum=$$ravel(newpstr)
  	. . set trigset=trigprefix_"set -xecute=""for i=1:1:$zlength($ztupdate,"""","""") set p=$piece($ztupdate,"""","""",i) zkill:$data("_name_"(p,$"_z_"piece($ztoldval,$ztdelim,p),"_sub_"))#10 ^(sub"_nsubs_") set:'$data("_name_"(p,$"_z_"piece($ztvalue,$ztdelim,p),"_sub_")) ^(sub"_nsubs_")="""""""""" -pieces="_newpnum_" -"_z_"delim="_$zwrite(sep)_trigsuffix
@@ -208,11 +370,11 @@ XREFDATA(gbl,nsubs,sep,pnum,nmonly,zpiece)
 	. tcommit
 	. ; Cross reference existing nodes, if needed. Note that even if this
 	. ; process set triggers, another concurrent process might have
-	. ; needed cross referenced the pieces this process wants xref'd.
+	. ; cross referenced the pieces this process wants xref'd.
 	. set oldpstr=$get(@name@(3),"#"),modflag=0
 	. for i=2:1:$zlength(newpstr) if +$zextract(newpstr,i)&'+$zextract(oldpstr,i) set modflag=1 quit
 	. do:modflag
-	. . do xrefdata(name,gbl,nsubs,sep,newpstr,zpiece)
+	. . do xrefdata(name,gbl,nsubs,.locxsub,sep,newpstr,zpiece)
 	. . ; Update medatadata
 	. . tstart ()
 	. . set @name=gbl,@name@(0)=$zut_" "_$job_" "_$zyrelease,^(1)=nsubs,^(2)=sep
@@ -228,7 +390,7 @@ XREFDATA(gbl,nsubs,sep,pnum,nmonly,zpiece)
 	. if $ztrigger("item",trigset)&$ztrigger("item",trigdel)&$ztrigger("item",trigdelx)
 	. set @name=gbl,@name@(6)=trigset,^(7)=trigdel,^(8)=trigdelx
 	. tcommit
-	. do xrefdata(name,gbl,nsubs,"","","")
+	. do xrefdata(name,gbl,nsubs,.locxsub,"","","")
 	. ; Add metadata to indicate completion
 	. tstart ()
 	. set @name@(0)=$zut_" "_$job_" "_$zyrelease,^(1)=nsubs,(^(2),^(3),^(4),^(5))=""
@@ -238,10 +400,44 @@ XREFDATA(gbl,nsubs,sep,pnum,nmonly,zpiece)
 	view "ztrigger_output":ztout
 	quit name
 
-; This label is interned to only be called internally. It is the inverse of the
-; unravel() function. ravel() takes a bit-map like piece number string, e.g.,
-; "#0010100111", and composes from it the compact form suitable for input to a
-; trigger specification, e.g, "3;5;8:10" for the example above.
+; The functions below are intended only to be called internally.
+
+; Checks for whether the single parameter meets one of the following trigger
+; specifications supported by Application Independent Metadata:
+; - A specific value, e.g., 100.1 or "PATIENT" with * (the default if not
+;   specified) to indicate that all subscripts at that level should be matched.
+;   A current limitation is that literal strings should not contain semicolons
+;   or colons.
+; - An inclusive range of specific values separated by a colon, e.g.,
+;   "1700:1799" or "A":"Z" where an omitted value is either the first possible
+;   subscript or the last possible subscript in the collation sequence for that
+;   global variable. If both subscripts are omitted, all subscripts are matched
+;   (i.e., ":" is equivalent to "*").
+; - A semicolon (;) separated list of values or inclusive values of either of
+;   the two forms above.
+chktrgspec:(trgspec)
+	new i,lower,okflag,piecelen,trgpiece,upper
+	set okflag=1
+	for i=1:1:$length(trgspec,";") do  quit:'okflag
+	. set trgpiece=$piece(trgspec,";",i),piecelen=$length(trgspec,":")
+	. ; Nothing to check if single value; only ranges need to be checked
+	. if 1=piecelen
+	. else  if 2=$length(trgpiece,":") do
+	. . set lower=$piece(trgpiece,":",1),upper=$piece(trgpiece,":",2)
+	. . if +lower=lower&(+upper=upper) set:lower>upper $ecode=",U246,"
+	. else  set okflag=0,$ecode=",U245,"
+
+; Output metadata for a specific xref variable.
+lsxrefdata:(lvn,xref)
+	new i
+	set lvn(xref)=@xref
+	for i=0:1:8 set lvn(xref,i)=@xref@(i)
+	quit
+
+; This label is the inverse of the unravel() function. ravel() takes a bit-map
+; like piece number string, e.g., "#0010100111", and composes from it the
+; compact form suitable for input to a trigger specification, e.g, "3;5;8:10"
+; for the example above.
 ravel:(pstr)
 	new i,j,newpspec,nextp
 	set newpspec=""
@@ -253,13 +449,12 @@ ravel:(pstr)
 	. else  if $increment(i)
 	quit newpspec
 
-; This label is intended to only be called internally. It takes a piece number
-; specification, e.g., "3;5;8:10" and returns the bit-map like piece
-; specification, preceded by "#", e.g., "#0010100111" for the example above.
-; and determines if there are new pieces to xref. Pieces are separated by
-; semi-colons. Each piece can be a number, or two colon separated numbers, with
-; the first number smaller than the second. Unraveled piece numbers are in a
-; bit-map like string, prefixed with "#".
+; This label takes a piece number specification, e.g., "3;5;8:10" and returns
+; the bit-map like piece specification, preceded by "#", e.g., "#0010100111" for
+; the example above.  and determines if there are new pieces to xref. Pieces are
+; separated by semi-colons. Each piece can be a number, or two colon separated
+; numbers, with the first number smaller than the second. Unraveled piece
+; numbers are in a bit-map like string, prefixed with "#".
 unravel:(pnum)
 	new i,newpstr,nextp,nextp1,nextpl,nextplen,nextpu
 	set modflag=0,newpstr="#"
@@ -279,31 +474,85 @@ unravel:(pnum)
 	. else  set $ecode=",U249,"
 	quit newpstr
 
-; This label is intended to only be called internally from XREFDATA, and
-; accesses that label's local variables.  Generate cross references for nodes at
-; the specified subscript level. It goes through the global at each level with
-; fewer subscripts than the cross reference calls for, and where a subtree is
-; found, recursively calls itself on that subtree till it reaches the specified
-; level, whereon it generates the cross references. Since triggers are set
-; before calling this routine, they will take care of cross references for any
-; node deletions. This label only needs to be concerned with setting cross
-; references for nodes that don't already have cross references, which is done
-; in a transaction to ensure Consistency.
-xrefdata:(name,gblref,nsubs,sep,pstr,zpiece)
-	new i,j,lastsub,nodeval,sublist,thissub,xref
+; Given the name of a cross reference global, this function removes the triggers
+; used to maintain the xref, and then deletes the cross reference global
+; variable.
+unxrefdata:(xrefgbl)
+	do:$data(@xrefgbl)
+	. new i,trig
+	. lock +@xrefgbl
+	. tstart ()
+	. for i=6:1:8 set trig=@xrefgbl@(i) if $ztrigger("item","-"_$zextract(trig,2,$zlength(trig)))
+	. kill @xrefgbl
+	. tcommit
+	. lock -@xrefgbl
+	quit
+
+; Generate cross references for nodes at the specified subscript level. It goes
+; through the global at each level with fewer subscripts than the cross
+; reference calls for, and where a subtree is found, recursively calls itself on
+; that subtree till it reaches the specified level, whereon it generates the
+; cross references. Since triggers are set before calling this routine, they
+; will take care of cross references for any node deletions. This label only
+; needs to be concerned with setting cross references for nodes that don't
+; already have cross references, which is done in a transaction to ensure
+; Consistency.
+; The following code has some built-in assumptions about the frequencey of
+; occurrence of different options, and actual application data might imply
+; a different ordering of tests for the various code paths. Fortunately, this
+; code is executed only for the initial creation of a cross reference, and not
+; in the triggers that maintain cross references as globals are updated.
+xrefdata:(name,gblref,nsubs,locxsub,sep,pstr,zpiece)
+	new i,j,k,lastsub,nodelen1,nodeval,piece1,piece2,sublist,sublvl,thissub,thisrange,tmp,xflag,xref
 	set thissub=""
+	; If nsubs>1 it means call the function recursively for the next
+	; subscript level. Where the specification is to not match all
+	; subscripts at this level, each subscript will need to be checked
+	; as to whether it should be cross referenced.
+	set sublvl=$order(locxsub(""),-1)-nsubs+1
 	if nsubs>1 do
-	. for  set thissub=$order(@gblref@(thissub)) quit:""=thissub  do:$data(@gblref@(thissub))\10 xrefdata(name,$select($qlength(gblref):$zextract(gblref,1,$zlength(gblref)-1)_",",1:gblref_"(")_$zwrite(thissub)_")",nsubs-1,sep,pstr,zpiece)
+	. if "*"=locxsub(sublvl) for  set thissub=$order(@gblref@(thissub)) quit:""=thissub  do:$data(@gblref@(thissub))\10 xrefdata(name,$select($qlength(gblref):$zextract(gblref,1,$zlength(gblref)-1)_",",1:gblref_"(")_$zwrite(thissub)_")",nsubs-1,.locxsub,sep,pstr,zpiece)
+	. else  for  set thissub=$order(@gblref@(thissub)) quit:""=thissub  do
+	. . if zpiece do
+	. . . for i=1:1:$zlength(locxsub(sublvl),";") do
+	. . . . set thisrange=$zpiece(locxsub(sublvl),";",i)
+	. . . . set piece1=$zpiece(thisrange,":",1)
+	. . . . set piece2=$select(1=$zlength(thisrange,":"):piece1,1:$zpiece(thisrange,":",2))
+	. . else  do
+	. . . for i=1:1:$length(locxsub(sublvl),";") do
+	. . . . set thisrange=$piece(locxsub(sublvl),";",i)
+	. . . . set piece1=$piece(thisrange,":",1)
+	. . . . set piece2=$select(1=$length(thisrange,":"):piece1,1:$piece(thisrange,":",2))
+	. . do:thissub=piece1!(thissub=piece2!(thissub]]piece1&(piece2]]thissub)))&($data(@gblref@(thissub))\10) xrefdata(name,$select($qlength(gblref):$zextract(gblref,1,$zlength(gblref)-1)_",",1:gblref_"(")_$zwrite(thissub)_")",nsubs-1,.locxsub,sep,pstr,zpiece)
+	; if nsubs=1 (this else clause) then cross reference those
+	; subscripts that the specification says to cross reference.
 	else  for  set thissub=$order(@gblref@(thissub)) quit:""=thissub  do
 	. tstart ()
-	. do:$data(@gblref@(thissub))#10
+	. set xflag=0
+	. if "*"=locxsub(sublvl) set xflag=1
+	. else  do
+	. . if zpiece do
+	. . . for i=1:1:$zlength(locxsub(sublvl),";") do
+	. . . . set thisrange=$zpiece(locxsub(sublvl),";",i)
+	. . . . set piece1=$zpiece(thisrange,":",1)
+	. . . . set piece2=$select(1=$zlength(thisrange,":"):piece1,1:$zpiece(thisrange,":",2))
+	. . else  do
+	. . . for i=1:1:$length(locxsub(sublvl),";") do
+	. . . . set thisrange=$piece(locxsub(sublvl),";",i)
+	. . . . set piece1=$piece(thisrange,":",1)
+	. . . . set piece2=$select(1=$length(thisrange,":"):piece1,1:$piece(thisrange,":",2))
+	. . set:thissub=piece1!(thissub=piece2!(thissub]]piece1&(piece2]]thissub))) xflag=1
+	. do:xflag&($data(@gblref@(thissub))#10)
 	. . set nodeval=@gblref@(thissub),sublist=""
 	. . for i=1:1:$qlength($reference) set sublist=sublist_","_$zwrite($qsubscript($reference,i))
 	. . set lastsub=$qsubscript($reference,$qlength($reference))
-	. . if $zlength(sep) for i=2:1:$zlength(pstr) do:+$zextract(pstr,i)
-	. . . set j=i-1
-	. . . set xref=name_"("_j_","_$zwrite($select(zpiece:$zpiece(nodeval,sep,j),1:$piece(nodeval,sep,j)))_sublist_")"
-	. . . set:'$data(@xref)#10 ^(lastsub)=""
+	. . if $zlength(sep) do
+	. . . set nodelen1=1+$select(zpiece:$zlength(nodeval,sep),1:$length(nodeval,sep))
+	. . . set tmp=$zlength(pstr),k=$select(tmp>nodelen1:nodelen1,1:tmp)
+	. . . for i=2:1:k do:+$zextract(pstr,i)
+	. . . . set j=i-1
+	. . . . set xref=name_"("_j_","_$zwrite($select(zpiece:$zpiece(nodeval,sep,j),1:$piece(nodeval,sep,j)))_sublist_")"
+	. . . . set:'$data(@xref)#10 ^(lastsub)=""
 	. . else  do
 	. . . set xref=name_"("_$zwrite(nodeval)_sublist_")"
 	. . . set:'$data(@xref)#10 ^(lastsub)=""
@@ -311,10 +560,13 @@ xrefdata:(name,gblref,nsubs,sep,pstr,zpiece)
 	quit
 
 ;	Error message texts
+U245	;"-F-INVPIECE Range """_trgpiece_""" has invalid number of pieces: "_piecelen
+U246	;"-F-INVRANGE upper """_upper_""" is less than lower """_lower_""" in range specification"
+U247	;"-F-INVSUB Subscript """_$get(i,nsubs)_""" is not an integer 1 through 31"
 U248	;"-F-INVPIECE Piece """_nextp_""" is invalid piece specification"
 U249	;"-F-INVPSEPLEN Piece number "_i_", "_nextp_" has "_nextplen_" "":"" separated pieces, invalid"
 U250	;"-F-NOPIECE Piece separator """_sep_""" specified, but no piece numbers"
-U251	;"-F-UNKNERR """_tmp1_""" is not a recognized error code"
+U251	;"-F-UNKNERR """_tmp_""" is not a recognized error code"
 U252	;"-F-NOTAGBL Variable """_gbl_""" is not a global variable"
 U253	;"-F-NOSUBS Need at least 1 subscript to cross reference; nsubs="_nsubs
 U254	;"-F-NOEXTREF Extended reference in "_var_" is not supported"
