@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2019-2020 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2019-2021 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -40,7 +40,7 @@ error_def(ERR_CTRLC);
 
 mlk_shrblk_ptr_t mlk_shrblk_sort(mlk_shrblk_ptr_t head);
 
-void lke_show_memory(mlk_shrblk_ptr_t bhead, char *prefix)
+void lke_show_memory(mlk_pvtctl_ptr_t pctl, mlk_shrblk_ptr_t bhead, char *prefix)
 {
 	mlk_shrblk_ptr_t	b, bnext, parent, children;
 	mlk_shrsub_ptr_t	dsub;
@@ -61,26 +61,27 @@ void lke_show_memory(mlk_shrblk_ptr_t bhead, char *prefix)
 		parent = b->parent ? (mlk_shrblk_ptr_t)R2A(b->parent) : NULL;
 		children = b->children ? (mlk_shrblk_ptr_t)R2A(b->children) : NULL;
 		pending = b->pending ? (mlk_prcblk_ptr_t)R2A(b->pending) : NULL;
-		PRINTF("%s%s : [shrblk] %p : [shrsub] %p (len=%d) : [shrhash] %x : [parent] %p : [children] %p : [pending] %p : "
-				"[owner] %u : [auxowner] %" PRIuPTR "\n",
+		PRINTF("%s%s : [shrblk] %p : [shrsub] %p (len=%d) : [shrhash] 0x%"PRIUSEDHASH" : [parent] %p : [children] %p : [pending] %p : "
+				"[owner] %u : [auxowner] %"PRIuPTR"\n",
 			prefix, temp, b, dsub, dsub->length, b->hash, parent, children, pending, b->owner, b->auxowner);
-		HASH128_STATE_INIT(hs, 0);
+		MLK_SUBHASH_INIT_PVTCTL(pctl, hs);
 		total_len = 0;
 		mlk_shrhash_val_build(b, &total_len, &hs);
 		MLK_SUBHASH_FINALIZE(hs, total_len, hashres);
 		hash = MLK_SUBHASH_RES_VAL(hashres);
 		if (hash != b->hash)		/* Should never happen; only here in case things get mangled. */
-			PRINTF("\t\t: [computed shrhash] %x\n", hash);
+			PRINTF("\t\t: [computed shrhash] 0x%"PRIUSEDHASH"\n", hash);
 		FFLUSH(stdout);
 		if (b->children)
-			lke_show_memory((mlk_shrblk_ptr_t)R2A(b->children), new_prefix);
+			lke_show_memory(pctl, (mlk_shrblk_ptr_t)R2A(b->children), new_prefix);
 		bnext = (mlk_shrblk_ptr_t)R2A(b->rsib);
 	}
 }
 
 void lke_show_hashtable(mlk_pvtctl_ptr_t pctl)
 {
-	uint4			hash, si, num_buckets;
+	uint4			si, num_buckets;
+	mlk_subhash_val_t	hash;
 	mlk_shrhash_map_t	usedmap;
 	mlk_shrhash_ptr_t	shrhash, current_bucket;
 	mlk_shrblk_ptr_t	current_shrblk;
@@ -95,10 +96,12 @@ void lke_show_hashtable(mlk_pvtctl_ptr_t pctl)
 		if ((0 == current_bucket->shrblk_idx) && (0 == usedmap))
 			continue;
 		current_shrblk = MLK_SHRHASH_SHRBLK_CHECK(*pctl, current_bucket);
-		PRINTF("%d\t: [shrblk] %p : [hash] %x : [usedmap] %" PRIUSEDMAP "\n", si, current_shrblk, hash, usedmap);
+		PRINTF("%d\t: [shrblk] %p : [hash] 0x%"PRIUSEDHASH" : [usedmap] %"PRIUSEDMAP"\n", si, current_shrblk, hash, usedmap);
 		FFLUSH(stdout);
 	}
 	PRINTF("\t: [num_buckets] %d\n", num_buckets);
+	if (0 != pctl->ctl->hash_seed)
+		PRINTF("\t: [seed] %"PRIu64"\n", pctl->ctl->hash_seed);
 	FFLUSH(stdout);
 }
 
@@ -130,7 +133,7 @@ bool	lke_showtree(struct CLB 	*lnk,
 	tree = (mlk_shrblk_ptr_t)R2A(ctl->blkroot);
 	if (memory)
 	{
-		lke_show_memory(tree, "	");
+		lke_show_memory(pctl, tree, "	");
 		if (shr_sub_size)
 			(*shr_sub_size) = ctl->subfree - ctl->subbase;
 		lke_show_hashtable(pctl);

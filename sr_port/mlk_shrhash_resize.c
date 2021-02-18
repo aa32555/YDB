@@ -3,7 +3,7 @@
  * Copyright (c) 2018-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2019-2020 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2019-2021 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -23,6 +23,7 @@
 #include "ipcrmid.h"
 #include "do_shmat.h"
 #include "mlk_ops.h"
+#include "mlk_rehash.h"
 
 GBLREF	uint4	process_id;
 
@@ -35,8 +36,9 @@ error_def(ERR_MLKHASHRESIZEFAIL);
 boolean_t mlk_shrhash_resize(mlk_pvtctl_ptr_t pctl)
 {
 	mlk_shrhash_ptr_t	shrhash_old, shrhash_new, old_bucket, new_bucket, free_bucket;
+	mlk_subhash_val_t	hash;
 	int			obi, shmid_new, shmid_old, nbi, fi, save_errno, status;
-	uint4			shrhash_size_old, shrhash_size_new, hash;
+	uint4			shrhash_size_old, shrhash_size_new;
 	size_t			shrhash_mem_new;
 	mlk_pvtctl		pctl_new;
 
@@ -44,6 +46,7 @@ boolean_t mlk_shrhash_resize(mlk_pvtctl_ptr_t pctl)
 	shrhash_size_old = pctl->ctl->num_blkhash;
 	shrhash_mem_new = NEW_SHRHASH_MEM(shrhash_size_old);
 	shrhash_size_new = shrhash_mem_new / SIZEOF(mlk_shrhash);
+
 	do
 	{
 		shmid_new = shmget(IPC_PRIVATE, shrhash_mem_new, RWDALL | IPC_CREAT);
@@ -93,6 +96,13 @@ boolean_t mlk_shrhash_resize(mlk_pvtctl_ptr_t pctl)
 							ERR_SYSCALL, 5, LEN_AND_LIT("shm_rmid"), CALLFROM, errno, 0);
 				send_msg_csa(CSA_ARG(pctl->csa) VARLSTCNT(5)
 						ERR_MLKHASHRESIZEFAIL, 3, shrhash_size_old, shrhash_size_new);
+				if (shrhash_size_new > (pctl->ctl->max_blkcnt - pctl->ctl->blkcnt) * 2)
+				{	/* We have more than twice as many hash buckets as we have active shrblks,
+					 * indicating something pathological, so try rehashing instead.
+					 */
+					pctl->ctl->rehash_needed = TRUE;
+					return FALSE;
+				}
 				shrhash_mem_new = NEW_SHRHASH_MEM(shrhash_size_new);
 				shrhash_size_new = shrhash_mem_new / SIZEOF(mlk_shrhash);
 				break;

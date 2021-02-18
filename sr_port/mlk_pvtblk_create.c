@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2021 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -76,9 +76,10 @@ void	mlk_pvtblk_create (int subcnt, mval *extgbl1, va_list subptr)
 	gd_addr		*gld;
 	mlk_subhash_state_t	accstate, tmpstate;
 	mlk_subhash_res_t	hashres;
+	boolean_t		do_hash;
 
 	/* Get count of mvals including extgbl1 */
-	assert (subcnt >= 2);
+	assert(2 <= subcnt);
 	subcnt--;
 	/* compiler gives us extgbl1 always, even if the nref is not an extended ref */
 	if (NULL == extgbl1)
@@ -129,12 +130,19 @@ void	mlk_pvtblk_create (int subcnt, mval *extgbl1, va_list subptr)
 	 * Each string is preceeded by 1 byte string len.
 	 */
 	MLK_PVTBLK_ALLOC(len + subcnt, subcnt, 0, r);
+	MLK_PVTCTL_INIT(r->pvtctl, reg);
+	/* We can't do proper hashes for remote locks, so just skip hashing in the remote case. */
+	do_hash = (NULL != r->pvtctl.ctl);
 	r->translev = 1;
 	r->subscript_cnt = subcnt;
 	/* Each string is preceeded by string length byte */
 	r->nref_length = len + subcnt;
 	/* Keep the hash code generation here in sync with MLK_PVTBLK_SUBHASH_GEN() */
-	HASH128_STATE_INIT(accstate, 0);
+	if (do_hash)
+	{
+		MLK_SUBHASH_INIT(r, accstate);
+		hashres = (mlk_subhash_res_t){0, 0};
+	}
 	cp = &r->value[0];
 	/* Copy all strings into the buffer one after another */
 	for (i = 0, VAR_COPY(mp, subptr);  i < subcnt;  i++)
@@ -146,14 +154,18 @@ void	mlk_pvtblk_create (int subcnt, mval *extgbl1, va_list subptr)
 		*cp++ = len;
 		memcpy(cp, (mp_temp)->str.addr, len);
 		cp += len;
-		ydb_mmrhash_128_ingest(&accstate, cp_prev, len + 1);
- 		tmpstate = accstate;
- 		ydb_mmrhash_128_result(&tmpstate, (cp - r->value), &hashres);
- 		DBG_LOCKHASH_N_BITS(hashres.one);
- 		MLK_PVTBLK_SUBHASH(r, i) = (uint4)hashres.one;
+		if (do_hash)
+		{
+			MLK_SUBHASH_INGEST(accstate, cp_prev, len + 1);
+			tmpstate = accstate;
+			MLK_SUBHASH_FINALIZE(tmpstate, (cp - r->value), hashres);
+			DBG_LOCKHASH_N_BITS(hashres.one);
+			MLK_PVTBLK_SUBHASH(r, i) = MLK_SUBHASH_RES_VAL(hashres);
+		}
 	}
+	if (do_hash)
+		mlk_last_hash = MLK_SUBHASH_RES_VAL(hashres);
 	va_end(mp);
-	MLK_PVTCTL_INIT(r->pvtctl, reg);
 	if (!mlk_pvtblk_insert(r))
 		free(r);
 	return;

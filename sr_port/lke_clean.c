@@ -129,7 +129,7 @@ void lke_clean(void)
 				WBTEST_ONLY(WBTEST_TRASH_HASH_NO_RECOVER,
 						mlk_shrblk_ptr_t	newfreehead;
 
-						HASH128_STATE_INIT(hs, 0);
+						MLK_SUBHASH_INIT(&pvtblk, hs);
 						sub = malloc(SIZEOF(mlk_shrsub) + 23);
 						sub->length = 24;
 						memcpy(sub->data, "A12345670123456776543210", 24);
@@ -166,7 +166,7 @@ void lke_clean(void)
 				WBTEST_ONLY(WBTEST_TRASH_HASH_RECOVER,
 						mlk_shrblk_ptr_t	newfreehead;
 
-						HASH128_STATE_INIT(hs, 0);
+						MLK_SUBHASH_INIT(&pvtblk, hs);
 						sub = malloc(SIZEOF(mlk_shrsub) + 32);
 						sub->length = 33;
 						memcpy(sub->data, "A12345678901234567890123456789012", 33);
@@ -238,7 +238,7 @@ void lke_clean(void)
 							}
 							shrblk = MLK_SHRHASH_SHRBLK(pvtblk.pvtctl, check_bucket);
 							assert(0 != shrblk->value);
-							HASH128_STATE_INIT(hs, 0);
+							MLK_SUBHASH_INIT(&pvtblk, hs);
 							total_len = 0;
 							mlk_shrhash_val_build(shrblk, &total_len, &hs);
 							MLK_SUBHASH_FINALIZE(hs, total_len, hashres);
@@ -258,7 +258,7 @@ void lke_clean(void)
 					}
 					if (0 != search_bucket->shrblk_idx)
 					{	/* Verify that the value in this bucket should be in this bucket */
-						HASH128_STATE_INIT(hs, 0);
+						MLK_SUBHASH_INIT(&pvtblk, hs);
 						total_len = 0;
 						mlk_shrhash_val_build(MLK_SHRHASH_SHRBLK(pvtblk.pvtctl, search_bucket),
 									&total_len, &hs);
@@ -271,7 +271,7 @@ void lke_clean(void)
 								  bucket; not in the right neighborhood -- try moving it */
 							mi = mlk_shrhash_find_bucket(&pvtblk.pvtctl, MLK_SUBHASH_RES_VAL(hashres));
 							shr = MLK_SHRHASH_SHRBLK(pvtblk.pvtctl, search_bucket);
-							if (mi == MLK_SHRHASH_FOUND_NO_BUCKET)
+							if (mi == -1)
 							{	/* If this triggers, it mean the hash table is full and things are
 								 * out of position; very bad
 								 * Emit a critical warning and carry on
