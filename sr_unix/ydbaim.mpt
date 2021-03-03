@@ -426,9 +426,9 @@ XREFDATA(gbl,xsub,sep,pnum,nmonly,zpiece,omitfix)
 	. . set ^(3)=oldpstr
 	. . tcommit
 	else  do:'$data(@name@(0))		; No piece sep; xref entire node
-	. set trigset=trigprefix_"set -xecute=""zkill:$data("_name_"($ztoldval,"_sub_"))#10 ^("_lastsub_") set:'$data("_name_"($ztvalue,"_sub_")) ^("_lastsub_")="""""""""""_trigsuffix
-	. set trigdel=trigprefix_"kill -xecute=""kill:$data("_name_"($ztoldval,"_sub_")) ^("_lastsub_")"""_trigsuffix
-	. set trigdelx=trigprefix_"zkill -xecute=""zkill:$data("_name_"($ztoldval,"_sub_"))#10 ^("_lastsub_")"""_trigsuffix
+	. set trigset=trigprefix_"set -xecute=""zkill:$data("_name_"(0,$ztoldval,"_sub_"))#10 ^("_lastsub_") set:'$data("_name_"(0,$ztvalue,"_sub_")) ^("_lastsub_")="""""""""""_trigsuffix
+	. set trigdel=trigprefix_"kill -xecute=""kill:$data("_name_"(0,$ztoldval,"_sub_")) ^("_lastsub_")"""_trigsuffix
+	. set trigdelx=trigprefix_"zkill -xecute=""zkill:$data("_name_"(0,$ztoldval,"_sub_"))#10 ^("_lastsub_")"""_trigsuffix
 	. tstart ()
 	. if $ztrigger("item",trigset)&$ztrigger("item",trigdel)&$ztrigger("item",trigdelx)
 	. set @name=gbl,@name@(6)=trigset,^(7)=trigdel,^(8)=trigdelx,^(9)=omitfix
@@ -608,7 +608,7 @@ xrefdata:(name,gblref,nsubs,locxsub,sep,pstr,zpiece,omitfix,constlist)
 	. . . . set xref=name_"("_j_","_$zwrite($select(zpiece:$zpiece(nodeval,sep,j),1:$piece(nodeval,sep,j)))_sublist_")"
 	. . . . set:'$data(@xref)#10 ^(lastsub)=""
 	. . else  do
-	. . . set xref=name_"("_$zwrite(nodeval)_sublist_")"
+	. . . set xref=name_"(0,"_$zwrite(nodeval)_sublist_")"
 	. . . set:'$data(@xref)#10 ^(lastsub)=""
 	. tcommit
 	quit
