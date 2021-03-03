@@ -74,6 +74,23 @@
 ;   entire global nodes, it would be prudent to set YottaDB's maximum key size
 ;   (1019 bytes) for that region.
 ;
+;  Note: subscript specifications which are not canonical numbers should be
+;  quoted. So to cross reference the first piece with "|" as the separator of
+;  ^%ydbocto("tables","pg_catalog","pg_attribute",*):
+;    YDB>set sub=4,sub(1)="""tables""",sub(2)="""pg_catalog""",sub(3)="""pg_attribute"""
+;
+;    YDB>set xref=$$XREFDATA^%YDBAIM("^%ydbocto",.sub,"|",1)
+;  to create the cross reference:
+;    YDB>write xref
+;    ^%ydbAIMDvjlGbD84bQ5u5hXGOtIe37
+;    YDB>
+;  Setting a value now creates the cross reference:
+;    YDB>set ^%ydbocto("tables","pg_catalog","pg_attribute",100)="ABC|DEF"
+;
+;    YDB>write $query(@xref@(1,"ABC",""))
+;    ^%ydbAIMDvjlGbD84bQ5u5hXGOtIe37(1,"ABC",100)
+;    YDB>YDB
+;
 %YDBAIM
 	; Top level entry not supported
 	do etrap		; set error trap
@@ -90,7 +107,8 @@ err	; Error handler
 	use stderr
 	write $text(+0),@$zpiece(tmp2,";",2,$zlength(tmp2,";")),!
 	use io
-	zshow "s":tmp1 zhalt:"%XCMD"=$piece($get(tmp1("S",$order(tmp1("S",""""),-1))),"^",2) +$extract(tmp1,2,$zlength(tmp1))
+	zshow "s":tmp1
+	zhalt:"%XCMD"=$piece($get(tmp1("S",$order(tmp1("S",""""),-1))),"^",2) +$extract(tmp1,2,$zlength(tmp1))
 	quit
 
 ; Set error trap. The first action the error trap does is set a failsafe error
@@ -187,8 +205,10 @@ LSXREFDATA(lvn,gbl)
 ;   XREFDATA() and is ignored.
 ; - zpiece, if 1 means that $ZPIECE() was used as the piece separator instead
 ;   of $PIECE(); this is part of the trigger signature.
+; - omitfix exists only to allow the parameters of UNXREFDATA() to match those
+;   of XREFDATA() and is ignored.
 UNXREFDATA(gbl,xsub,sep,pnum,nmonl,zpiece,omitfix)
-	if "Write:(0=$STACK) ""Error occurred: "",$ZStatus,!"=$etrap new $etrap do etrap
+	if ""=$etrap!("Write:(0=$STACK) ""Error occurred: "",$ZStatus,!"=$etrap) new $etrap do etrap
 	new i,nsubs,xrefvar,ztout
 	set ztout=$view("ztrigger_output")
 	view "ztrigger_output":0
@@ -215,7 +235,7 @@ UNXREFDATA(gbl,xsub,sep,pnum,nmonl,zpiece,omitfix)
 	. . set xrefvar="^%ydbAIMD"
 	. . for  set xrefvar=$order(@xrefvar) quit:xrefvar'?1"^%ydbAIMD".AN!(""=xrefvar)  do:gbl=xrefvar!(gbl=@xrefvar) unxrefdata(xrefvar)
 	. . lock -^%ydbAIMD(gbl)
-	. else  do unxrefdata($$XREFDATA(gbl,.xsub,$get(sep),,1,$get(zpiece),$get(omitfix)))
+	. else  do unxrefdata($$XREFDATA(gbl,.xsub,$get(sep),,1,$get(zpiece),$get(omitfix,1)))
 	view "ztrigger_output":ztout
 	quit:$quit "" quit
 
@@ -261,7 +281,9 @@ UNXREFDATA(gbl,xsub,sep,pnum,nmonl,zpiece,omitfix)
 ; - omitfix, if 1 instructs XREFDATA() to omit from the subscripts of the cross
 ;   reference any subscripts of the application global that are fixed constants
 ;   because the code to traverse the application global using the cross
-;   reference will include those known fixed subscripts when making the access
+;   reference will include those known fixed subscripts when making the access.
+;   If not specified, omitfix defaults to 1.
+;
 ; Return value: name of global variable with cross reference e.g.,
 ; "^%ydbAIMDZzUmfwxt80MHPiWLZNtq4". The subscripts of cross reference variables
 ; are:
@@ -316,7 +338,7 @@ UNXREFDATA(gbl,xsub,sep,pnum,nmonl,zpiece,omitfix)
 ; Since the cross references themselves must have at least two subscripts, any
 ; node with one subscript is metadata for the cross reference.
 XREFDATA(gbl,xsub,sep,pnum,nmonly,zpiece,omitfix)
-	if "Write:(0=$STACK) ""Error occurred: "",$ZStatus,!"=$etrap new $etrap do etrap
+	if ""=$etrap!("Write:(0=$STACK) ""Error occurred: "",$ZStatus,!"=$etrap) new $etrap do etrap
 	new i,io,j,lastsub,locxsub,modflag,name,newpnum,newpstr,nsubs,constlist,omitflag,oldpstr,stderr,sub,tmp,trigdel,trigdelx,trigprefix,trigset,trigsub,trigsuffix,z,ztout
 	set io=$io
 	set stderr="/proc/self/fd/2" open stderr
@@ -333,16 +355,16 @@ XREFDATA(gbl,xsub,sep,pnum,nmonly,zpiece,omitfix)
 	do:$data(xsub)\10
 	. set i="" for  set i=$order(xsub(i)) quit:""=i  do:$data(xsub(i))#10
 	. . set:1>i!(i\1'=i)!(31<i) $ecode=",U247,"
-	. . set locxsub(i)=xsub(i)
+	. . set tmp=xsub(i),locxsub(i)=$select(":"=tmp:"*",1:tmp)
 	. . set constlist(i)=$$chktrgspec(.locxsub,i)
 	. set i=$order(locxsub(""),-1)
 	. set:i>nsubs nsubs=i
 	set:1>nsubs $ecode=",U253,"
 	set:nsubs\1'=nsubs!(31<nsubs) $ecode=",U247,"
-	for i=1:1:nsubs set:'$data(locxsub(i))!(":"=locxsub(i)) locxsub(i)="*"
+	for i=1:1:nsubs set:'$data(locxsub(i)) locxsub(i)="*"
 	; Derive subscript specification for trigger definitions from parameters
 	; and build string from which to derive xref variable name
-	set omitfix=+$get(omitfix,0),omitflag=0
+	set omitfix=+$get(omitfix,1),omitflag=0
 	set (name,sub,trigsub)=""
 	for i=1:1:nsubs do
 	. set name=name_locxsub(i)
@@ -440,6 +462,7 @@ XREFDATA(gbl,xsub,sep,pnum,nmonly,zpiece,omitfix)
 ; specifications set $ecode and raise an error.
 chktrgspec:(locxsub,n)
 	new i,lower,okflag,piecelen,subpiece,upper
+	quit:"*"=locxsub(n) 0
 	set okflag=1
 	for i=1:1:$length(locxsub(n),";") do  quit:'okflag
 	. set subpiece=$piece(locxsub(n),";",i),piecelen=$length(subpiece,":")
@@ -529,7 +552,7 @@ unxrefdata:(xrefgbl)
 ; code is executed only for the initial creation of a cross reference, and not
 ; in the triggers that maintain cross references as globals are updated.
 xrefdata:(name,gblref,nsubs,locxsub,sep,pstr,zpiece,omitfix,constlist)
-	new i,j,k,lastsub,nodelen1,nodeval,piece1,piece2,sublist,sublvl,thissub,thisrange,tmp,xflag,xref
+	new i,j,k,lastsub,nodelen1,nodeval,piece1,piece2,sublist,sublvl,thisrange,thissub,thissubz,tmp,xflag,xref
 	set thissub=""
 	; If nsubs>1 it means call the function recursively for the next
 	; subscript level. Where the specification is to not match all
@@ -539,6 +562,7 @@ xrefdata:(name,gblref,nsubs,locxsub,sep,pstr,zpiece,omitfix,constlist)
 	if nsubs>1 do
 	. if "*"=locxsub(sublvl) for  set thissub=$order(@gblref@(thissub)) quit:""=thissub  do:$data(@gblref@(thissub))\10 xrefdata(name,$select($qlength(gblref):$zextract(gblref,1,$zlength(gblref)-1)_",",1:gblref_"(")_$zwrite(thissub)_")",nsubs-1,.locxsub,sep,pstr,zpiece,omitfix,.constlist)
 	. else  for  set thissub=$order(@gblref@(thissub)) quit:""=thissub  do
+	. . set thissubz=$zwrite(thissub)
 	. . if zpiece do
 	. . . for i=1:1:$zlength(locxsub(sublvl),";") do
 	. . . . set thisrange=$zpiece(locxsub(sublvl),";",i)
@@ -549,25 +573,27 @@ xrefdata:(name,gblref,nsubs,locxsub,sep,pstr,zpiece,omitfix,constlist)
 	. . . . set thisrange=$piece(locxsub(sublvl),";",i)
 	. . . . set piece1=$piece(thisrange,":",1)
 	. . . . set piece2=$select(1=$length(thisrange,":"):piece1,1:$piece(thisrange,":",2))
-	. . do:thissub=piece1!(thissub=piece2!(thissub]]piece1&(piece2]]thissub)))&($data(@gblref@(thissub))\10) xrefdata(name,$select($qlength(gblref):$zextract(gblref,1,$zlength(gblref)-1)_",",1:gblref_"(")_$zwrite(thissub)_")",nsubs-1,.locxsub,sep,pstr,zpiece,omitfix,.constlist)
+	. . do:thissubz=piece1!(thissubz=piece2!(thissubz]]piece1&(piece2]]thissubz)))&($data(@gblref@(thissub))\10) xrefdata(name,$select($qlength(gblref):$zextract(gblref,1,$zlength(gblref)-1)_",",1:gblref_"(")_thissubz_")",nsubs-1,.locxsub,sep,pstr,zpiece,omitfix,.constlist)
 	; if nsubs=1 (this else clause) then cross reference those
 	; subscripts that the specification says to cross reference.
 	else  for  set thissub=$order(@gblref@(thissub)) quit:""=thissub  do
+	. set thissubz=$zwrite(thissub)
 	. tstart ()
 	. set xflag=0
 	. if "*"=locxsub(sublvl) set xflag=1
 	. else  do
 	. . if zpiece do
-	. . . for i=1:1:$zlength(locxsub(sublvl),";") do
+	. . . for i=1:1:$zlength(locxsub(sublvl),";") quit:xflag  do
 	. . . . set thisrange=$zpiece(locxsub(sublvl),";",i)
 	. . . . set piece1=$zpiece(thisrange,":",1)
 	. . . . set piece2=$select(1=$zlength(thisrange,":"):piece1,1:$zpiece(thisrange,":",2))
+	. . . . set:thissubz=piece1!(thissubz=piece2!(thissubz]]piece1&(piece2]]thissubz))) xflag=1
 	. . else  do
-	. . . for i=1:1:$length(locxsub(sublvl),";") do
+	. . . for i=1:1:$length(locxsub(sublvl),";") quit:xflag  do
 	. . . . set thisrange=$piece(locxsub(sublvl),";",i)
 	. . . . set piece1=$piece(thisrange,":",1)
 	. . . . set piece2=$select(1=$length(thisrange,":"):piece1,1:$piece(thisrange,":",2))
-	. . set:thissub=piece1!(thissub=piece2!(thissub]]piece1&(piece2]]thissub))) xflag=1
+	. . . . set:thissubz=piece1!(thissubz=piece2!(thissubz]]piece1&(piece2]]thissubz))) xflag=1
 	. do:xflag&($data(@gblref@(thissub))#10)
 	. . set nodeval=@gblref@(thissub),sublist=""
 	. . for i=1:1:$qlength($reference) do:'omitflag!'$get(constlist(i),0)
