@@ -286,10 +286,10 @@ if ( $?gtm_version_change == "1" ) then
  	# -lrt doesn't work to pull in semaphores with GCC 4.6, so use -lpthread.
  	# Add -lc in front of -lpthread to avoid linking in thread-safe versions
  	# of libc routines from libpthread.
-        setenv	gt_ld_syslibs		" -lelf -lncurses -lm -ldl -lc -lpthread -lrt"
+        setenv	gt_ld_syslibs		" -lelf -lncurses -lm -ldl -lc -lpthread -lrt -lreadline"
 	if ( ( 32 == $gt_build_type ) && ( "armv6l" != $mach_type ) && ( "armv7l" != $mach_type ) ) then
 		# 32bit x86_64 and ia32 - decided at the beginning of the file
-		setenv  gt_ld_syslibs           " -lncurses -lm -ldl -lc -lpthread -lrt"
+		setenv  gt_ld_syslibs           " -lncurses -lm -ldl -lc -lpthread -lrt -lreadline"
 	endif
 	if ( "cygwin" == $platform_only ) then
 		setenv  gt_ld_syslibs           "-lncurses -lm -lcrypt"
