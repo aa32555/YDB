@@ -1,8 +1,9 @@
 /****************************************************************
  *								*
- * Copyright 2005, 2011 Fidelity Information Services, Inc	*
+ * Copyright (c) 2005-2019 Fidelity National Information	*
+ * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2021 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -22,7 +23,7 @@
 
 void wbox_test_init(void)
 {
-#	ifdef DEBUG
+#	if defined (DEBUG) && !defined (STATIC_ANALYSIS)
 	mstr	trans_name;
 	char	trans_bufr[MAX_TRANS_NAME_LEN];
 

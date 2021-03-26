@@ -1,9 +1,9 @@
 /****************************************************************
  *								*
- * Copyright (c) 2001-2020 Fidelity National Information	*
+ * Copyright (c) 2001-2021 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2017-2020 YottaDB LLC and/or its subsidiaries.*
+ * Copyright (c) 2017-2021 YottaDB LLC and/or its subsidiaries.*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -139,7 +139,7 @@ const static readonly int error_ansi[] = {
 	   0,	/* MBXWRTONLY */
 	   0,	/* MEMORY */
 	   0,	/* DONOBLOCK */
-	   0,	/* UNUSEDMSG306 */
+	   0,	/* ZATRANSCOL */
 	   0,	/* UNUSEDMSG307 */
 	   0,	/* UNUSEDMSG308 */
 	   0,	/* UNUSEDMSG309 */
@@ -493,7 +493,7 @@ const static readonly int error_ansi[] = {
 	   0,	/* INVBITSTR */
 	   0,	/* INVBITPOS */
 	   0,	/* PARNORMAL */
-	   0,	/* PARBUFSM */
+	   0,	/* FILEPATHTOOLONG */
 	  72,	/* RMWIDTHTOOBIG */
 	   0,	/* PATTABNOTFND */
 	   0,	/* OBJFILERR */
@@ -612,7 +612,7 @@ const static readonly int error_ansi[] = {
 	   0,	/* MEMORYRECURSIVE */
 	   0,	/* FREEZEID */
 	   0,	/* BLKWRITERR */
-	   0,	/* UNUSEDMSG781 */
+	   0,	/* DSEINVALBLKID */
 	   0,	/* PINENTRYERR */
 	   0,	/* BCKUPBUFLUSH */
 	   0,	/* NOFORKCORE */
@@ -1076,8 +1076,8 @@ const static readonly int error_ansi[] = {
 	   0,	/* BKUPTMPFILOPEN */
 	   0,	/* BKUPTMPFILWRITE */
 	   0,	/* UNUSEDMSG1244 */
-	   0,	/* LOADBGSZ2 */
-	   0,	/* LOADEDSZ2 */
+	   0,	/* UNUSEDMSG1245 */
+	   0,	/* UNUSEDMSG1246 */
 	   0,	/* REPLINSTMISMTCH */
 	   0,	/* REPLINSTREAD */
 	   0,	/* REPLINSTDBMATCH */

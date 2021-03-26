@@ -279,6 +279,11 @@ void	gtm_env_init(void)
 		if ((tmsock = ydb_trans_numeric(YDBENVINDX_MAX_SOCKETS, &is_defined, IGNORE_ERRORS_TRUE, NULL))
 							&& MAX_MAX_N_SOCKET > tmsock) /* Note assignment!! */
 			ydb_max_sockets = tmsock;
+		/* Initialize TCP_KEEPIDLE and by implication SO_KEEPALIVE */
+		TREF(ydb_socket_keepalive_idle) = ydb_trans_numeric(YDBENVINDX_SOCKET_KEEPALIVE_IDLE, &is_defined,
+											IGNORE_ERRORS_TRUE, NULL);
+		if (0 > TREF(ydb_socket_keepalive_idle))
+			TREF(ydb_socket_keepalive_idle) = 0;
 		/* Initialize storage to allocate and keep in our back pocket in case run out of memory */
 		outOfMemoryMitigateSize = GTM_MEMORY_RESERVE_DEFAULT;
 		reservesize = ydb_trans_numeric(YDBENVINDX_MEMORY_RESERVE, &is_defined, IGNORE_ERRORS_TRUE, NULL);

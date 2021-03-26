@@ -3,7 +3,7 @@
  * Copyright (c) 2006-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2017-2020 YottaDB LLC and/or its subsidiaries. *
+ * Copyright (c) 2017-2021 YottaDB LLC and/or its subsidiaries. *
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -120,20 +120,6 @@ GBLREF	unsigned char		*gtmsource_tcombuff_start;
 #ifdef GTM_TLS
 GBLREF	gtmsource_options_t	gtmsource_options;
 #endif
-
-error_def(ERR_REPL2OLD);
-error_def(ERR_REPLCOMM);
-error_def(ERR_REPLFTOKSEM);
-error_def(ERR_REPLINSTNOHIST);
-error_def(ERR_REPLINSTSECMTCH);
-error_def(ERR_REPLNOXENDIAN);
-error_def(ERR_REPLWARN);
-error_def(ERR_SECNOTSUPPLEMENTARY);
-error_def(ERR_STRMNUMMISMTCH1);
-error_def(ERR_STRMNUMMISMTCH2);
-error_def(ERR_TEXT);
-error_def(ERR_TLSCONVSOCK);
-error_def(ERR_TLSHANDSHAKE);
 
 int gtmsource_est_conn()
 {
@@ -296,7 +282,7 @@ int gtmsource_est_conn()
 	}
 	repl_log(gtmsource_log_fp, TRUE, TRUE, "Connected to secondary, using TCP send buffer size %d receive buffer size %d\n",
 			repl_max_send_buffsize, repl_max_recv_buffsize);
-	repl_log_conn_info(gtmsource_sock_fd, gtmsource_log_fp);
+	repl_log_conn_info(gtmsource_sock_fd, gtmsource_log_fp, FALSE);
 	/* re-determine compression level on the replication pipe after every connection establishment */
 	gtmsource_local->repl_zlib_cmp_level = repl_zlib_cmp_level = ZLIB_CMPLVL_NONE;
 	/* reset any CMP2UNCMP messages received in prior connections. Once a connection encounters a REPL_CMP2UNCMP message
@@ -1004,6 +990,7 @@ void	gtmsource_repl_send(repl_msg_ptr_t msg, char *msgtypestr, seq_num optional_
 	int			status, poll_dir;			/* needed for REPL_{SEND,RECV}_LOOP */
 	char			err_string[1024];
 	gtmsource_local_ptr_t	gtmsource_local;
+	boolean_t		close_retry = FALSE;
 
 	assert((REPL_MULTISITE_MSG_START > msg->type) || (REPL_PROTO_VER_MULTISITE <= remote_side->proto_ver));
 	if (MAX_SEQNO != optional_seqno)
@@ -1039,7 +1026,19 @@ void	gtmsource_repl_send(repl_msg_ptr_t msg, char *msgtypestr, seq_num optional_
 			if (REPL_CONN_RESET(status))
 			{
 				repl_log(gtmsource_log_fp, TRUE, TRUE, "Connection reset while sending %s. Status = %d ; %s\n",
-						msgtypestr, status, STRERROR(status));
+					msgtypestr, status, STRERROR(status));
+				close_retry = TRUE;
+			} else if (ECOMM == status) /*Communication error in send */
+			{
+				repl_log(gtmsource_log_fp, TRUE, TRUE,	"Error sending %s message. "
+				"Error in send : %s\n", msgtypestr, STRERROR(status));
+				close_retry = TRUE;
+				repl_log_conn_info(gtmsource_sock_fd, gtmsource_log_fp, TRUE);
+				if (WBTEST_ENABLED(WBTEST_REPLCOMM_SEND_SRC))
+					gtm_wbox_input_test_case_count = 6; /*Do not got into white box case again */
+			}
+			if (close_retry)
+			{
 				repl_close(&gtmsource_sock_fd);
 				SHORT_SLEEP(GTMSOURCE_WAIT_FOR_RECEIVER_CLOSE_CONN);
 				gtmsource_state = jnlpool->gtmsource_local->gtmsource_state = GTMSOURCE_WAITING_FOR_CONNECTION;
@@ -1048,7 +1047,8 @@ void	gtmsource_repl_send(repl_msg_ptr_t msg, char *msgtypestr, seq_num optional_
 			{
 				SNPRINTF(err_string, SIZEOF(err_string), "Error sending %s message. "
 					"Error in send : %s", msgtypestr, STRERROR(status));
-				rts_error_csa(CSA_ARG(NULL) VARLSTCNT(6) ERR_REPLCOMM, 0, ERR_TEXT, 2, LEN_AND_STR(err_string));
+				rts_error_csa(CSA_ARG(NULL) VARLSTCNT(6) ERR_REPLCOMM, 0, ERR_TEXT, 2,
+						LEN_AND_STR(err_string));
 			}
 		} else if (EREPL_SELECT == repl_errno)
 		{

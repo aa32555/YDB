@@ -147,45 +147,6 @@ GBLREF	jnl_gbls_t		jgbl;
 GBLREF	sgmnt_addrs		*cs_addrs;
 GBLREF	uint4			process_id;
 
-error_def(ERR_CRITSEMFAIL);
-error_def(ERR_DBFILOPERR);
-error_def(ERR_DBFRZRESETFL);
-error_def(ERR_DBFRZRESETSUC);
-error_def(ERR_DBJNLNOTMATCH);
-error_def(ERR_DBRDONLY);
-error_def(ERR_FILENOTFND);
-error_def(ERR_FILEPARSE);
-error_def(ERR_JNLBADRECFMT);
-error_def(ERR_JNLDBTNNOMATCH);
-error_def(ERR_JNLDBSEQNOMATCH);
-error_def(ERR_JNLFILEDUP);
-error_def(ERR_JNLFILEOPNERR);
-error_def(ERR_JNLNMBKNOTPRCD);
-error_def(ERR_JNLSTATEOFF);
-error_def(ERR_JNLTNOUTOFSEQ);
-error_def(ERR_MUKILLIP);
-error_def(ERR_MUPCLIERR);
-error_def(ERR_MUPJNLINTERRUPT);
-error_def(ERR_MUSTANDALONE);
-error_def(ERR_NOPREVLINK);
-error_def(ERR_NOSTARFILE);
-error_def(ERR_NOTALLJNLEN);
-error_def(ERR_NOTALLREPLON);
-error_def(ERR_ORLBKFRZOVER);
-error_def(ERR_ORLBKFRZPROG);
-error_def(ERR_ORLBKNOV4BLK);
-error_def(ERR_ORLBKSTART);
-error_def(ERR_REPLSTATEOFF);
-error_def(ERR_RLBKNOBIMG);
-error_def(ERR_ROLLBKINTERRUPT);
-error_def(ERR_STARFILE);
-error_def(ERR_SYSCALL);
-error_def(ERR_TEXT);
-error_def(ERR_WCBLOCKED);
-error_def(ERR_ORLBKRESTART);
-error_def(ERR_ORLBKREL);
-error_def(ERR_REPLPOOLINST);
-
 #define		STAR_QUOTE "\"*\""
 
 /* Release all locks, in general follow the direction of mur_close_files. We do not reset fields
@@ -265,7 +226,6 @@ void release_all_locks(unix_db_info *udi, gtmsource_local_ptr_t gtmsourcelocal_p
 		assert(FALSE);
 }
 
-
 int4 mur_open_files(boolean_t retry)
 {
 	boolean_t			interrupted_rollback;
@@ -317,6 +277,11 @@ int4 mur_open_files(boolean_t retry)
 		0 == memcmp(jnl_file_list, STAR_QUOTE, STR_LIT_LEN(STAR_QUOTE))))
 	{
 		star_specified = TRUE;
+		if (mur_options.corruptdb)
+		{
+			gtm_putmsg_csa(CSA_ARG(NULL) VARLSTCNT(4) ERR_STARFILE, 2, LEN_AND_LIT("CORRUPTDB qualifier"));
+			mupip_exit(ERR_MUPCLIERR);
+		}
 		if (NULL != mur_options.redirect)
 		{
 			gtm_putmsg_csa(CSA_ARG(NULL) VARLSTCNT(4) ERR_STARFILE, 2, LEN_AND_LIT("REDIRECT qualifier"));
@@ -450,7 +415,7 @@ int4 mur_open_files(boolean_t retry)
 					rctl->standalone = TRUE;
 				}
 			}
-			if (mur_options.update || mur_options.extr[GOOD_TN])
+			if (!TREF(skip_DB_exists_check) && (mur_options.update || mur_options.extr[GOOD_TN]))
 			{
 	        		gvcst_init(rctl->gd);
 				TP_CHANGE_REG(rctl->gd);
@@ -696,7 +661,7 @@ int4 mur_open_files(boolean_t retry)
 	{
 		if (rctl->db_present)
 		{
-			if (mur_options.update || mur_options.extr[GOOD_TN])
+			if (!TREF(skip_DB_exists_check) && (mur_options.update || mur_options.extr[GOOD_TN]))
 			{	/* NOTE: Only for collation info extract needs database access */
 				DEFER_INTERRUPTS(INTRPT_IN_MUR_OPEN_FILES, prev_intrpt_state);	/* temporarily disable
 												 * MUPIP STOP/signal handling. */
@@ -868,7 +833,8 @@ int4 mur_open_files(boolean_t retry)
 				/* 1) show 2) extract 3) verify action does not need standalone access.
 				 * In this case csa is NULL
 				 */
-				if (!file_head_read((char *)rctl->gd->dyn.addr->fname, rctl->csd, SGMNT_HDR_LEN))
+				if (!file_head_read((char *)rctl->gd->dyn.addr->fname, rctl->csd, SGMNT_HDR_LEN)
+					&& !TREF(skip_DB_exists_check))
 				{
 					gtm_putmsg_csa(CSA_ARG(NULL) VARLSTCNT(4) ERR_DBFILOPERR, 2, REG_LEN_STR(rctl->gd));
 					ENABLE_INTERRUPTS(INTRPT_IN_MUR_OPEN_FILES, prev_intrpt_state);
@@ -1005,7 +971,7 @@ int4 mur_open_files(boolean_t retry)
 					}
 				}
 				/* db list was created from journal file header. So it is not possible */
-				assertpro(rctl != rctl_top);
+				assertpro(TREF(skip_DB_exists_check) || (rctl != rctl_top));
 			}
 			/* Detect and report 1st case of any duplicated files in mupip forward recovery command. */
 			if (mur_options.forward)
@@ -1124,7 +1090,7 @@ int4 mur_open_files(boolean_t retry)
 	for (rctl = mur_ctl, rctl_top = mur_ctl + murgbl.reg_total; rctl < rctl_top; rctl++)
 	{
 		jctl = rctl->jctl_head;
-		if (rctl->db_present && (mur_options.update || mur_options.extr[GOOD_TN]))
+		if (rctl->db_present && (!TREF(skip_DB_exists_check) && (mur_options.update || mur_options.extr[GOOD_TN])))
 			rctl->csa->miscptr = (void *)rctl; /* needed by gdsfilext_nojnl/jnl_write_pini/mur_pini_addr_reset */
 		if (mur_options.update)
 		{

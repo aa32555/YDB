@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2021 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -52,9 +52,9 @@
 #include "mu_gv_cur_reg_init.h"
 #include "warn_db_sz.h"
 #include "gvcst_protos.h"
+#include "muextr.h"
+#include "mu_getkey.h"
 
-#define DUMMY_GLOBAL_VARIABLE		"%D%DUMMY_VARIABLE"
-#define DUMMY_GLOBAL_VARIABLE_LEN	SIZEOF(DUMMY_GLOBAL_VARIABLE)
 #define MAX_UTIL_LEN			96
 #define APPROX_ALL_ERRORS		1000000
 #define DEFAULT_ERR_LIMIT		10
@@ -105,8 +105,6 @@ GBLDEF int			trans_errors = 0;
 GBLDEF boolean_t		block = FALSE;
 GBLDEF boolean_t		muint_fast = FALSE;
 GBLDEF boolean_t		master_dir;
-GBLDEF boolean_t		muint_key = MUINTKEY_FALSE;
-GBLDEF boolean_t		muint_subsc = FALSE;
 GBLDEF boolean_t		mu_int_err_ranges;
 GBLDEF boolean_t		tn_reset_specified;	/* use this to avoid recomputing cli_present("TN_RESET") in the loop */
 GBLDEF boolean_t		tn_reset_this_reg;
@@ -142,34 +140,14 @@ GBLREF boolean_t		debug_mupip;
 GBLREF gd_region		*gv_cur_region;
 GBLREF gv_key			*gv_altkey;
 GBLREF gv_key			*gv_currkey;
-GBLREF gv_key			*muint_end_key;
-GBLREF gv_key			*muint_start_key;
+GBLREF gv_key			*mu_end_key;
+GBLREF boolean_t		mu_key;
+GBLREF gv_key			*mu_start_key;
 GBLREF gv_namehead		*gv_target;
 GBLREF sgmnt_addrs		*cs_addrs;
 GBLREF short			crash_count;
 GBLREF tp_region		*grlist;
 GBLREF util_snapshot_ptr_t	util_ss_ptr;
-
-error_def(ERR_CTRLC);
-error_def(ERR_CTRLY);
-error_def(ERR_DBBTUFIXED);
-error_def(ERR_DBBTUWRNG);
-error_def(ERR_DBNOREGION);
-error_def(ERR_DBRBNLBMN);
-error_def(ERR_DBRBNNEG);
-error_def(ERR_DBRBNTOOLRG);
-error_def(ERR_DBRDONLY);
-error_def(ERR_DBSPANCHUNKORD);
-error_def(ERR_DBSPANGLOINCMP);
-error_def(ERR_DBTNLTCTN);
-error_def(ERR_DBTNRESET);
-error_def(ERR_DBTNRESETINC);
-error_def(ERR_INTEGERRS);
-error_def(ERR_MUNOACTION);
-error_def(ERR_MUNOFINISH);
-error_def(ERR_MUNOTALLINTEG);
-error_def(ERR_MUPCLIERR);
-error_def(ERR_REGFILENOTFOUND);
 
 void mupip_integ(void)
 {
@@ -316,15 +294,15 @@ void mupip_integ(void)
 	online_integ = ((TRUE != cli_negated("ONLINE")) && region); /* Default option for INTEG is -ONLINE */
 	preserve_snapshot = (CLI_PRESENT == cli_present("PRESERVE")); /* Should snapshot file be preserved ? */
 	assert(!online_integ || (region && !tn_reset_specified));
-	assert(MUINTKEY_FALSE == muint_key);
+	assert(MUKEY_FALSE == mu_key);
 	if (CLI_PRESENT == cli_present("SUBSCRIPT"))
 	{
 		keylen = SIZEOF(key_buff);
 		if (0 == cli_get_str("SUBSCRIPT", (char *)key_buff, &keylen))
 			mupip_exit(ERR_MUPCLIERR);
-		if (FALSE == mu_int_getkey(key_buff, keylen))
+		if (FALSE == mu_getkey(key_buff, keylen))
 			mupip_exit(ERR_MUPCLIERR);
-		assert(muint_key);	/* or else "mu_int_getkey" call above would have returned FALSE */
+		assert(mu_key);	/* or else "mu_getkey" call above would have returned FALSE */
 		disp_map_errors = 0;
 	}
 	if (CLI_PRESENT == cli_present("BLOCK"))
@@ -335,7 +313,7 @@ void mupip_integ(void)
 		disp_map_errors = 0;
 		master_dir = FALSE;
 	}
-	muint_all_index_blocks = !(block || muint_key);
+	muint_all_index_blocks = !(block || mu_key);
 	mu_int_master = malloc(MASTER_MAP_SIZE_MAX);
 	tn_reset_specified = (CLI_PRESENT == cli_present("TN_RESET"));
 	mu_outofband_setup();
@@ -494,13 +472,14 @@ void mupip_integ(void)
 			master_dir = FALSE;
 			trees->root = muint_block;
 		}
-		if ((MUINTKEY_NULLSUBS == muint_key) && gv_cur_region->std_null_coll)
+		if ((MUKEY_NULLSUBS == mu_key) && gv_cur_region->std_null_coll)
 		{	/* -SUBSCRIPT was specified AND at least one null-subscript was specified in it.
-			 * muint_start_key and muint_end_key have been constructed assuming gv_cur_region->std_null_coll is FALSE.
-			 * Update muint_start_key and muint_end_key to reflect the current gv_cur_region->std_null_coll value.
+			 * mu_start_key and mu_end_key have been constructed assuming gv_cur_region->std_null_coll is FALSE.
+			 * Update mu_start_key and mu_end_key to reflect the current gv_cur_region->std_null_coll value.
 			 */
-			GTM2STDNULLCOLL(muint_start_key->base, muint_start_key->end);
-			GTM2STDNULLCOLL(muint_end_key->base, muint_end_key->end);
+			GTM2STDNULLCOLL(mu_start_key->base, mu_start_key->end);
+			if (mu_end_key)
+				GTM2STDNULLCOLL(mu_end_key->base, mu_end_key->end);
 		}
 		for (trees->link = 0;  ;  master_dir = FALSE, temp = (char*)trees,  trees = trees->link,  free(temp))
 		{
@@ -647,10 +626,10 @@ void mupip_integ(void)
 				mu_int_errknt--; /* if this error is not supposed to increment the error count */
 			}
 		}
-		if ((MUINTKEY_NULLSUBS == muint_key) && gv_cur_region->std_null_coll)
-		{	/* muint_start_key and muint_end_key have been modified for this region. Undo that change. */
-			STD2GTMNULLCOLL(muint_start_key->base, muint_start_key->end);
-			STD2GTMNULLCOLL(muint_end_key->base, muint_end_key->end);
+		if ((MUKEY_NULLSUBS == mu_key) && gv_cur_region->std_null_coll)
+		{	/* mu_start_key and mu_end_key have been modified for this region. Undo that change. */
+			STD2GTMNULLCOLL(mu_start_key->base, mu_start_key->end);
+			STD2GTMNULLCOLL(mu_end_key->base, mu_end_key->end);
 		}
 		if (muint_all_index_blocks)
 		{
@@ -727,7 +706,7 @@ void mupip_integ(void)
 			util_out_print("Data  !15@UQ !15@UQ    !8UL.!3ZL  !12UL", TRUE, &mu_int_tot[DATA][BLKS],
 				&mu_int_tot[DATA][RECS], leftpt, rightpt, mu_data_adj);
 		}
-		if ((FALSE == block) && (MUINTKEY_FALSE == muint_key))
+		if ((FALSE == block) && (MUKEY_FALSE == mu_key))
 		{
 			tot_blks = mu_int_data.trans_hist.total_blks
 				- ((mu_int_data.trans_hist.total_blks + mu_int_data.bplmap - 1) / mu_int_data.bplmap);

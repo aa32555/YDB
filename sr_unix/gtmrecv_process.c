@@ -196,33 +196,6 @@ GBLREF	mur_gbls_t		murgbl;
 GBLREF	repl_conn_info_t	*this_side, *remote_side;
 GBLREF	int4			strm_index;
 
-error_def(ERR_INSNOTJOINED);
-error_def(ERR_INSROLECHANGE);
-error_def(ERR_INSUNKNOWN);
-error_def(ERR_JNLNEWREC);
-error_def(ERR_JNLSETDATA2LONG);
-error_def(ERR_NOSUPPLSUPPL);
-error_def(ERR_PRIMARYNOTROOT);
-error_def(ERR_RCVRMANYSTRMS);
-error_def(ERR_REPL2OLD);
-error_def(ERR_REPLCOMM);
-error_def(ERR_REPLINSTNOHIST);
-error_def(ERR_REPLINSTREAD);
-error_def(ERR_REPLNOTLS);
-error_def(ERR_REPLTRANS2BIG);
-error_def(ERR_REPLXENDIANFAIL);
-error_def(ERR_RESUMESTRMNUM);
-error_def(ERR_REUSEINSTNAME);
-error_def(ERR_SECONDAHEAD);
-error_def(ERR_STRMNUMIS);
-error_def(ERR_SUPRCVRNEEDSSUPSRC);
-error_def(ERR_SYSCALL);
-error_def(ERR_TEXT);
-error_def(ERR_TLSCONVSOCK);
-error_def(ERR_TLSHANDSHAKE);
-error_def(ERR_UNIMPLOP);
-error_def(ERR_UPDSYNCINSTFILE);
-
 typedef enum
 {
 	GTM_RECV_POOL,
@@ -250,6 +223,7 @@ static	boolean_t	repl_cmp_solve_timer_set;
 
 #define ISSUE_REPLCOMM_ERROR(REASON, SAVE_ERRNO)									\
 {															\
+	SEND_SYSMSG_REPLCOMM(LEN_AND_LIT(REASON));									\
 	if (0 != SAVE_ERRNO)												\
 		rts_error_csa(CSA_ARG(NULL) VARLSTCNT(7) ERR_REPLCOMM, 0, ERR_TEXT, 2, LEN_AND_LIT(REASON), SAVE_ERRNO);\
 	else														\
@@ -797,7 +771,7 @@ STATICFNDEF int gtmrecv_est_conn(void)
 		ISSUE_REPLCOMM_ERROR("Error getting socket recv buffsize", errno);
 	repl_log(gtmrecv_log_fp, TRUE, TRUE, "Connection established, using TCP send buffer size %d receive buffer size %d\n",
 			repl_max_send_buffsize, repl_max_recv_buffsize);
-	repl_log_conn_info(gtmrecv_sock_fd, gtmrecv_log_fp);
+	repl_log_conn_info(gtmrecv_sock_fd, gtmrecv_log_fp, FALSE);
 	/* re-determine endianness of other side */
 	remote_side->endianness_known = FALSE;
 	/* re-determine journal format of other side */
@@ -2902,17 +2876,22 @@ STATICFNDEF void do_main_loop(boolean_t crash_restart)
 				{
 					repl_log(gtmrecv_log_fp, TRUE, TRUE, "Connection reset. Status = %d ; %s\n",
 							status, STRERROR(status));
-					repl_connection_reset = TRUE;
-					repl_close(&gtmrecv_sock_fd);
-					return;
 				} else
 				{
-					ISSUE_REPLCOMM_ERROR("Error in receiving from source. Error in recv", status);
+					repl_log(gtmrecv_log_fp, TRUE, TRUE, "Error in receiving from source."
+						 " Error in recv: %d ; %s\n", status, STRERROR(status));
+					SEND_SYSMSG_REPLCOMM(LEN_AND_LIT("Error in receiving from source. Error in recv"));
+					repl_log_conn_info(gtmrecv_sock_fd, gtmrecv_log_fp, TRUE);
 				}
 			} else if (EREPL_SELECT == repl_errno)
 			{
+				repl_log(gtmrecv_log_fp, TRUE, TRUE, "Error in receiving from source."
+					 " Error in select: %d ; %s\n", status, STRERROR(status));
 				ISSUE_REPLCOMM_ERROR("Error in receiving from source. Error in select", status);
 			}
+			repl_connection_reset = TRUE;
+			repl_close(&gtmrecv_sock_fd);
+			return;
 		}
 		if (repl_connection_reset)
 			return;

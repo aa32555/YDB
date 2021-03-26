@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2021 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -47,17 +47,6 @@ GBLREF	boolean_t	skip_dbtriggers;
 GBLREF	mstr		sys_input;
 GBLDEF	int		onerror;
 
-error_def(ERR_LDBINFMT);
-error_def(ERR_LOADBGSZ);
-error_def(ERR_LOADBGSZ2);
-error_def(ERR_LOADINVCHSET);
-error_def(ERR_LOADEDBG);
-error_def(ERR_LOADEDSZ);
-error_def(ERR_LOADEDSZ2);
-error_def(ERR_MAXSTRLEN);
-error_def(ERR_MUNOFINISH);
-error_def(ERR_MUPCLIERR);
-
 #define CHAR_TO_READ_LINE1_BIN	STR_LIT_LEN("d0GDS BINARY")  /* read first 12 characters to check file is binary [d\0GDS BINARY] */
 #define	MAX_ONERROR_VALUE_LEN	STR_LIT_LEN("INTERACTIVE") /* PROCEED, STOP, INTERACTIVE are the choices with INTERACTIVE as max */
 #define	MAX_FORMAT_VALUE_LEN	STR_LIT_LEN("BINARY") /* ZWR, BINARY, GO, GOQ are the choices with BINARY being the longest */
@@ -65,9 +54,9 @@ error_def(ERR_MUPCLIERR);
 void mupip_cvtgbl(void)
 {
 	char		fn[MAX_FN_LEN + 1], *line1_ptr, *line3_ptr;
-	gtm_int64_t	begin_i8, end_i8;
+	gtm_uint64_t	begin, end;
 	int		dos, i, file_format, line1_len, line3_len, utf8;
-	uint4	        begin, end, max_rec_size;
+	uint4	        max_rec_size;
 	unsigned char	buff[MAX_ONERROR_VALUE_LEN];
 	unsigned short	fn_len, len;
 	boolean_t	ignore_chset;
@@ -108,31 +97,24 @@ void mupip_cvtgbl(void)
 	mu_outofband_setup();
 	if (cli_present("BEGIN") == CLI_PRESENT)
 	{
-	        if (!cli_get_int64("BEGIN", &begin_i8))
+	        if (!cli_get_uint64("BEGIN", &begin))
 			mupip_exit(ERR_MUPCLIERR);
-		if (1 > begin_i8)
+		if (1 > begin)
 			mupip_exit(ERR_LOADBGSZ);
-		else if (MAXUINT4 < begin_i8)
-			mupip_exit(ERR_LOADBGSZ2);
-		begin = (uint4) begin_i8;
 	} else
 	{
 		begin = 1;
-		begin_i8 = 1;
 	}
 	if (cli_present("END") == CLI_PRESENT)
 	{
-	        if (!cli_get_int64("END", &end_i8))
+	        if (!cli_get_uint64("END", &end))
 			mupip_exit(ERR_MUPCLIERR);
-		if (1 > end_i8)
+		if (1 > end)
 			mupip_exit(ERR_LOADEDSZ);
-		else if (MAXUINT4 < end_i8)
-			mupip_exit(ERR_LOADEDSZ2);
-		if (end_i8 < begin_i8)
+		if (end < begin)
 			mupip_exit(ERR_LOADEDBG);
-		end = (uint4) end_i8;
 	} else
-		end = MAXUINT4;
+		end = MAXUINT8;
 	if (cli_present("FILL_FACTOR") == CLI_PRESENT)
 	{
 		assert(SIZEOF(gv_fillfactor) == SIZEOF(int4));

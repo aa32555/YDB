@@ -1,6 +1,6 @@
 /****************************************************************
  *								*
- * Copyright (c) 2001-2018 Fidelity National Information	*
+ * Copyright (c) 2001-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
  * Copyright (c) 2018-2021 YottaDB LLC and/or its subsidiaries.	*
@@ -97,6 +97,42 @@
 				LEN_AND_LIT("Waited too long to get/send" MESSAGE " from primary. Check if primary is alive."));\
 }
 
+
+
+#define CHECK_CONN_RETRY(STATUS)										\
+{														\
+        if ((EREPL_RECV == repl_errno) && (REPL_CONN_RESET(STATUS)))    					\
+        {       												\
+		if (WBTEST_ENABLED(WBTEST_FETCHCOMM_ERR) || WBTEST_ENABLED(WBTEST_FETCHCOMM_HISTINFO))		\
+			repl_log(stdout, TRUE, TRUE, "Closing socket and re-establishing connection\n");	\
+                repl_close(&gtmrecv_sock_fd);   								\
+                gtmrecv_fetchresync_connect(port);   								\
+                repl_connection_reset = FALSE;  								\
+		reconnect = TRUE;										\
+        }       												\
+}
+
+#define SEND_REPL_FETCH_RESYNC_MSG(RESYNC_MSG,MAX_REG_SEQNO)									\
+{																\
+	/* Send REPL_FETCH_RESYNC message */											\
+	memset(&RESYNC_MSG, 0, SIZEOF(RESYNC_MSG));										\
+	RESYNC_MSG.resync_seqno = MAX_REG_SEQNO;										\
+	assert(RESYNC_MSG.resync_seqno);											\
+	RESYNC_MSG.proto_ver = REPL_PROTO_VER_THIS;										\
+	RESYNC_MSG.node_endianness = NODE_ENDIANNESS;										\
+	RESYNC_MSG.is_supplementary = jnlpool->repl_inst_filehdr->is_supplementary;						\
+	remote_side->endianness_known = FALSE;											\
+	remote_side->cross_endian = FALSE;											\
+	gtmrecv_repl_send((repl_msg_ptr_t)&RESYNC_MSG, REPL_FETCH_RESYNC, MIN_REPL_MSGLEN,					\
+				"REPL_FETCH_RESYNC", RESYNC_MSG.resync_seqno);							\
+	if (repl_connection_reset)												\
+	{	/* Connection got reset during the above send */								\
+		rts_error_csa(CSA_ARG(NULL) VARLSTCNT(1) ERR_REPLCOMM);								\
+		return ERR_REPLCOMM;												\
+	}															\
+	assert(!REPL_TLS_ENABLED);	/* Currently, a fetchresync rollback never uses TLS to connect to the source server */	\
+}
+
 GBLREF	uint4			process_id;
 GBLREF	int			recvpool_shmid;
 GBLREF	int			gtmrecv_listen_sock_fd, gtmrecv_sock_fd;
@@ -109,13 +145,6 @@ GBLREF 	mur_gbls_t		murgbl;
 GBLREF	boolean_t		holds_sem[NUM_SEM_SETS][NUM_SRC_SEMS];
 GBLREF	repl_conn_info_t	*remote_side;
 GBLREF	int4			strm_index;
-
-error_def(ERR_PRIMARYNOTROOT);
-error_def(ERR_RECVPOOLSETUP);
-error_def(ERR_REPL2OLD);
-error_def(ERR_REPLCOMM);
-error_def(ERR_REPLINSTNOHIST);
-error_def(ERR_TEXT);
 
 CONDITION_HANDLER(gtmrecv_fetchresync_ch)
 {
@@ -130,43 +159,16 @@ CONDITION_HANDLER(gtmrecv_fetchresync_ch)
 	NEXTCH;
 }
 
-int gtmrecv_fetchresync(int port, seq_num *resync_seqno, seq_num max_reg_seqno)
+void gtmrecv_fetchresync_connect(int port)
 {
-	boolean_t			is_wacky_message;
-	repl_resync_msg_t		resync_msg;
-	repl_msg_t			msg;
-	uchar_ptr_t			msgp;
-	unsigned char			*msg_ptr;				/* needed for REPL_{SEND,RECV}_LOOP */
-	int				tosend_len, sent_len, sent_this_iter;	/* needed for REPL_SEND_LOOP */
-	int				torecv_len, recvd_len, recvd_this_iter;	/* needed for REPL_RECV_LOOP */
-	int				status, poll_dir;			/* needed for REPL_{SEND,RECV}_LOOP */
-	fd_set				input_fds;
-	int				wait_count, save_errno;
-	char				seq_num_str[32], *seq_num_ptr;
-	pid_t				rollback_pid;
-	int				rollback_status;
-	int				wait_status;
-	time_t				t1, t2;
-	repl_old_instinfo_msg_t		old_instinfo_msg;
-	repl_old_needinst_msg_ptr_t	old_need_instinfo_msg;
-	repl_needinst_msg_t		need_instinfo_msg;
-	repl_needhistinfo_msg_ptr_t	need_histinfo_msg;
-	repl_histinfo			histinfo;
-	seq_num				histinfo_seqno;
-	short				retry_num;
-	repl_inst_hdr_ptr_t		inst_hdr;
-	repl_logfile_info_msg_t		logfile_msg;
-	uint4				len;
-	struct addrinfo			primary_ai;
-	struct sockaddr_storage		primary_sas;
-	struct timeval			repl_poll_wait;
-	DCL_THREADGBL_ACCESS;
+	int                             status;
+	struct addrinfo                 primary_ai;
+	struct sockaddr_storage         primary_sas;
+	struct timeval                  repl_poll_wait;
+	fd_set                          input_fds;
+	time_t                          t1, t2;
+	int				save_errno;
 
-	SETUP_THREADGBL_ACCESS;
-	repl_log(stdout, TRUE, TRUE,
-			"Assuming primary supports multisite functionality. Connecting using multisite communication protocol.\n");
-	ESTABLISH_RET(gtmrecv_fetchresync_ch, (!SS_NORMAL));
-	QWASSIGN(*resync_seqno, seq_num_zero);
 	gtmrecv_comm_init(port);
 
 	primary_ai.ai_addr = (sockaddr_ptr)&primary_sas;
@@ -215,10 +217,6 @@ int gtmrecv_fetchresync(int port, seq_num *resync_seqno, seq_num max_reg_seqno)
 		if (FD_INVALID == gtmrecv_sock_fd)
 		{
 			save_errno = errno;
-#			ifdef __hpux
-			if (ENOBUFS == save_errno)
-				continue;
-#			endif
 			rts_error_csa(CSA_ARG(NULL) VARLSTCNT(7) ERR_REPLCOMM, 0,
 					ERR_TEXT, 2, LEN_AND_LIT("Error accepting connection from Source Server"), save_errno);
 		}
@@ -227,6 +225,44 @@ int gtmrecv_fetchresync(int port, seq_num *resync_seqno, seq_num max_reg_seqno)
 	/* Connection established */
 	repl_close(&gtmrecv_listen_sock_fd); /* Close the listener socket */
 	repl_connection_reset = FALSE;
+	return;
+}
+
+
+int gtmrecv_fetchresync(int port, seq_num *resync_seqno, seq_num max_reg_seqno)
+{
+	boolean_t			is_wacky_message;
+	repl_resync_msg_t		resync_msg;
+	repl_msg_t			msg;
+	uchar_ptr_t			msgp;
+	unsigned char			*msg_ptr;				/* needed for REPL_{SEND,RECV}_LOOP */
+	int				tosend_len, sent_len, sent_this_iter;	/* needed for REPL_SEND_LOOP */
+	int				torecv_len, recvd_len, recvd_this_iter;	/* needed for REPL_RECV_LOOP */
+	int				status, poll_dir;			/* needed for REPL_{SEND,RECV}_LOOP */
+	int				wait_count, save_errno;
+	char				seq_num_str[32], *seq_num_ptr;
+	pid_t				rollback_pid;
+	int				rollback_status;
+	int				wait_status;
+	repl_old_instinfo_msg_t		old_instinfo_msg;
+	repl_old_needinst_msg_ptr_t	old_need_instinfo_msg;
+	repl_needinst_msg_t		need_instinfo_msg;
+	repl_needhistinfo_msg_ptr_t	need_histinfo_msg;
+	repl_histinfo			histinfo;
+	seq_num				histinfo_seqno;
+	short				retry_num;
+	repl_inst_hdr_ptr_t		inst_hdr;
+	repl_logfile_info_msg_t		logfile_msg;
+	uint4				len;
+	boolean_t reconnect		= FALSE;
+	DCL_THREADGBL_ACCESS;
+
+	SETUP_THREADGBL_ACCESS;
+	repl_log(stdout, TRUE, TRUE,
+			"Assuming primary supports multisite functionality. Connecting using multisite communication protocol.\n");
+	ESTABLISH_RET(gtmrecv_fetchresync_ch, (!SS_NORMAL));
+	QWASSIGN(*resync_seqno, seq_num_zero);
+	gtmrecv_fetchresync_connect(port);
 	if (0 != (status = get_send_sock_buff_size(gtmrecv_sock_fd, &repl_max_send_buffsize))
 		|| 0 != (status = get_recv_sock_buff_size(gtmrecv_sock_fd, &repl_max_recv_buffsize)))
 	{
@@ -235,25 +271,9 @@ int gtmrecv_fetchresync(int port, seq_num *resync_seqno, seq_num max_reg_seqno)
 	}
 	repl_log(stdout, TRUE, TRUE, "Connection established, using TCP send buffer size %d receive buffer size %d\n",
 			repl_max_send_buffsize, repl_max_recv_buffsize);
-	repl_log_conn_info(gtmrecv_sock_fd, stdout);
+	repl_log_conn_info(gtmrecv_sock_fd, stdout, FALSE);
 
-	/* Send REPL_FETCH_RESYNC message */
-	memset(&resync_msg, 0, SIZEOF(resync_msg));
-	resync_msg.resync_seqno = max_reg_seqno;
-	assert(resync_msg.resync_seqno);
-	resync_msg.proto_ver = REPL_PROTO_VER_THIS;
-	resync_msg.node_endianness = NODE_ENDIANNESS;
-	resync_msg.is_supplementary = jnlpool->repl_inst_filehdr->is_supplementary;
-	remote_side->endianness_known = FALSE;
-	remote_side->cross_endian = FALSE;
-	gtmrecv_repl_send((repl_msg_ptr_t)&resync_msg, REPL_FETCH_RESYNC, MIN_REPL_MSGLEN,
-				"REPL_FETCH_RESYNC", resync_msg.resync_seqno);
-	if (repl_connection_reset)
-	{	/* Connection got reset during the above send */
-		rts_error_csa(CSA_ARG(NULL) VARLSTCNT(1) ERR_REPLCOMM);
-		return ERR_REPLCOMM;
-	}
-	assert(!REPL_TLS_ENABLED);	/* Currently, a fetchresync rollback never uses TLS to connect to the source server */
+	SEND_REPL_FETCH_RESYNC_MSG(resync_msg,max_reg_seqno);
 	/* Wait for REPL_RESYNC_SEQNO (if dual-site primary) or REPL_OLD_NEED_INSTANCE_INFO (if multi-site primary)
 	 * or REPL_NEED_INSTINFO (if multi-site primary with supplementary instance support) message
 	 */
@@ -261,13 +281,39 @@ int gtmrecv_fetchresync(int port, seq_num *resync_seqno, seq_num max_reg_seqno)
 	{
 		wait_count = MAX_ATTEMPTS_FOR_FETCH_RESYNC;
 		assert(SIZEOF(msg) == MIN_REPL_MSGLEN);
-		REPL_RECV_LOOP(gtmrecv_sock_fd, &msg, MIN_REPL_MSGLEN, REPL_POLL_WAIT)
+		REPL_RECV_LOOP_FETCHRESYNC(gtmrecv_sock_fd, &msg, MIN_REPL_MSGLEN, REPL_POLL_WAIT)
 		{
+			if (SS_NORMAL == status)
+			{
+				recvd_len += recvd_this_iter;
+				torecv_len -= recvd_this_iter;
+				if (torecv_len <= 0)
+				break;
+			}
+			/* Else connection reset || torecv_len > 0*/
 			if (0 >= wait_count)
 				break;
 			repl_log(stdout, TRUE, TRUE, "Waiting for REPL_RESYNC_SEQNO or REPL_OLD_NEED_INSTANCE_INFO "
 				" or REPL_NEED_INSTINFO or REPL_NEED_HISTINFO\n");
 			wait_count--;
+			CHECK_CONN_RETRY(status);
+			if (reconnect) /* There was connection reset and we re-connected */
+			{
+				if (0 != (status = get_send_sock_buff_size(gtmrecv_sock_fd, &repl_max_send_buffsize))
+				|| 0 != (status = get_recv_sock_buff_size(gtmrecv_sock_fd, &repl_max_recv_buffsize)))
+				{
+					rts_error_csa(CSA_ARG(NULL) VARLSTCNT(7) ERR_REPLCOMM, 0, ERR_TEXT, 2,
+					LEN_AND_LIT("Error getting socket send/recv buffsizes"), status);
+				}
+				repl_log(stdout, TRUE, TRUE,
+				"Connection established, using TCP send buffer size %d receive buffer size %d\n",
+				repl_max_send_buffsize, repl_max_recv_buffsize);
+				repl_log_conn_info(gtmrecv_sock_fd, stdout, FALSE);
+				SEND_REPL_FETCH_RESYNC_MSG(resync_msg,max_reg_seqno);
+				reconnect = FALSE;
+				if (WBTEST_ENABLED(WBTEST_FETCHCOMM_ERR))
+					gtm_wbox_input_test_case_count = 6; /* Do not go to white box again*/
+			}
 		}
 		CHECK_SEND_RECV_LOOP_ERROR(status, wait_count, "RESYNC JNLSEQNO");
 		if (!remote_side->endianness_known)

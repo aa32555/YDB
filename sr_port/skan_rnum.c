@@ -1,7 +1,9 @@
 /****************************************************************
  *								*
- * Copyright (c) 2001-2016 Fidelity National Information	*
+ * Copyright (c) 2001-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
+ *								*
+ * Copyright (c) 2021 YottaDB LLC and/or its subsidiaries.	*
  *								*
  *	This source code contains the intellectual property	*
  *	of its copyright holder(s), and is made available	*
@@ -13,7 +15,7 @@
 #include "mdef.h"
 
 #include "gtm_string.h"
-
+#include "gdsdbver.h"
 #include "gdsroot.h"
 #include "gtm_facility.h"
 #include "fileinfo.h"
@@ -26,23 +28,35 @@
 #include "skan_rnum.h"
 #include "dse.h"
 
-#define MAX_UTIL_LEN	80
-
 GBLREF block_id		patch_curr_blk;
 GBLREF sgmnt_addrs	*cs_addrs;
 GBLREF char		patch_comp_key[MAX_KEY_SZ + 1];
 GBLREF unsigned short	patch_comp_count;
 GBLREF int		patch_rec_counter;
 
+error_def(ERR_DSEINVALBLKID);
+
 sm_uc_ptr_t skan_rnum(sm_uc_ptr_t bp, bool over_run)
 {
 	char 		util_buff[MAX_UTIL_LEN];
-	unsigned short	cc;
 	int		tmp_cmpc;
-	sm_uc_ptr_t 	b_top, rp, r_top, key_top;
-	short int 	size, rec_size;
 	int4 		record;
+	long		blk_id_size;
+	short int 	size, rec_size;
+	sm_uc_ptr_t 	b_top, rp, r_top, key_top;
+	unsigned short	cc;
 
+	if (((blk_hdr_ptr_t)bp)->bver > BLK_ID_32_VER)
+	{
+#		ifdef BLK_NUM_64BIT
+		blk_id_size = SIZEOF(block_id_64);
+#		else
+		rts_error_csa(CSA_ARG(cs_addrs) VARLSTCNT(1) ERR_DSEINVALBLKID);
+#		endif
+	} else
+	{
+		blk_id_size = SIZEOF(block_id_32);
+	}
 	if (((blk_hdr_ptr_t) bp)->bsiz > cs_addrs->hdr->blk_size)
 		b_top = bp + cs_addrs->hdr->blk_size;
 	else if (((blk_hdr_ptr_t) bp)->bsiz < SIZEOF(blk_hdr))
@@ -75,7 +89,7 @@ sm_uc_ptr_t skan_rnum(sm_uc_ptr_t bp, bool over_run)
 		}
 		patch_rec_counter++;
 		if (((blk_hdr_ptr_t) bp)->levl)
-			key_top = r_top - SIZEOF(block_id);
+			key_top = r_top - blk_id_size;
 		else
 		{
 			for (key_top = rp + SIZEOF(rec_hdr); key_top < r_top ; )

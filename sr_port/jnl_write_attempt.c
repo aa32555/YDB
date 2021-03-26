@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2017-2020 YottaDB LLC and/or its subsidiaries. *
+ * Copyright (c) 2017-2021 YottaDB LLC and/or its subsidiaries. *
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -50,16 +50,6 @@ GBLREF	jnlpool_addrs_ptr_t	jnlpool;
 GBLREF	uint4			process_id;
 GBLREF	uint4			image_count;
 
-error_def(ERR_JNLACCESS);
-error_def(ERR_JNLCNTRL);
-error_def(ERR_JNLFLUSH);
-error_def(ERR_JNLFLUSHNOPROG);
-error_def(ERR_JNLPROCSTUCK);
-error_def(ERR_JNLQIOSALVAGE);
-error_def(ERR_JNLWRTDEFER);
-error_def(ERR_JNLWRTNOWWRTR);
-error_def(ERR_TEXT);
-
 static uint4 jnl_sub_write_attempt(jnl_private_control *jpc, unsigned int *lcnt, uint4 threshold)
 {
 	sgmnt_addrs		*csa;
@@ -95,7 +85,7 @@ static uint4 jnl_sub_write_attempt(jnl_private_control *jpc, unsigned int *lcnt,
 			jb->image_count = 0;
 			RELEASE_SWAPLOCK(&jb->io_in_prog_latch);
 		}
-		if (!jb->io_in_prog_latch.u.parts.latch_pid)
+		if ((!jb->io_in_prog_latch.u.parts.latch_pid) DEBUG_ONLY(&& !WBTEST_ENABLED(WBTEST_JNLPROCSTUCK_FORCE)))
 		{
 			if (freeze_waiter)
 			{
@@ -131,14 +121,19 @@ static uint4 jnl_sub_write_attempt(jnl_private_control *jpc, unsigned int *lcnt,
 			writer = CURRENT_JNL_IO_WRITER(jb);
 			loop_image_count = jb->image_count;
 			*lcnt = 1;	/* !!! this should be detected and limited by the caller !!! */
+#			ifdef DEBUG
+			if (WBTEST_ENABLED(WBTEST_JNLPROCSTUCK_FORCE))
+				writer = process_id;
+			else
+#			endif
 			break;
 		}
-		if (JNL_MAX_FLUSH_TRIES >= *lcnt)
+		if ((JNL_MAX_FLUSH_TRIES >= *lcnt) DEBUG_ONLY(&& !(WBTEST_ENABLED(WBTEST_JNLPROCSTUCK_FORCE))))
 		{
 			wcs_sleep(*lcnt);
 			break;
 		}
-		if (writer == CURRENT_JNL_IO_WRITER(jb))
+		if ((writer == CURRENT_JNL_IO_WRITER(jb)) DEBUG_ONLY(|| (WBTEST_ENABLED(WBTEST_JNLPROCSTUCK_FORCE))))
 		{	/* It isn't strictly necessary to hold crit here since we are doing an atomic operation on
 			 * io_in_prog_latch, which won't have any effect if the writer changed. If things are in a bad state,
 			 * though, grabbing crit will call wcs_recover() for us.
@@ -158,7 +153,8 @@ static uint4 jnl_sub_write_attempt(jnl_private_control *jpc, unsigned int *lcnt,
 				}
 			}
 			/* If no one home, try to clear the semaphore */
-			if ((FALSE == is_proc_alive(writer, jb->image_count))
+			if (((FALSE == is_proc_alive(writer, jb->image_count))
+					DEBUG_ONLY(&& !(WBTEST_ENABLED(WBTEST_JNLPROCSTUCK_FORCE))))
 					&& COMPSWAP_UNLOCK(&jb->io_in_prog_latch, writer, LOCK_AVAILABLE))
 			{	/* We cleared the latch, so report it and restart the loop. */
 				BG_TRACE_PRO_ANY(csa, jnl_blocked_writer_lost);
@@ -178,8 +174,11 @@ static uint4 jnl_sub_write_attempt(jnl_private_control *jpc, unsigned int *lcnt,
 				continue;
 			}
 			jpc->status = status;
-			jnl_send_oper(jpc, ERR_JNLFLUSH);
 			send_msg_csa(CSA_ARG(csa) VARLSTCNT(3) ERR_JNLPROCSTUCK, 1, writer);
+#			ifdef DEBUG
+			if (WBTEST_ENABLED(WBTEST_JNLPROCSTUCK_FORCE))
+				ydb_white_box_test_case_enabled = FALSE;
+#			endif
 			stuck_cnt++;
 			if (IS_REPL_INST_FROZEN)
 			{	/* The instance wasn't frozen above, but it is now, so most likely we froze it.
@@ -302,8 +301,7 @@ uint4 jnl_write_attempt(jnl_private_control *jpc, uint4 threshold)
 			continue;
 		}
 		if ((ERR_JNLCNTRL == status) || (ERR_JNLACCESS == status)
-			|| (csa->now_crit
-				&& (ERR_JNLWRTDEFER != status) && (ERR_JNLWRTNOWWRTR != status) && (ERR_JNLPROCSTUCK != status)))
+			|| (csa->now_crit && (ERR_JNLWRTDEFER != status) && (ERR_JNLWRTNOWWRTR != status)))
 		{	/* If JNLCNTRL or if holding crit and not waiting for some other writer
 			 * better turn off journaling and proceed with database update to avoid a database hang.
 			 */
@@ -315,10 +313,9 @@ uint4 jnl_write_attempt(jnl_private_control *jpc, uint4 threshold)
 				grab_crit(jpc->region);	/* jnl_write_attempt has an assert about have_crit that this relies on */
 			}
 			jnlfile_lost = FALSE;
-			assert((ydb_white_box_test_case_enabled
-				&& (WBTEST_JNL_FILE_LOST_DSKADDR == ydb_white_box_test_case_number))
-			       || TREF(ydb_test_fake_enospc) || WBTEST_ENABLED(WBTEST_RECOVER_ENOSPC));
-			if (JNL_ENABLED(csa->hdr))
+			assert(TREF(ydb_test_fake_enospc) || WBTEST_ENABLED(WBTEST_JNL_FILE_LOST_DSKADDR)
+			|| WBTEST_ENABLED(WBTEST_RECOVER_ENOSPC) || (ERR_JNLPROCSTUCK == status));
+			if (JNL_ENABLED(csa->hdr) && (ERR_JNLPROCSTUCK != status))
 			{	/* We ignore the return value of jnl_file_lost() since we always want to report the journal
 				 * error, whatever its error handling method is.  Also, an operator log will be sent by some
 				 * callers (t_end()) only if an error is returned here, and the operator log is wanted in
@@ -350,7 +347,7 @@ uint4 jnl_write_attempt(jnl_private_control *jpc, uint4 threshold)
 			assert(!csa->jnlpool || (csa->jnlpool == jnlpool));
 			WAIT_FOR_REPL_INST_UNFREEZE_SAFE(csa);
 		}
-		if ((ERR_JNLWRTDEFER != status) && (ERR_JNLWRTNOWWRTR != status) && (ERR_JNLPROCSTUCK != status))
+		if ((ERR_JNLWRTDEFER != status) && (ERR_JNLWRTNOWWRTR != status))
 		{	/* If holding crit, then jnl_sub_write_attempt would have invoked jnl_file_lost which would have
 			 * caused the JNL_FILE_SWITCHED check at the beginning of this for loop to succeed and return from
 			 * this function so we should never have gotten here. Assert accordingly. If not holding crit,

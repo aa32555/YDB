@@ -49,20 +49,9 @@ GBLREF	stack_frame		*frame_pointer;
 GBLREF	unsigned char		*stackbase, *stacktop, *msp, *stackwarn;
 GBLREF	volatile int4		outofband;
 
-error_def(ERR_GETNAMEINFO);
-error_def(ERR_GETSOCKNAMERR);
-error_def(ERR_GETSOCKOPTERR);
-error_def(ERR_OPENCONN);
-error_def(ERR_SETSOCKOPTERR);
-error_def(ERR_SOCKINIT);
-error_def(ERR_STACKCRIT);
-error_def(ERR_STACKOFLOW);
-error_def(ERR_TEXT);
-error_def(ERR_ZINTRECURSEIO);
-
 boolean_t iosocket_connect(socket_struct *sockptr, uint8 nsec_timeout, boolean_t update_bufsiz)
 {
-	int		temp_1, flags, flags_orig;
+	int		temp_1, flags, flags_orig, keepalive_opt;
 	char		*errptr;
 	int		errlen, save_errno;
 	int		d_socket_struct_len, res, nfds, sockerror;
@@ -80,8 +69,11 @@ boolean_t iosocket_connect(socket_struct *sockptr, uint8 nsec_timeout, boolean_t
 	int		errcode, real_errno;
 	char		ipaddr[SA_MAXLEN + 1];
 	char		port_buffer[NI_MAXSERV];
+	static readonly char 	action[] = "CONNECT";
 	GTM_SOCKLEN_TYPE	sockbuflen, tmp_addrlen;
+	DCL_THREADGBL_ACCESS;
 
+	SETUP_THREADGBL_ACCESS;
 	DBGSOCK((stdout, "socconn: ************* Entering socconn - nsec_timeout: %llu\n", nsec_timeout));
 	/* check for validity */
 	dsocketptr = sockptr->dev;
@@ -570,7 +562,6 @@ boolean_t iosocket_connect(socket_struct *sockptr, uint8 nsec_timeout, boolean_t
 		}
 		hiber_start(100);
 	} while (res < 0);
-
 	sockptr->state = socket_connected;
 	sockptr->first_read = sockptr->first_write = TRUE;
 	/* update dollar_key */
@@ -654,6 +645,9 @@ boolean_t iosocket_connect(socket_struct *sockptr, uint8 nsec_timeout, boolean_t
 		}
 		STRNDUP(ipaddr, SA_MAXLEN, sockptr->remote.saddr_ip);
 		strncpy(&iod->dollar.key[len], sockptr->remote.saddr_ip, DD_BUFLEN - 1 - len);
+		keepalive_opt = TREF(ydb_socket_keepalive_idle);	/* deviceparameter would give more granular control */
+		if (keepalive_opt && !iosocket_tcp_keepalive(sockptr, keepalive_opt, action))
+			return FALSE;				/* iosocket_tcp_keepalive issues rts_error rather than return */
 	} else
 	{	/* getsockname does not return info for AF_UNIX connected socket so copy from remote side */
 		local_ai_ptr->ai_socktype = sockptr->remote.ai.ai_socktype;

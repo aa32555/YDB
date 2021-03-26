@@ -1,9 +1,9 @@
 /****************************************************************
  *								*
- * Copyright (c) 2007-2015 Fidelity National Information 	*
+ * Copyright (c) 2007-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2017-2019 YottaDB LLC and/or its subsidiaries. *
+ * Copyright (c) 2017-2021 YottaDB LLC and/or its subsidiaries. *
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -57,9 +57,9 @@
 #include "min_max.h"
 
 /* Platform specific action instructions when routine called from foreign language. Returns -1 to caller */
-#define MIN_LINK_PSECT_SIZE     0
-LITDEF mach_inst jsb_action[JSB_ACTION_N_INS] = {0x48, 0xc7, 0xc0, 0xff, 0xff, 0xff, 0xff, 0xc3};
+#define MIN_LINK_PSECT_SIZE	0
 
+LITDEF mach_inst jsb_action[JSB_ACTION_N_INS] = {0x48, 0xc7, 0xc0, 0xff, 0xff, 0xff, 0xff, 0xc3};
 
 GBLREF command_qualifier cmd_qlf;
 GBLREF unsigned char	object_file_name[];
@@ -68,7 +68,7 @@ GBLREF unsigned short	object_name_len;
 GBLREF mident		module_name;
 GBLREF boolean_t	run_time;
 GBLREF int4		gtm_object_size;
-DEBUG_ONLY(GBLREF int   obj_bytes_written;)
+DEBUG_ONLY(GBLREF int	obj_bytes_written;)
 
 #define YDB_LANG	"M"
 static char static_string_tbl[] = {
@@ -89,13 +89,9 @@ static char static_string_tbl[] = {
 #define STR_SEC_STRTAB_OFFSET 7
 #define STR_SEC_SYMTAB_OFFSET 15
 
-#define SEC_TEXT_INDX 1
-#define SEC_STRTAB_INDX 2
-#define SEC_SYMTAB_INDX 3
-
-GBLREF mliteral 	literal_chain;
+GBLREF mliteral		literal_chain;
 GBLREF unsigned char	source_file_name[];
-GBLREF unsigned short 	source_name_len;
+GBLREF unsigned short	source_name_len;
 GBLREF mident		routine_name;
 GBLREF mident		module_name;
 GBLREF int4		mlmax, mvmax;
@@ -107,7 +103,7 @@ void create_object_file(rhdtyp *rhead)
 {
 	assert(!run_time);
 	DEBUG_ONLY(obj_bytes_written = 0);
- 	init_object_file_name(); /* inputs: cmd_qlf.object_file, module_name; outputs: object_file_name, object_name_len */
+	init_object_file_name(); /* inputs: cmd_qlf.object_file, module_name; outputs: object_file_name, object_name_len */
 	object_file_des = mk_tmp_object_file(object_file_name, object_name_len);
 	/* Action instructions and marker are not kept in the same array since the type of the elements of
 	 * the former (uint4) may be different from the type of the elements of the latter (char).
@@ -116,8 +112,7 @@ void create_object_file(rhdtyp *rhead)
 	 */
 	assert(JSB_ACTION_N_INS * SIZEOF(jsb_action[0]) == SIZEOF(jsb_action));	/* JSB_ACTION_N_INS maintained? */
 	assert(SIZEOF(jsb_action) <= SIZEOF(rhead->jsb));			/* Overflow check */
-
-  	memcpy(rhead->jsb, (char *)jsb_action, SIZEOF(jsb_action)); 		/* Action instructions */
+	memcpy(rhead->jsb, (char *)jsb_action, SIZEOF(jsb_action));		/* Action instructions */
 	memcpy(&rhead->jsb[SIZEOF(jsb_action)], JSB_MARKER,			/* Followed by GTM_CODE marker */
 	       MIN(STR_LIT_LEN(JSB_MARKER), SIZEOF(rhead->jsb) - SIZEOF(jsb_action)));
 	emit_immed((char *)rhead, SIZEOF(*rhead));
@@ -129,7 +124,7 @@ void create_object_file(rhdtyp *rhead)
  */
 void finish_object_file(void)
 {
-	int		i, status;
+	int		i, status, non_local_symidx;
 	size_t		bufSize;
 	ssize_t		actualSize;
 	char		*gtm_obj_code, *string_tbl;
@@ -204,7 +199,7 @@ void finish_object_file(void)
 	ehdr->e_ident[EI_CLASS] = ELFCLASS64;
 	ehdr->e_ident[EI_VERSION] = EV_CURRENT;
 	ehdr->e_ident[EI_DATA] = ELFDATA2LSB;
-	ehdr->e_ident[EI_OSABI] = ELFOSABI_LINUX;
+	ehdr->e_ident[EI_OSABI] = ELFOSABI_NONE;
 	ehdr->e_ident[EI_ABIVERSION] = 0;	/* No ABI version info defined for LINUX */
 	ehdr->e_machine = EM_X86_64;
 	ehdr->e_type = ET_REL;
@@ -246,7 +241,7 @@ void finish_object_file(void)
 	strtab_data->d_align = NATIVE_WSIZE;
 	strtab_data->d_buf = string_tbl;
 	strtab_data->d_off = 0LL;
-	strtab_data->d_size = SPACE_STRING_ALLOC_LEN;
+	strtab_data->d_size = symIndex + module_name.len + 1;
 	strtab_data->d_type = ELF_T_BYTE;
 	strtab_data->d_version = EV_CURRENT;
 	if (NULL == (strtab_shdr = elf64_getshdr(strtab_scn)))
@@ -270,7 +265,7 @@ void finish_object_file(void)
 	symEntries[i].st_name = STR_SEC_TEXT_OFFSET;
 	symEntries[i].st_info = ELF64_ST_INFO(STB_LOCAL, STT_SECTION);
 	symEntries[i].st_other = STV_DEFAULT;
-	symEntries[i].st_shndx = SEC_TEXT_INDX; /* index of the .text */
+	symEntries[i].st_shndx = elf_ndxscn(text_scn);
 	symEntries[i].st_size = 0;
 	symEntries[i].st_value = 0;
 	i++;
@@ -278,7 +273,7 @@ void finish_object_file(void)
 	symEntries[i].st_name = symIndex;
 	symEntries[i].st_info = ELF64_ST_INFO(STB_GLOBAL, STT_FUNC);
 	symEntries[i].st_other = STV_DEFAULT;
-	symEntries[i].st_shndx = SEC_TEXT_INDX;
+	symEntries[i].st_shndx = elf_ndxscn(text_scn);
 	symEntries[i].st_size = gtm_object_size;
 	symEntries[i].st_value = 0;
 	i++;
@@ -300,7 +295,7 @@ void finish_object_file(void)
 	symtab_shdr->sh_name = STR_SEC_SYMTAB_OFFSET;
 	symtab_shdr->sh_type = SHT_SYMTAB;
 	symtab_shdr->sh_entsize = SIZEOF(Elf64_Sym) ;
-	symtab_shdr->sh_link = SEC_STRTAB_INDX;
+	symtab_shdr->sh_link = elf_ndxscn(strtab_scn);
 	symtab_shdr->sh_info = YDB_MAX_LCLSYM_INDX_P1;	/* Highest local value symtab index used + 1 */
 	elf_flagehdr(elf, ELF_C_SET, ELF_F_DIRTY);
 	if (0 > elf_update(elf, ELF_C_WRITE))

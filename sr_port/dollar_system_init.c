@@ -1,8 +1,9 @@
 /****************************************************************
  *								*
- * Copyright 2002, 2009 Fidelity Information Services, Inc	*
+ * Copyright (c) 2002-2019 Fidelity National Information	*
+ * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018-2019 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2021 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -26,16 +27,13 @@
 #define	SYSTEM_LITERAL	"47,"
 
 GBLREF	mval	dollar_system;
-GBLREF spdesc	stringpool;
+GBLREF	spdesc	stringpool;
 
 void dollar_system_init(struct startup_vector *svec)
 {
 	int4		status;
 	mstr		tn;
 	char		buf[MAX_TRANS_NAME_LEN];
-
-	error_def(ERR_LOGTOOLONG);
-	error_def(ERR_TRNLOGFAIL);
 
 	ENSURE_STP_FREE_SPACE(MAX_TRANS_NAME_LEN + STR_LIT_LEN(SYSTEM_LITERAL));
 	dollar_system.mvtype = MV_STR;
