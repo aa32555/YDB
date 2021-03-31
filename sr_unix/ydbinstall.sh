@@ -415,7 +415,11 @@ if [ "N" = "$ydb_force_install" ]; then
 					osallowmajorver="10"
 					osallowminorver="0"
 				fi
-			fi
+            elif ["arch" = "${osid}"] ; then
+                osallowmajorver=""  # Rolling release candidate whose majorver is empty. Ensures that version is not 999 and doesn't fire a warning
+                osallowminorver=""  # This gets checked later in the code with bypass_force_install, where the ydb build env and current env is compared to
+                # see if bypass of force-install is possible.
+            fi
 		elif [ "aarch64" = "${ydb_flavor}" ] ; then
 			if [ "ubuntu" = "${osid}" ] ; then
 				# Ubuntu 18.04 and onwards is considered supported on 64-bit ARM architecture
@@ -462,11 +466,6 @@ if [ "N" = "$ydb_force_install" ]; then
 	else
 		echo "/etc/os-release does not exist on host; Not installing YottaDB."
 	fi
-	if [ 0 = "$osver_supported" ] ; then
-		echo "Specify ydbinstall.sh --force-install to force install"
-		err_exit
-	fi
-
 	# Use the OS variables just defined to determine if we are running on Ubuntu 18.10 or greater and make sure libtinfo5 is installed
 	if [ "ubuntu" = "${osid}" -a 1 = `expr "$osmajorver" ">" "18"` ] || [ 1 = `expr "$osmajorver" "=" "18"` -a 1 = `expr "$osminorver" ">=" "10"` ] ; then
 		if [ "x8664" = "${ydb_flavor}" -a ! -f /lib/x86_64-linux-gnu/libtinfo.so.5 ] || [ "aarch64" = "${ydb_flavor}" -a ! -f /lib/aarch64-linux-gnu/libtinfo.so.5 ] ; then
@@ -559,7 +558,6 @@ fi
 if [ -z "$ydb_version" ] ; then
 echo YottaDB/GT.M version to install is required ; err_exit
 fi
-
 # Now that "ydb_version" is determined, get YottaDB/GT.M distribution if ydbinstall is not bundled with distribution
 # Note that r1.26 onwards "yottadb" executable exists so use it. If not, use "mumps" executable (pre-r1.26).
 if [ -f "${ydb_distrib}/yottadb" ] ; then gtm_tmpdir=$ydb_distrib
@@ -651,7 +649,8 @@ else
 				*)             continue ;;	# else move on to next tarball
 			esac
 			yottadb_download_url="https://gitlab.com/YottaDB/DB/YDB${fullfilename}"
-			break					# Now that we found one tarball, stop looking at other choices
+            bypass_force_install=1      # The platform and architecture of the ydb build matches the current platform and architecture, Bypass force install.
+			break					    # Now that we found one tarball, stop looking at other choices
 		done
 		if [ "$yottadb_download_url" = "" ]; then echo Unable to find YottaDB tarball for ${ydb_version} $platform $arch ; err_exit; fi
                 wget $wget_flags $gtm_tmpdir $yottadb_download_url
@@ -678,6 +677,10 @@ else
 fi
 if [ "Y" = "$gtm_verbose" ] ; then echo Downloaded and unpacked YottaDB/GT.M distribution ; dump_info ; fi
 
+if [ 0 = "$bypass_force_install" -a 0 = "$osver_supported" ] ; then
+    echo "Specify ydbinstall.sh --force-install to force install"
+    err_exit
+fi
 # Check installation settings & provide defaults as needed
 tmp=`id -un`
 if [ -z "$gtm_user" ] ; then gtm_user=$tmp
