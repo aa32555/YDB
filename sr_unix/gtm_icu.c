@@ -456,13 +456,6 @@ void gtm_icu_init(void)
 	 * we skip the "dlopen_handle_array_add" (and in turn "dlopen_handle_array_close" at "ydb_exit" time).
 	 */
 	ENABLE_INTERRUPTS(INTRPT_IN_FUNC_WITH_MALLOC, prev_intrpt_state);
-	#ifndef DEBUG
-		symbols_renamed = FALSE; /* This should not be needed because findx will be 0 on the first iteration and this
-				  	  * variable should be initialized after the first iteration but valgrind throws what
-				  	  * what we believe is a false uninitialized variable warning for this so we set it
-					  * to avoid the warning.
-				  	  */
-	#endif
 	DEBUG_ONLY(symbols_renamed = -1;)
 	for (findx = 0; findx < icu_func_n; ++findx)
 	{
@@ -538,6 +531,7 @@ void gtm_icu_init(void)
 			}
 		}
 	}
+	ENABLE_INTERRUPTS(INTRPT_IN_FUNC_WITH_MALLOC, prev_intrpt_state);
 	gtm_utf8_mode = TRUE;
 	/* gtm_wcswidth()/U_ISPRINT() in util_format() can henceforth be safely called now that ICU initialization is complete */
 	gtm_conv_init();
