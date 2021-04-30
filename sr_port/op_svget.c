@@ -651,7 +651,7 @@ void op_svget(int varnum, mval *v)
 			get_dlr_zkey(v);
 			break;
 		case SV_ZSTRPLLIM:
-			count = TREF(gtm_strpllim);
+			count = TREF(ydb_strpplim);
 			MV_FORCE_MVAL(v, count);
 			break;
 		case SV_ZTIMEOUT:
@@ -667,7 +667,6 @@ void op_svget(int varnum, mval *v)
 	}
 	if (!(MVTYPE_IS_SQLNULL(v->mvtype)))
 	{
-<<<<<<< HEAD
 		if (!(MVTYPE_IS_STRING(v->mvtype)))
 		{	/* in case op_svget is called at compile time; shouldn't hurt much any time */
 			assert(MVTYPE_IS_NUMERIC(v->mvtype));
@@ -675,14 +674,10 @@ void op_svget(int varnum, mval *v)
 		} else if (!(MVTYPE_IS_NUMERIC(v->mvtype)))
 		{
 			assert(MVTYPE_IS_STRING(v->mvtype));
+			lcl_compile_time = TREF(compile_time);
+			TREF(compile_time) = TRUE;
 			s2n(v);
+			TREF(compile_time) = lcl_compile_time;
 		}
-=======
-		assert(MVTYPE_IS_STRING(v->mvtype));
-		lcl_compile_time = TREF(compile_time);
-		TREF(compile_time) = TRUE;
-		s2n(v);
-		TREF(compile_time) = lcl_compile_time;
->>>>>>> 04cc1b83d... GT.M V6.3-011
 	}
 }

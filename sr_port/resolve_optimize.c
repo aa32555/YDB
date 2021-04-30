@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2021 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -39,15 +39,6 @@ GBLREF src_line_struct		src_head;
 error_def(ERR_DONOBLOCK);
 
 boolean_t resolve_optimize(triple *curtrip)
-<<<<<<< HEAD
-{	/* a when all lines have been parsed optimization, current only applied for $TEXT() */
-	int		i, sav_col;
-	mval		tmp_mval;
-	mstr		src_line;
-	triple		*line_offset, *label, *routine;
-	src_line_struct	*cur_line;
-	boolean_t	negative, optimized = FALSE;
-=======
 {	/* a when all lines have been parsed optimization, might someday do more */
 	boolean_t       name, negative, optimized = FALSE;
 	int             i, j, sav_col;
@@ -55,7 +46,6 @@ boolean_t resolve_optimize(triple *curtrip)
 	mval            *tmp_mval;
 	src_line_struct *cur_line;
 	triple          *label, *line_offset, *routine;
->>>>>>> 04cc1b83d... GT.M V6.3-011
 	DCL_THREADGBL_ACCESS;
 
 	SETUP_THREADGBL_ACCESS;
@@ -199,17 +189,6 @@ boolean_t resolve_optimize(triple *curtrip)
 			curtrip->opcode = OC_LIT;					/* Insert literal into triple tree */
 			put_lit_s(tmp_mval, curtrip);
 		}
-<<<<<<< HEAD
-		stringpool.free += tmp_mval.str.len;
-		if ((0 != src_line.len) && (NULL != src_line.addr))
-			free(src_line.addr);
-		/* Update all things that referenced this value */
-		curtrip->opcode = OC_LIT;
-		put_lit_s(&tmp_mval, curtrip);
-		label->opcode = OC_NOOP;
-		routine->opcode = OC_NOOP;
-=======
->>>>>>> 04cc1b83d... GT.M V6.3-011
 		optimized = TRUE;
 	default:
 		break;									/* No optimization (yet) for other cases */

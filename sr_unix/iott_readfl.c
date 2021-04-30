@@ -1205,13 +1205,8 @@ int	iott_readfl(mval *v, int4 length, uint8 nsec_timeout)	/* timeout in millisec
 			rts_error_csa(CSA_ARG(NULL) VARLSTCNT(1) status);
 		}
 	}
-<<<<<<< HEAD
 	SEND_KEYPAD_LOCAL;	/* to turn keypad off if possible */
-	if (outofband && jobinterrupt != outofband)
-=======
-	SEND_KEYPAD_LOCAL	/* to turn keypad off if possible */
 	if (outofband && (jobinterrupt != outofband))
->>>>>>> 04cc1b83d... GT.M V6.3-011
 	{
 		v->str.len = 0;
 		io_ptr->dollar.za = 9;

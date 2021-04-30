@@ -449,7 +449,10 @@ void	dm_read (mval *v)
 		} else if (0 == status)
 		{	/* select() says there's something to read, but read() found zero characters; assume connection dropped. */
 			HANDLE_EINTR_OUTSIDE_SYSTEM_CALL;
-			ISSUE_NOPRINCIO_IF_NEEDED(io_ptr, FALSE, FALSE);		/* FALSE, FALSE: READ tt not socket */
+			if (io_curr_device.in == io_std_device.in)
+			{
+				ISSUE_NOPRINCIO_IF_NEEDED(io_ptr, FALSE, FALSE);	/* FALSE, FALSE: READ tt not socket */
+			}
 			tt_ptr->discard_lf = FALSE;
 			rts_error_csa(CSA_ARG(NULL) VARLSTCNT(1) ERR_IOEOF);
 		} else if (0 < status)

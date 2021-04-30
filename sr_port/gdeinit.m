@@ -442,15 +442,9 @@ syntabi:
 	s syntab("VERIFY","TEMPLATE")=""
 	q
 UNIX:
-<<<<<<< HEAD
-	s hdrlab="GTCGBDUNX012"         ; must be concurrently maintained in gbldirnam.h!!!
-	i (gtm64=TRUE) s hdrlab="GTCGBDUNX112" ; the high order digit is a 64-bit flag
-	s tfile=$view("GBLDIRXLATE",$ztrnlnm("ydb_gbldir"))
-=======
 	s hdrlab="GTCGBDUNX013"         ; must be concurrently maintained in gbldirnam.h!!!
 	i (gtm64=TRUE) s hdrlab="GTCGBDUNX113" ; the high order digit is a 64-bit flag
-	s tfile="$gtmgbldir"
->>>>>>> 04cc1b83d... GT.M V6.3-011
+	s tfile=$view("GBLDIRXLATE",$ztrnlnm("ydb_gbldir"))
 	s accmeth="\BG\MM"
 	s helpfile="$ydb_dist/gdehelp.gld"
 	s defdb="mumps.dat"

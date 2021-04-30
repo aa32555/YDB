@@ -54,11 +54,7 @@ CALL
 	d main
 	q
 SILENT(patt,label)
-<<<<<<< HEAD
         n $et,io s $et=$s($d(%zdebug):"b",1:"zg "_$zl_":err^%RSEL"),io=$io
-=======
-	n $et s $et=$s($d(%zdebug):"b",1:"zg "_$zl_":err^%RSEL")
->>>>>>> 04cc1b83d... GT.M V6.3-011
 	i ""=$g(label) s label="SRC"
 	d @label
 	u io

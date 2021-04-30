@@ -106,7 +106,7 @@ void op_svput(int varnum, mval *v)
 	int	i, ok, state;
 	char	*vptr, lcl_str[256], *tmp;
 	mval	lcl_mval;
-	int4	previous_gtm_strpllim;
+	int4	previous_ydb_strpplim;
 	int4  	event_type, param_val;
 	void (*set_fn)(int4 param);
 
@@ -477,11 +477,11 @@ void op_svput(int varnum, mval *v)
 			rts_error_csa(CSA_ARG(NULL) VARLSTCNT(1) ERR_UNIMPLOP);
 #			endif
 		case SV_ZSTRPLLIM:
-			previous_gtm_strpllim = TREF(gtm_strpllim);
+			previous_ydb_strpplim = TREF(ydb_strpplim);
 			MV_FORCE_NUM(v);
-			TREF(gtm_strpllim) = MV_FORCE_INT(v);
-			if ((TREF(gtm_strpllim) <= 0) || (TREF(gtm_strpllim) >= previous_gtm_strpllim))
-				TREF(gtm_strpllimwarned) =  FALSE;
+			TREF(ydb_strpplim) = MV_FORCE_INT(v);
+			if ((TREF(ydb_strpplim) <= 0) || (TREF(ydb_strpplim) >= previous_ydb_strpplim))
+				TREF(ydb_strpplimwarned) =  FALSE;
 			break;
 		case SV_ZTIMEOUT:
 			check_and_set_ztimeout(v);

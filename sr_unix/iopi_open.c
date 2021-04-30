@@ -51,7 +51,6 @@
 #include "gtm_filter_command.h"
 #include "ydb_getenv.h"
 #include "min_max.h"
-#include "ident.h"
 
 ZOS_ONLY(GBLREF boolean_t	gtm_tag_utf8_as_ascii;)
 GBLREF	boolean_t		gtm_pipe_child;
@@ -580,7 +579,7 @@ short iopi_open(io_log_name *dev_name, mval *pp, int fd, mval *mspace, uint8 tim
 		 * as that would be needed later if we need to send a DEVOPENFAIL error to the syslog.
 		 */
 		assert(SIZEOF(dev_name_buf) > dev_name->len);	/* "get_log_name" issues an INVSTRLEN error otherwise */
-		CONVERT_IDENT(dev_name_buf, dev_name->dollar_io, dev_name->len);
+		memcpy(dev_name_buf, dev_name->dollar_io, dev_name->len);
 		dev_mstr.len = MIN(dev_name->len, SIZEOF(dev_name_buf));	/* use MIN just in case */
 		dev_mstr.addr = dev_name_buf;
 		io_rundown(RUNDOWN_EXCEPT_STD);
