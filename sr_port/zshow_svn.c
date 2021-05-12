@@ -745,7 +745,7 @@ void zshow_svn(zshow_out *output, int one_sv)
 				break;
 		/* CAUTION: fall through */
 		case SV_ZSTRPLLIM:
-			count = TREF(ydb_strpplim);
+			count = TREF(ydb_strpllim);
 			MV_FORCE_MVAL(&var, count);
 			ZS_VAR_EQU(&x, zstrpllim_text);
 			mval_write(output, &var, TRUE);

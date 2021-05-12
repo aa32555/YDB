@@ -103,6 +103,19 @@ LITDEF	err_msg gdeerrors[] = {
 	{ "GBLNAMCOLLVER", "Global directory indicates GBLNAME !AD has collation sequence #!UL with a version #!UL but shared library reports different version #!UL", 5, 0 },
 	{ "GDEASYNCIONOMM", "!AD segment has ASYNCIO turned on. Cannot support MM access method.", 2, 0 },
 	{ "NOPERCENTY", "^%Y* is a reserved global name in YottaDB", 0, 0 },
+	{ "UNUSED2021A", "Not used - for FIS", 0, 0 },
+	{ "UNUSED2021B", "Not used - for FIS", 0, 0 },
+	{ "UNUSED2021C", "Not used - for FIS", 0, 0 },
+	{ "UNUSED2021D", "Not used - for FIS", 0, 0 },
+	{ "UNUSED2021E", "Not used - for FIS", 0, 0 },
+	{ "UNUSED2021F", "Not used - for FIS", 0, 0 },
+	{ "UNUSED2021G", "Not used - for FIS", 0, 0 },
+	{ "UNUSED2021H", "Not used - for FIS", 0, 0 },
+	{ "UNUSED2021I", "Not used - for FIS", 0, 0 },
+	{ "UNUSED2021J", "Not used - for FIS", 0, 0 },
+	{ "UNUSED2021K", "Not used - for FIS", 0, 0 },
+	{ "UNUSED2021L", "Not used - for FIS", 0, 0 },
+	{ "INVGBLDIR2", "Invalid Global Directory spec: !AD", 2, 0 },
 };
 
 
@@ -115,7 +128,7 @@ GBLDEF	err_ctl gdeerrors_ctl = {
 	248,
 	"GDE",
 	&gdeerrors[0],
-	86,
+	99,
 	&gdeerrors_undocarr[0],
 	0
 };

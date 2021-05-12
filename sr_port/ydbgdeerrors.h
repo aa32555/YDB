@@ -1,9 +1,9 @@
 /****************************************************************
  *								*
- * Copyright (c) 2001-2018 Fidelity National Information	*
+ * Copyright (c) 2001-2021 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2017-2018 YottaDB LLC and/or its subsidiaries. *
+ * Copyright (c) 2017-2021 YottaDB LLC and/or its subsidiaries.*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -99,3 +99,16 @@
 #define GDE_GBLNAMCOLLVER 150504098
 #define GDE_GDEASYNCIONOMM 150504106
 #define GDE_NOPERCENTY 150504114
+#define GDE_UNUSED2021A 150504122
+#define GDE_UNUSED2021B 150504130
+#define GDE_UNUSED2021C 150504138
+#define GDE_UNUSED2021D 150504146
+#define GDE_UNUSED2021E 150504154
+#define GDE_UNUSED2021F 150504162
+#define GDE_UNUSED2021G 150504170
+#define GDE_UNUSED2021H 150504178
+#define GDE_UNUSED2021I 150504186
+#define GDE_UNUSED2021J 150504194
+#define GDE_UNUSED2021K 150504202
+#define GDE_UNUSED2021L 150504210
+#define GDE_INVGBLDIR2 150504218

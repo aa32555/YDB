@@ -581,7 +581,7 @@ RECCNT		<Last LOAD record number: !UL>/info/fao=1!/ansi=0
 TEXT		<!AD>/info/fao=2!/ansi=0
 ZWRSPONE	<Subscript patterns in ZWRITE are atomic; Invalid delimiter>/error/fao=0!/ansi=0
 FILEDEL		<File !AD successfully deleted>/info/fao=2!/ansi=0
-JNLBADLABEL	<Journal file !AD has a bad GT.M Journal File Label. Expected !AD. Found !AD.>/error/fao=6!/ansi=0
+JNLBADLABEL	<Journal file !AD has a bad GT.M/YottaDB Journal File Label. Expected !AD. Found !AD.>/error/fao=6!/ansi=0
 JNLREADEOF	<End of journal file encountered>/error/fao=0!/ansi=0
 JNLRECFMT	<Journal file record format error encountered>/error/fao=0!/ansi=0
 BLKTOODEEP	<Block level too deep>/warning/fao=0!/ansi=0

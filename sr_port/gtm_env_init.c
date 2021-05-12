@@ -403,8 +403,9 @@ void	gtm_env_init(void)
 			ydb_repl_filter_timeout = REPL_FILTER_TIMEOUT_MAX;
 		assert((REPL_FILTER_TIMEOUT_MIN <= ydb_repl_filter_timeout)
 				&& (REPL_FILTER_TIMEOUT_MAX >= ydb_repl_filter_timeout));
-		/* See if $ydb_dollar_test is set */
-		dollar_test_default = ydb_logical_truth_value(YDBENVINDEX_DOLLAR_TEST, FALSE, &is_defined);
+		/* See if $ydb_dollar_test is set - Default is TRUE */
+		ret = ydb_logical_truth_value(YDBENVINDEX_DOLLAR_TEST, FALSE, &is_defined);
+		dollar_test_default = (is_defined ? ret : TRUE);
 		/* ydb_nofflf for GTM-9136.  Default is FALSE */
 		ydb_nofflf = ydb_logical_truth_value(YDBENVINDX_NOFFLF, FALSE, &is_defined);
 

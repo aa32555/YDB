@@ -218,13 +218,24 @@ void iott_use(io_desc *iod, mval *pp)
 					GET_LONG(tt_ptr->enbld_outofbands.mask, pp->str.addr + p_offset);
 					if (!ctrlc_on)
 					{	/* if cenable, ctrlc_handler active anyway, otherwise, depends on ctrap=$c(3) */
-						sigemptyset(&act.sa_mask);
+						void *sighandler;
+
 						if (CTRLC_MSK & tt_ptr->enbld_outofbands.mask)
-							act.sa_sigaction = ctrlc_handler_ptr;
+							sighandler = ctrlc_handler_ptr;
 						else
-							act.sa_sigaction = null_handler;
-						act.sa_flags = YDB_SIGACTION_FLAGS;
-						sigaction(SIGINT, &act, NULL);
+							sighandler = null_handler;
+						if (!USING_ALTERNATE_SIGHANDLING)
+						{
+							sigemptyset(&act.sa_mask);
+							act.sa_flags = YDB_SIGACTION_FLAGS;
+							act.sa_sigaction = sighandler;
+							sigaction(SIGINT, &act, NULL);
+						} else
+						{
+							if (null_handler == sighandler)
+								sighandler = NULL;	/* Better method of ignoring signal */
+							SET_ALTERNATE_SIGHANDLER(SIGINT, sighandler);
+						}
 					}
 					break;
 				case iop_downscroll:

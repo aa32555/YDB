@@ -136,7 +136,7 @@ boolean_t parse_gv_name_and_subscripts(mval *src, int *subscripts, int *start, i
 	subs_max = gvn ? MAX_GVSUBSCRIPTS : MAX_LVSUBSCRIPTS;
 	isrc = 0;
 	lastcpt = src->str.addr + src->str.len;
-	for (cpt = src->str.addr; (cpt < lastcpt) && (subs_count < subs_max);)
+	for (cpt = src->str.addr; (cpt < lastcpt) && (subs_count <= subs_max);)
 	{
 		letter = *cpt;
 		switch (state)
@@ -155,7 +155,7 @@ boolean_t parse_gv_name_and_subscripts(mval *src, int *subscripts, int *start, i
 				}
 				return FALSE;
 			case CHECK_FOR_ENVIRONMENT:		/* global name */
-				if (('%' == letter) ||ISALPHA_ASCII(letter))	/* found ^ allow environment */
+				if (('%' == letter) || ISALPHA_ASCII(letter))	/* found ^ allow environment */
 				{	/* found ^ allow environment */
 					*start++ = isrc;
 					state = EXPECT_NEXT_LETTER_OF_NAME;	/* rest of name */
@@ -413,7 +413,7 @@ boolean_t parse_gv_name_and_subscripts(mval *src, int *subscripts, int *start, i
 		subs_count = 0;
 		*stop = isrc;
 	}
-	assert((('^' == src->str.addr[0]) ? MAX_GVSUBSCRIPTS : MAX_LVSUBSCRIPTS) > subs_count);
+	assert((('^' == src->str.addr[0]) ? MAX_GVSUBSCRIPTS : MAX_LVSUBSCRIPTS) >= subs_count);
 	assert((0 < isrc) && (isrc == src->str.len) && (cpt == lastcpt));
 	*subscripts = subs_count;
 	return TRUE;

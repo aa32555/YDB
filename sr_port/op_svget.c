@@ -651,7 +651,7 @@ void op_svget(int varnum, mval *v)
 			get_dlr_zkey(v);
 			break;
 		case SV_ZSTRPLLIM:
-			count = TREF(ydb_strpplim);
+			count = TREF(ydb_strpllim);
 			MV_FORCE_MVAL(v, count);
 			break;
 		case SV_ZTIMEOUT:

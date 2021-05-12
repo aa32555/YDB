@@ -1013,9 +1013,9 @@ void stp_gcol(size_t space_asked)	/* BYPASSOK */
 			expansion_failed = FALSE;	/* will be set to TRUE by condition handler if can't get memory */
 			assert((stp_incr + stringpool.top - stringpool.base) >= (space_needed + blklen));
 			DBGSTPGCOL((stderr, "incr_factor=%i stp_incr=%i space_needed=%i\n", *incr_factor, stp_incr, space_needed));
-			if ((TREF(ydb_strpplimwarned)) /* previously warned */
-				&& (0 < TREF(ydb_strpplim)) /* watching a stp limit */
-				&& ((stp_incr + stringpool.top - stringpool.base) > TREF(ydb_strpplim))) /* expanding larger */
+			if ((TREF(ydb_strpllimwarned)) /* previously warned */
+				&& (0 < TREF(ydb_strpllim)) /* watching a stp limit */
+				&& ((stp_incr + stringpool.top - stringpool.base) > TREF(ydb_strpllim))) /* expanding larger */
 					rts_error_csa(CSA_ARG(NULL) VARLSTCNT(1) ERR_STPOFLOW);
 			expand_stp((ssize_t)(stp_incr + stringpool.top - stringpool.base));
 #			ifdef DEBUG
@@ -1130,10 +1130,10 @@ void stp_gcol(size_t space_asked)	/* BYPASSOK */
 		lvmon_compare_value_slots(1, 2);		/* Make sure they are the same */
 	}
 #	endif	/* !STP_MOVE */
-	if ((0 < TREF(ydb_strpplim)) /* monitoring stp limit */
-		&& ((stringpool.top - stringpool.base) > TREF(ydb_strpplim))) /* past the stp limit */
+	if ((0 < TREF(ydb_strpllim)) /* monitoring stp limit */
+		&& ((stringpool.top - stringpool.base) > TREF(ydb_strpllim))) /* past the stp limit */
 	{
-		TREF(ydb_strpplimwarned) =  TRUE;
+		TREF(ydb_strpllimwarned) =  TRUE;
 		rts_error_csa(CSA_ARG(NULL) VARLSTCNT(1) ERR_STPCRIT);
 	}
 	return;

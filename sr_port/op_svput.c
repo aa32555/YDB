@@ -106,7 +106,7 @@ void op_svput(int varnum, mval *v)
 	int	i, ok, state;
 	char	*vptr, lcl_str[256], *tmp;
 	mval	lcl_mval;
-	int4	previous_ydb_strpplim;
+	int4	previous_ydb_strpllim;
 	int4  	event_type, param_val;
 	void (*set_fn)(int4 param);
 
@@ -286,18 +286,18 @@ void op_svput(int varnum, mval *v)
 					len--;
 					memcpy(tmp2, entryref + 1, len);
 					tmp2[len] = '\0';
-					util_out_print(errortext + 1, NOFLUSH);
+					util_out_print(errortext + 1, NOFLUSH_OUT);
 					/* The below simulates a RTSLOC error */
-					util_out_print("!/!_!_At M source location ", NOFLUSH);	/* !/ is \n, !_ is \t */
-					util_out_print(tmp2, NOFLUSH);
+					util_out_print("!/!_!_At M source location ", NOFLUSH_OUT);	/* !/ is \n, !_ is \t */
+					util_out_print(tmp2, NOFLUSH_OUT);
 					free(tmp2);
-				} else {
-					/* $ZSTATUS is not in the form ERRNUM,ENTRYREF,ERRORTEXT.
+				} else
+				{	/* $ZSTATUS is not in the form ERRNUM,ENTRYREF,ERRORTEXT.
 					 * Likely because the user defined error trap is not abiding by the convention
 					 * when setting $ZSTATUS to a value. Copy over the entire $ZSTATUS text into
 					 * the util_output buffer in this case.
 					 */
-					util_out_print(tmp, NOFLUSH);
+					util_out_print(tmp, NOFLUSH_OUT);
 				}
 				free(tmp);
 			}
@@ -477,11 +477,11 @@ void op_svput(int varnum, mval *v)
 			rts_error_csa(CSA_ARG(NULL) VARLSTCNT(1) ERR_UNIMPLOP);
 #			endif
 		case SV_ZSTRPLLIM:
-			previous_ydb_strpplim = TREF(ydb_strpplim);
+			previous_ydb_strpllim = TREF(ydb_strpllim);
 			MV_FORCE_NUM(v);
-			TREF(ydb_strpplim) = MV_FORCE_INT(v);
-			if ((TREF(ydb_strpplim) <= 0) || (TREF(ydb_strpplim) >= previous_ydb_strpplim))
-				TREF(ydb_strpplimwarned) =  FALSE;
+			TREF(ydb_strpllim) = MV_FORCE_INT(v);
+			if ((TREF(ydb_strpllim) <= 0) || (TREF(ydb_strpllim) >= previous_ydb_strpllim))
+				TREF(ydb_strpllimwarned) =  FALSE;
 			break;
 		case SV_ZTIMEOUT:
 			check_and_set_ztimeout(v);

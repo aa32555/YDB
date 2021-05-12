@@ -417,7 +417,7 @@ LITDEF	err_msg merrors[] = {
 	{ "TEXT", "!AD", 2, 0 },
 	{ "ZWRSPONE", "Subscript patterns in ZWRITE are atomic; Invalid delimiter", 0, 0 },
 	{ "FILEDEL", "File !AD successfully deleted", 2, 0 },
-	{ "JNLBADLABEL", "Journal file !AD has a bad GT.M Journal File Label. Expected !AD. Found !AD.", 6, 0 },
+	{ "JNLBADLABEL", "Journal file !AD has a bad GT.M/YottaDB Journal File Label. Expected !AD. Found !AD.", 6, 0 },
 	{ "JNLREADEOF", "End of journal file encountered", 0, 0 },
 	{ "JNLRECFMT", "Journal file record format error encountered", 0, 0 },
 	{ "BLKTOODEEP", "Block level too deep", 0, 0 },

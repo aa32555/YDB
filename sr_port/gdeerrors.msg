@@ -3,7 +3,7 @@
 ! Copyright (c) 2001-2018 Fidelity National Information		!
 ! Services, Inc. and/or its subsidiaries. All rights reserved.	!
 !								!
-! Copyright (c) 2017-2018 YottaDB LLC and/or its subsidiaries.	!
+! Copyright (c) 2017-2021 YottaDB LLC and/or its subsidiaries.	!
 ! All rights reserved.						!
 !								!
 !	This source code contains the intellectual property	!
@@ -105,4 +105,17 @@ STDNULLCOLLREQ	<Region !AD needs Standard Null Collation enabled because global 
 GBLNAMCOLLVER	<Global directory indicates GBLNAME !AD has collation sequence #!UL with a version #!UL but shared library reports different version #!UL>/error/fao=5
 GDEASYNCIONOMM	<!AD segment has ASYNCIO turned on. Cannot support MM access method.>/error/fao=2
 NOPERCENTY	<^%Y* is a reserved global name in YottaDB>/error/fao=0
+UNUSED2021A	<Not used - for FIS>/error/fao=0
+UNUSED2021B	<Not used - for FIS>/error/fao=0
+UNUSED2021C	<Not used - for FIS>/error/fao=0
+UNUSED2021D	<Not used - for FIS>/error/fao=0
+UNUSED2021E	<Not used - for FIS>/error/fao=0
+UNUSED2021F	<Not used - for FIS>/error/fao=0
+UNUSED2021G	<Not used - for FIS>/error/fao=0
+UNUSED2021H	<Not used - for FIS>/error/fao=0
+UNUSED2021I	<Not used - for FIS>/error/fao=0
+UNUSED2021J	<Not used - for FIS>/error/fao=0
+UNUSED2021K	<Not used - for FIS>/error/fao=0
+UNUSED2021L	<Not used - for FIS>/error/fao=0
+INVGBLDIR2	<Invalid Global Directory spec: !AD>/error/fao=2
 	.end
