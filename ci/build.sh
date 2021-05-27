@@ -20,16 +20,24 @@ set -o pipefail
 export LC_ALL=C
 
 echo "# Randomly choose to build Debug or Release build"
-if [[ $(( $RANDOM % 2)) -eq 0 ]]; then
+if [[ $(( RANDOM % 2)) -eq 0 ]]; then
 	build_type="Debug"
 else
 	build_type="RelWithDebInfo"
 fi
 echo " -> build_type = $build_type"
 
+echo "# Run shellcheck on all scripts"
+if [ -x "$(command -v shellcheck)" ]; then
+	find .. -name build -prune -o -name '*.sh' -print0 | xargs -0 shellcheck -e SC1091,SC2154,SC1090,SC2086,SC2053,SC2046,SC2006,SC2164
+else
+	echo " -> Shellcheck not found!"
+	exit 1
+fi
+
 echo "# Run the build using clang"
 mkdir build
-cd build
+cd build || exit
 cmake -D CMAKE_C_COMPILER=clang-10 -D CMAKE_BUILD_TYPE=$build_type -D CMAKE_EXPORT_COMPILE_COMMANDS=ON ..
 mkdir warnings
 # Record the warnings, but if `make` fails, say why instead of silently exiting.
@@ -40,7 +48,7 @@ set +e
 make -j $(nproc) gen_export check_git_repository 2>warnings/make_warnings.txt
 status=$?
 set -e
-cd warnings
+cd warnings || exit
 if ! [ $status = 0 ]; then
 	echo "# make failed with exit status [$status]. make output follows below"
 	cat make_warnings.txt
@@ -48,9 +56,10 @@ if ! [ $status = 0 ]; then
 fi
 
 # Check for unexpected warnings
-../../ci/sort_warnings.sh make_warnings.txt
+../../ci/sort_warnings.sh make_warnings.txt sorted_warnings.txt
 
 # This is used for both `make` and `clang-tidy` warnings.
+# It should be run from the warnings/ directory.
 compare() {
 	expected="$1"
 	actual="$2"
