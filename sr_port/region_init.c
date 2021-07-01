@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2017 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2021 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -15,7 +15,10 @@
 
 #include "mdef.h"
 
+#include <errno.h>
+
 #include "gtm_stdlib.h"
+#include "gtm_stat.h"
 
 #include "gdsroot.h"
 #include "gtm_facility.h"
@@ -26,6 +29,10 @@
 #include "error.h"
 #include "change_reg.h"
 #include "min_max.h"
+#include "gvcst_protos.h"
+#include "eintr_wrappers.h"
+#include "util.h"
+#include "gtmimagename.h"
 
 GBLREF gd_addr		*gd_header;
 GBLREF gd_region	*gv_cur_region;
@@ -52,6 +59,36 @@ boolean_t region_init(bool cm_regions)
 			continue;
 		if (IS_STATSDB_REG(gv_cur_region))
 			continue;			/* Bypass statsDB files */
+		if (IS_AUTODB_REG(gv_cur_region))
+		{	/* This is an AUTODB region. Check if the corresponding db file name exists.
+			 * If so, open it. If not, skip this region (do not want to create the db file in this case).
+			 * To find out the db file name (after expansion of any '$' usages), we use "dbfilopn()" if needed.
+			 * And then check if that file exists.
+			 */
+			gd_segment	*seg;
+			struct stat	stat_buf;
+			int		stat_res;
+
+			assert(!gv_cur_region->seg_fname_initialized);
+			reg = dbfilopn(gv_cur_region, TRUE);	/* TRUE indicates just update "seg->fname" if needed and
+								 * return without opening the db file and/or creating
+								 * AUTODB files.
+								 */
+			UNUSED(reg);
+			assert(gv_cur_region->seg_fname_initialized);
+			seg = gv_cur_region->dyn.addr;
+			assert('\0' == seg->fname[seg->fname_len]);	/* assert it is null terminated */
+			STAT_FILE((char *)seg->fname, &stat_buf, stat_res);
+			if ((0 != stat_res) && (ENOENT == errno))
+			{
+				if (IS_DSE_IMAGE)
+				{	/* If caller is DSE, indicate to the user that the region open was skipped */
+					gtm_putmsg_csa(CSA_ARG(NULL) VARLSTCNT(6)
+							ERR_DSESKIPOPEN, 4, REG_LEN_STR(gv_cur_region), DB_LEN_STR(gv_cur_region));
+				}
+				continue;
+			}
+		}
 		is_cm = reg_cmcheck(gv_cur_region);
 		if (!is_cm || cm_regions)
 		{

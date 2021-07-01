@@ -69,6 +69,7 @@ INVMAINLANG	<Invalid main routine language id specified: !UL>/error/fao=1
 WCSFLUFAILED	<!AD error while flushing buffers at transaction number 0x!16@XQ for database file !AD>/info/fao=5
 WORDEXPFAILED	<wordexp() call for string [!AD] returned !AZ error. See wordexp() man pages for details>/error/fao=3
 TRANSREPLJNL1GB	<Transaction can use at most 1GiB of replicated journal records across all journaled regions>/error/fao=0
+DSESKIPOPEN	<DSE skipped open of AUTODB region !AD as database file !AD does not exist>/info/fao=4
 !
 ! If there are UNUSEDMSG* lines unused for more than one year and at least two non-patch releases, use them before adding new lines.
 !

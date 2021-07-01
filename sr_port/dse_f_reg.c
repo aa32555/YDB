@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2018 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2021 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -82,6 +82,20 @@ void dse_f_reg(void)
 		return;
 	}
 	assert(!IS_STATSDB_REG(regptr));
+	/* reg_cmcheck would have already been called for ALL regions at region_init time. In Unix, this would have set
+	 * reg->dyn.addr->acc_meth to dba_cm if it is remote database. So we can safely use this to check if the region
+	 * is dba_cm or not.
+	 */
+	if (dba_cm == regptr->dyn.addr->acc_meth)
+	{
+		gtm_putmsg_csa(CSA_ARG(NULL) VARLSTCNT(6) ERR_NOGTCMDB, 4, LEN_AND_LIT("DSE"), rnlen, rn);
+		return;
+	}
+	if (!regptr->open)
+	{
+		gtm_putmsg_csa(CSA_ARG(NULL) VARLSTCNT(4) ERR_DSENOTOPEN, 2, rnlen, rn);
+		return;
+	}
 	if (CLI_PRESENT == cli_present("STATS"))
 	{	/* Go to corresponding STATSDB if present */
 		if (!(RDBF_NOSTATS & regptr->reservedDBFlags))
@@ -100,20 +114,6 @@ void dse_f_reg(void)
 	if (regptr == gv_cur_region)
 	{
 		util_out_print("Error:  already in region: !AD", TRUE, REG_LEN_STR(gv_cur_region));
-		return;
-	}
-	/* reg_cmcheck would have already been called for ALL regions at region_init time. In Unix, this would have set
-	 * reg->dyn.addr->acc_meth to dba_cm if it is remote database. So we can safely use this to check if the region
-	 * is dba_cm or not.
-	 */
-	if (dba_cm == regptr->dyn.addr->acc_meth)
-	{
-		gtm_putmsg_csa(CSA_ARG(NULL) VARLSTCNT(6) ERR_NOGTCMDB, 4, LEN_AND_LIT("DSE"), rnlen, rn);
-		return;
-	}
-	if (!regptr->open)
-	{
-		gtm_putmsg_csa(CSA_ARG(NULL) VARLSTCNT(4) ERR_DSENOTOPEN, 2, rnlen, rn);
 		return;
 	}
 	if (cs_addrs->now_crit)
