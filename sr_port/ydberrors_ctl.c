@@ -57,6 +57,7 @@ LITDEF	err_msg ydberrors[] = {
 	{ "WCSFLUFAILED", "!AD error while flushing buffers at transaction number 0x!16@XQ for database file !AD", 5, 0 },
 	{ "WORDEXPFAILED", "wordexp() call for string [!AD] returned !AZ error. See wordexp() man pages for details", 3, 0 },
 	{ "TRANSREPLJNL1GB", "Transaction can use at most 1GiB of replicated journal records across all journaled regions", 0, 0 },
+	{ "DSESKIPOPEN", "DSE skipped open of AUTODB region !AD as database file !AD does not exist", 4, 0 },
 };
 
 
@@ -69,7 +70,7 @@ GBLDEF	err_ctl ydberrors_ctl = {
 	256,
 	"YDB",
 	&ydberrors[0],
-	40,
+	41,
 	&ydberrors_undocarr[0],
 	0
 };
