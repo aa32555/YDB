@@ -158,11 +158,11 @@ help_exit()
     echo "Version is defaulted from yottadb file if one exists in the same directory as the installer."
     echo "This version must run as root."
     echo ""
-    echo "Example usages are (assumes latest YottaDB release is r1.30 and latest GT.M version is V6.3-008)"
-    echo "  ydbinstall.sh                          # installs latest YottaDB release (r1.30) at /usr/local/lib/yottadb/r130"
-    echo "  ydbinstall.sh --utf8 default           # installs YottaDB release r1.30 with added support for UTF-8"
-    echo "  ydbinstall.sh --installdir /r130 r1.30 # installs YottaDB r1.30 at /r130"
-    echo "  ydbinstall.sh --gtm                    # installs latest GT.M version (V6.3-008) at /usr/local/lib/fis-gtm/V6.3-008_x86_64"
+    echo "Example usages are (assumes latest YottaDB release is r1.32 and latest GT.M version is V6.3-010)"
+    echo "  ydbinstall.sh                          # installs latest YottaDB release (r1.32) at /usr/local/lib/yottadb/r132"
+    echo "  ydbinstall.sh --utf8 default           # installs YottaDB release r1.32 with added support for UTF-8"
+    echo "  ydbinstall.sh --installdir /r132 r1.32 # installs YottaDB r1.32 at /r132"
+    echo "  ydbinstall.sh --gtm                    # installs latest GT.M version (V6.3-010) at /usr/local/lib/fis-gtm/V6.3-010_x86_64"
     echo ""
     exit 1
 }
@@ -406,33 +406,33 @@ if [ "N" = "$ydb_force_install" ]; then
 			fi
 		elif [ "x8664" = "${ydb_flavor}" ] ; then
 			if [ "ubuntu" = "${osid}" ] ; then
-				# Ubuntu 18.04 onwards is considered supported on x86_64
-				osallowmajorver="18"
+				# Ubuntu 20.04 onwards is considered supported on x86_64
+				osallowmajorver="20"
 				osallowminorver="04"
 			elif [ "rhel" = "${osid}" ] ; then
 				# RHEL 7 onwards is considered supported on x86_64
 				osallowmajorver="7"
 				osallowminorver="0"
-			elif [ "centos" = "${osid}" ] ; then
-				# CentOS 8.x is considered supported on x86_64
-				osallowmajorver="8"
-				osallowminorver="0"
 			elif [ "debian" = "${osid}" ] ; then
-				# Debian 10 (buster) onwards is considered supported on x86_64.
-				osallowmajorver="10"
+				# Debian 11 (buster) onwards is considered supported on x86_64.
+				osallowmajorver="11"
 				osallowminorver="0"
 			fi
 		elif [ "aarch64" = "${ydb_flavor}" ] ; then
 			if [ "ubuntu" = "${osid}" ] ; then
-				# Ubuntu 18.04 onwards is considered supported on AARCH64
-				osallowmajorver="18"
+				# Ubuntu 20.04 onwards is considered supported on AARCH64
+				osallowmajorver="20"
 				osallowminorver="04"
+			elif [ "debian" = ${osid} ] ; then
+				# Debian 11 (buster) onwards is considered supported on AARCH64
+				osallowmajorver="11"
+				osallowminorver="0"
 			fi
 		else
-			if [ "armv6l" = "${ydb_flavor}" ] || [ "armv7l" = "${ydb_flavor}" ] ; then
-				if [ "raspbian" = "${osid}" ] || [ "debian" = ${osid} ] ; then
-					# Raspbian/Debian 9 onwards is considered supported on ARMV7L/ARMV6L
-					osallowmajorver="9"
+			if [ "armv6l" = "${ydb_flavor}" ] ; then
+				if [ "debian" = ${osid} ] ; then
+					# Debian 11 onwards is considered supported on ARMV7L/ARMV6L
+					osallowmajorver="11"
 					osallowminorver="0"
 				fi
 			fi
@@ -469,14 +469,6 @@ if [ "N" = "$ydb_force_install" ]; then
 	if [ 0 = "$osver_supported" ] ; then
 		echo "Specify ydbinstall.sh --force-install to force install"
 		err_exit
-	fi
-
-	# Use the OS variables just defined to determine if we are running on Ubuntu 18.10 or greater and make sure libtinfo5 is installed
-	if { [ "ubuntu" = "${osid}" ] && [ "$osmajorver" -gt 18 ]; } || { [ "$osmajorver" "=" "18" ] && [ "$osminorver" -ge 10 ]; } ; then
-		if { [ "x8664" = "${ydb_flavor}" ] && ! [ -f /lib/x86_64-linux-gnu/libtinfo.so.5 ]; } || { [ "aarch64" = "${ydb_flavor}" ] && ! [ -f /lib/aarch64-linux-gnu/libtinfo.so.5 ]; } ; then
-			echo "libtinfo5 package is required to be installed on Ubuntu 18.10 or greater using 'sudo apt-get install --no-install-recommends libtinfo5'"
-			err_exit
-		fi
 	fi
 fi
 
@@ -596,53 +588,105 @@ else
 		# There might be multiple binary tarballs of YottaDB (for various architectures & platforms).
 		# If so, choose the one that corresponds to the current host.
 		yottadb_download_urls=`sed 's,/uploads/,\n&,g' ${gtm_tmpdir}/${ydb_version} | grep "^/uploads/" | cut -d')' -f1`
-		# Determine current host's architecture
+		# The variables "arch" and "platform" determine which tarball gets chosen so set them appropriately below.
+		# Determine current host's architecture and store it in "arch" variable.
+		# Determine current host's OS and store it in "platform" variable.
+		# Modify "arch" and "platform" based on certain conditions below.
 		arch=`uname -m | tr -d '_'`
-		# Determine current host's OS. We expect the OS name in the tarball.
-		platform=`uname -s | tr '[:upper:]' '[:lower:]'`
-		if [ $arch = "x8664" ] ; then
-			# If the current architecture is x86_64 and the distribution is RHEL (including CentOS and SLES)
-			# or Debian then set the platform to rhel or debian (not linux) as there are specific tarballs
-			# for these distributions. If the distribution is Ubuntu, then set the platform to ubuntu (not linux)
-			# if the version is 20.04 or later as there is a specific tarball for newer versions of Ubuntu.
-			#
-			# To get the correct binary for CentOS, RHEL and SLES, we treat OS major version 7 as rhel and later versions as centos
-                        case "${osid}" in
-			rhel|centos|sles)
-				# CentOS-specific releases of YottaDB for x86_64 happened only after r1.26
-				if expr r1.26 \< "${ydb_version}" >/dev/null; then
-					# If the OS major version is later than 7, treat it as centos. Otherwise, treat it as rhel.
+		if expr r1.30 \< "${ydb_version}" >/dev/null; then
+			# From r1.32 onwards, the tarball naming conventions changed.
+			# Below are the tarball names for the r1.32 tarballs.
+			#	yottadb_r132_aarch64_debian11_pro.tgz
+			#	yottadb_r132_aarch64_ubuntu2004_pro.tgz
+			#	yottadb_r132_armv6l_debian11_pro.tgz
+			#	yottadb_r132_x8664_debian11.tgz
+			#	yottadb_r132_x8664_rhel7_pro.tgz
+			#	yottadb_r132_x8664_rhel8_pro.tgz
+			#	yottadb_r132_x8664_ubuntu2004_pro.tgz
+			# And below are the rules for picking a tarball name for a given target system (OS and architecture).
+			platform="${osid}"
+			case $arch in
+			x8664)
+				case "${osid}" in
+				rhel|centos)
+					# For x86_64 architecture and RHEL OS, we have separate tarballs for RHEL 7 and RHEL 8.
+					# Hence the use of "osmajorver" below in the "platform" variable.
 					osmajorver=`echo $osver | cut -d. -f1`
-					if [ 1 = `expr "$osmajorver" ">" "7"` ] ; then
-						platform="centos"
-					else
+					platform="rhel${osmajorver}"
+					# For centos, use the rhel tarball if one exists for the same version.
+					#	i.e. CentOS 7 should use the RHEL 7 tarball etc.
+					#	i.e. CentOS 8 should use the RHEL 8 tarball etc.
+					# Hence the "rhel|centos" usage in the above "case" block.
+					;;
+				esac
+				;;
+			armv7l)
+				# armv7l architecture should use the armv6l tarball if available.
+				arch="armv6l"
+				;;
+			esac
+		else
+			# For r1.30 and older YottaDB releases, use the below logic
+			# Below are the tarball names for the r1.30 tarballs.
+			#	yottadb_r130_linux_aarch64_pro.tgz
+			#	yottadb_r130_linux_armv6l_pro.tgz
+			#	yottadb_r130_linux_armv7l_pro.tgz
+			#	yottadb_r130_centos8_x8664_pro.tgz
+			#	yottadb_r130_debian10_x8664_pro.tgz
+			#	yottadb_r130_linux_x8664_pro.tgz
+			#	yottadb_r130_rhel7_x8664_pro.tgz
+			#	yottadb_r130_ubuntu2004_x8664_pro.tgz
+			platform=`uname -s | tr '[:upper:]' '[:lower:]'`
+			if [ $arch = "x8664" ] ; then
+				# If the current architecture is x86_64 and the distribution is RHEL (including CentOS and SLES)
+				# or Debian then set the platform to rhel or debian (not linux) as there are specific tarballs
+				# for these distributions. If the distribution is Ubuntu, then set the platform to ubuntu (not linux)
+				# if the version is 20.04 or later as there is a specific tarball for newer versions of Ubuntu.
+				#
+				# To get the correct binary for CentOS, RHEL and SLES, we treat OS major version 7 as rhel and later versions as centos
+				case "${osid}" in
+				rhel|centos|sles)
+					# CentOS-specific releases of YottaDB for x86_64 happened only after r1.26
+					if expr r1.26 \< "${ydb_version}" >/dev/null; then
+						# If the OS major version is later than 7, treat it as centos. Otherwise, treat it as rhel.
+						osmajorver=`echo $osver | cut -d. -f1`
+						if [ 1 = `expr "$osmajorver" ">" "7"` ] ; then
+							platform="centos"
+						else
+							platform="rhel"
+						fi
+					# RHEL-specific releases of YottaDB for x86_64 happened only starting r1.10 so do this
+					# only if the requested version is not r1.00 (the only YottaDB release prior to r1.10)
+					elif [ "r1.00" != ${ydb_version} ]; then
 						platform="rhel"
 					fi
-				# RHEL-specific releases of YottaDB for x86_64 happened only starting r1.10 so do this
-				# only if the requested version is not r1.00 (the only YottaDB release prior to r1.10)
-				elif [ "r1.00" != ${ydb_version} ]; then
-					platform="rhel"
-				fi
-				;;
-			debian)
-				# Debian-specific releases of YottaDB for x86_64 happened only after r1.24
-				if expr r1.24 \< "${ydb_version}" >/dev/null; then
-					platform="debian"
-				fi
-				;;
-			ubuntu)
-				# Starting with r1.30, there is an Ubuntu 20.04 build where the platform is ubuntu (not linux)
-				# so set the platform to ubuntu only if the requested version is r1.30 or later and the
-				# Ubuntu version is 20.04 or later.
-				if expr r1.28 \< "${ydb_version}" >/dev/null; then
-					# If the OS major version is 20 or later, treat it as ubuntu. Otherwise, treat it as linux.
-					osmajorver=`echo $osver | cut -d. -f1`
-					if [ "${osmajorver:-0}" -gt 19 ] ; then
-						platform="ubuntu"
+					;;
+				debian)
+					# Debian-specific releases of YottaDB for x86_64 happened only after r1.24
+					if expr r1.24 \< "${ydb_version}" >/dev/null; then
+						platform="debian"
 					fi
-				fi
-			esac
+					;;
+				ubuntu)
+					# Starting with r1.30, there is an Ubuntu 20.04 build where the platform is ubuntu (not linux)
+					# so set the platform to ubuntu only if the requested version is r1.30 or later and the
+					# Ubuntu version is 20.04 or later.
+					if expr r1.28 \< "${ydb_version}" >/dev/null; then
+						# If the OS major version is 20 or later, treat it as ubuntu. Otherwise, treat it as linux.
+						osmajorver=`echo $osver | cut -d. -f1`
+						if [ "${osmajorver:-0}" -gt 19 ] ; then
+							platform="ubuntu"
+						fi
+					fi
+					;;
+				esac
+			fi
 		fi
+		# Note that as long as we find a tarball with "$arch" and "$platform" in the name, we pick that tarball even if it has
+		# a specific version in it and the target system has a lesser version of the OS installed. This is because that case is
+		# possible only if --force-install is specified (or else a previous block of code would have done "osallowmajorver" and
+		# "osallowminorver" checks and issued appropriate errors). And in that case, we assume the user knows what they are doing
+		# and proceed with the install.
 		yottadb_download_url=""
 		for fullfilename in $yottadb_download_urls
 		do
@@ -657,7 +701,7 @@ else
 				*)         continue ;;		# else move on to next tarball
 			esac
 			case $ydb_filename in
-				*"$platform"*) ;;		# If tarball has current architecture in its name, consider it
+				*"$platform"*) ;;		# If tarball has current platform in its name, consider it
 				*)             continue ;;	# else move on to next tarball
 			esac
 			yottadb_download_url="https://gitlab.com/YottaDB/DB/YDB${fullfilename}"
