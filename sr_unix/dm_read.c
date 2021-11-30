@@ -664,6 +664,7 @@ void	dm_read (mval *v)
 					DOWRITE(tt_ptr->fildes, NATIVE_TTEOL, strlen(NATIVE_TTEOL));	/* BYPASSOK */
 					WRITE_GTM_PROMPT;
 					instr = dx_instr = outlen = dx_outlen = 0;
+					err_recall = NO_ERROR;
 				}
 				continue;	/* to allow more input */
 			}
