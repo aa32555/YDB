@@ -1,5 +1,7 @@
 # YottaDB
 
+# TEST DONT COMMIT!
+
 All software in this package is part of YottaDB (https://yottadb.com) each
 file of which identifies its copyright holders. The software is made available
 to you under the terms of a license. Refer to the [LICENSE](LICENSE) file for details.
