@@ -107,13 +107,12 @@ void zl_cmd_qlf(mstr *quals, command_qualifier *qualif, char *srcstr, unsigned s
 				glb_cmd_qlf.qlf = save_qlf;
 			rts_error_csa(CSA_ARG(NULL) VARLSTCNT(5) ERR_FILEPARSE, 2, *srclen, srcstr, status);
 		}
-		assert(pblk.b_name);
 		file.addr = pblk.l_name;
 		if ((pblk.b_ext != (SIZEOF(DOTM) - 1)) || memcmp(&pblk.l_name[pblk.b_name], DOTM, SIZEOF(DOTM) - 1))
 		{	/* Move any non-".m" extension over to be part of the file name */
 			pblk.b_name += pblk.b_ext;
 			pblk.b_ext = 0;
-			if (MAX_FN_LEN >= (*srclen + SIZEOF(DOTM)))
+			if ((pblk.buffer + MAX_FN_LEN) >= (pblk.l_name + pblk.b_name + SIZEOF(DOTM)))
 			{
 				memcpy(&pblk.l_name[pblk.b_name], DOTM, SIZEOF(DOTM));
 				pblk.b_ext = (SIZEOF(DOTM) - 1);
@@ -129,14 +128,18 @@ void zl_cmd_qlf(mstr *quals, command_qualifier *qualif, char *srcstr, unsigned s
 		*srclen = source_name_len;
 		if (!module_name.len && !(CQ_NAMEOFRTN & cmd_qlf.qlf) && !(CLI_PRESENT == cli_present("OBJECT")))
 		{
-			memcpy(routine_name.addr, file.addr, file.len);
 			clen = routine_name.len = MIN(file.len, MAX_MIDENT_LEN);
+			memcpy(routine_name.addr, file.addr, clen);
 			object_name_len = clen;
 			memcpy(object_file_name, pblk.l_name, object_name_len);
 			SET_OBJ(object_file_name, object_name_len);
 		}
 
 	}
+#	ifdef DEBUG
+	else
+		pblk.b_name = 0; /* needed to avoid false alert from clang-tidy in a later assert that uses pblk.b_name */
+#	endif
 	assert(!last || *srclen);
 	/* routine_name is the internal name of the routine (with any leading '%' translated to '_') which by default is the
 	 * unpathed name of the source file. An -OBJECT qualif (without a NAMEOFOFRTN) makes routine_name from the name of the
@@ -180,6 +183,7 @@ void zl_cmd_qlf(mstr *quals, command_qualifier *qualif, char *srcstr, unsigned s
 		{
 			memcpy(object_file_name, routine_name.addr, clen);
 			SET_OBJ(object_file_name, clen);
+			object_name_len = clen;
 		}
 	}
 	assert(!last || *srclen);
@@ -208,7 +212,7 @@ void zl_cmd_qlf(mstr *quals, command_qualifier *qualif, char *srcstr, unsigned s
 		module_name.len = int_module_name.len = clen;
 		memcpy(int_module_name.addr, routine_name.addr, clen);
 	} else
-		assert(!last || int_module_name.len);
+		assert(!last || int_module_name.len || !pblk.b_name);
 	assert(!last || *srclen);
 	if (!last)
 	{
