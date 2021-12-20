@@ -319,11 +319,17 @@ void iott_use(io_desc *iod, mval *pp)
 						temp_ptr = (d_tt_struct *)io_std_device.in->dev_sp;
 						if (tt_ptr->fildes == temp_ptr->fildes)
 						{	/* if $PRINCIPAL, enable hup_handler; similar code in term_setup.c */
-							sigemptyset(&act.sa_mask);
-							act.sa_flags = 0;
-							act.sa_handler = ctrlc_handler_ptr;
-							sigaction(SIGHUP, &act, 0);
-							hup_on = TRUE;
+							if (!USING_ALTERNATE_SIGHANDLING)
+							{
+								sigemptyset(&act.sa_mask);
+								act.sa_flags = 0;
+								act.sa_handler = ctrlc_handler_ptr;
+								sigaction(SIGHUP, &act, 0);
+								hup_on = TRUE;
+							} else
+							{
+								SET_ALTERNATE_SIGHANDLER(SIGHUP, &ydb_altmain_sighandler);
+							}
 						}
 					}
 					break;
@@ -333,11 +339,17 @@ void iott_use(io_desc *iod, mval *pp)
 						temp_ptr = (d_tt_struct *)io_std_device.in->dev_sp;
 						if (tt_ptr->fildes == temp_ptr->fildes)
 						{	/* if $PRINCIPAL, disable the hup_handler */
-							sigemptyset(&act.sa_mask);
-							act.sa_flags = 0;
-							act.sa_handler = SIG_IGN;
-							sigaction(SIGHUP, &act, 0);
-							hup_on = FALSE;
+							if (!USING_ALTERNATE_SIGHANDLING)
+							{
+								sigemptyset(&act.sa_mask);
+								act.sa_flags = 0;
+								act.sa_handler = SIG_IGN;
+								sigaction(SIGHUP, &act, 0);
+								hup_on = FALSE;
+							} else
+							{
+								SET_ALTERNATE_SIGHANDLER(SIGHUP, NULL);
+							}
 						}
 					}
 					break;
