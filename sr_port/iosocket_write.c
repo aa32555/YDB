@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2021 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -76,7 +76,7 @@ error_def(ERR_ZINTRECURSEIO);
 	gtmioBuff = (sm_uc_ptr_t)(SBUFF);										\
 	for (;;)													\
         {														\
-		gtmioChunk = gtmioBuffLen;		\
+		gtmioChunk = gtmioBuffLen;										\
 		SEND((SOCKETPTR)->sd, gtmioBuff, gtmioChunk, SFLAGS, gtmioStatus);					\
 		if ((ssize_t)-1 != gtmioStatus)										\
 	        {													\
@@ -98,12 +98,12 @@ error_def(ERR_ZINTRECURSEIO);
 
 #define DOTCPSEND(SOCKETPTR, SBUFF, SBUFF_LEN, SFLAGS, RC)								\
 {															\
-	ssize_t	localstatus;													\
+	ssize_t	localstatus;												\
 	if (0 == (SOCKETPTR)->obuffer_size)										\
 		DOTCPSEND_REAL(SOCKETPTR, SBUFF, SBUFF_LEN, SFLAGS, RC)							\
 	else														\
 	{														\
-		localstatus = iosocket_write_buffered(SOCKETPTR, SBUFF, SBUFF_LEN);						\
+		localstatus = iosocket_write_buffered(SOCKETPTR, SBUFF, SBUFF_LEN);					\
 		if (SBUFF_LEN == localstatus)										\
 			RC = 0;												\
 		else													\
