@@ -267,8 +267,8 @@ THREADGBLDEF(ydb_environment_init,		boolean_t)			/* indicates a development envi
 										 * than a production environment */
 THREADGBLFPTR(gtm_sigusr1_handler,		void, 		(void))		/* SIGUSR1 signal handler function ptr */
 THREADGBLDEF(ydb_linktmpdir,			mstr)				/* Directory to use for relinkctl files */
-THREADGBLDEF(gtm_strpllim,			int4)				/* if non-zero, sets limit on stringpool */
-THREADGBLDEF(gtm_strpllimwarned,		boolean_t)			/* already hit limit on stringpool  */
+THREADGBLDEF(ydb_strpllim,			int4)				/* if non-zero, sets limit on stringpool */
+THREADGBLDEF(ydb_strpllimwarned,		boolean_t)			/* already hit limit on stringpool  */
 THREADGBLDEF(ydb_trigger_etrap,			mval)				/* $etrap - for use in triggers */
 THREADGBLDEF(gtm_trctbl_cur,			trctbl_entry *)			/* Current gtm trace table entry */
 THREADGBLDEF(gtm_trctbl_end,			trctbl_entry *)			/* End of gtm trace table (last entry + 1) */

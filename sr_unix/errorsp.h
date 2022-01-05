@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2017-2020 YottaDB LLC and/or its subsidiaries. *
+ * Copyright (c) 2017-2021 YottaDB LLC and/or its subsidiaries. *
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -533,12 +533,17 @@ void stop_image(void);
 void stop_image_conditional_core(void);
 void stop_image_no_core(void);
 
-#define TERMINATE		{					\
-					CHTRACEPOINT;			\
-					if (SUPPRESS_DUMP)		\
-						stop_image_no_core();	\
-					else				\
-						stop_image();		\
+#define TERMINATE		{						\
+					GBLREF int4 exi_condition;		\
+										\
+					CHTRACEPOINT;				\
+					if (SUPPRESS_DUMP)			\
+					{					\
+						if (0 == exi_condition)		\
+							exi_condition = SIGQUIT;\
+						stop_image_no_core();		\
+					} else					\
+						stop_image();			\
 				}
 
 #define SUPPRESS_DUMP		(created_core || dont_want_core)
@@ -590,7 +595,7 @@ unsigned char *set_zstatus(mstr *src, int max_len, int arg, unsigned char **ctxt
 #define EXIT_HANDLER(x)
 
 #define SEND_CALLERID(callee) send_msg_csa(CSA_ARG(NULL) VARLSTCNT(5) ERR_CALLERID, 3, LEN_AND_STR((callee)), caller_id());
-#define PRINT_CALLERID util_out_print(" -- generated from 0x!XJ.", NOFLUSH, caller_id())
+#define PRINT_CALLERID util_out_print(" -- generated from 0x!XJ.", NOFLUSH_OUT, caller_id())
 #define UNIX_EXIT_STATUS_MASK	0xFF
 
 void err_init(void (*x)());

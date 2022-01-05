@@ -1,6 +1,6 @@
 /****************************************************************
  *								*
- * Copyright (c) 2004-2018 Fidelity National Information	*
+ * Copyright (c) 2004-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
  * Copyright (c) 2018-2021 YottaDB LLC and/or its subsidiaries.	*
@@ -61,9 +61,6 @@
 #include "gtm_reservedDB.h"
 
 #define	DEFAULT_NON_BLOCKED_WRITE_RETRIES	10	/* default number of retries */
-#ifdef __MVS__
-#  define PUTENV_BPXK_MDUMP_PREFIX 		"_BPXK_MDUMP="
-#endif
 
 /* Remove trailing '/' from path (unless only '/') */
 #define	REMOVE_TRAILING_SLASH_FROM_MSTR(TRANS)				\
@@ -72,16 +69,14 @@
 		TRANS.len--;						\
 }
 
+GBLREF	boolean_t		badchar_inhibit, dmterm_default, hup_on, ydb_quiet_halt, is_ydb_chset_utf8, utf8_patnumeric;
+GBLREF	boolean_t		ipv4_only;
 GBLREF	uint4			ydb_principal_editing_defaults;	/* ext_cap flags if tt */
-GBLREF	boolean_t		is_ydb_chset_utf8;
-GBLREF	boolean_t		utf8_patnumeric;
-GBLREF	boolean_t		badchar_inhibit;
-GBLREF	boolean_t		ydb_quiet_halt;
 GBLREF	int			ydb_non_blocked_write_retries;	/* number for retries for non_blocked write to pipe */
 GBLREF	char			*gtm_core_file;
 GBLREF	char			*gtm_core_putenv;
-GBLREF	boolean_t		dmterm_default;
-GBLREF	boolean_t		ipv4_only;		/* If TRUE, only use AF_INET. */
+GBLREF	int			gtm_non_blocked_write_retries;	/* number for retries for non_blocked write to pipe */
+GBLREF	uint4			gtm_principal_editing_defaults;	/* ext_cap flags if tt */
 ZOS_ONLY(GBLREF	char		*gtm_utf8_locale_object;)
 ZOS_ONLY(GBLREF	boolean_t	gtm_tag_utf8_as_ascii;)
 GBLREF	volatile boolean_t	timer_in_handler;
@@ -182,9 +177,14 @@ void	gtm_env_init_sp(void)
 	ydb_zlib_cmp_level = ydb_trans_numeric(YDBENVINDX_ZLIB_CMP_LEVEL, &is_defined, IGNORE_ERRORS_TRUE, NULL);
 	if (YDB_CMPLVL_OUT_OF_RANGE(ydb_zlib_cmp_level))
 		ydb_zlib_cmp_level = ZLIB_CMPLVL_MIN;	/* no compression in this case */
+	/* Check for and and setup $ydb_hupenable if specified */
+	ret = ydb_logical_truth_value(YDBENVINDX_HUPENABLE, FALSE, &is_defined);
+	if (is_defined)
+		hup_on = ret;
+	/* $ydb_principal_editing_defaults */
 	ydb_principal_editing_defaults = 0;
 	if (SS_NORMAL == ydb_trans_log_name(YDBENVINDX_PRINCIPAL_EDITING, &trans, buf, YDB_PATH_MAX,
-												IGNORE_ERRORS_TRUE, NULL))
+					    IGNORE_ERRORS_TRUE, NULL))
 	{
 		assert(trans.len < YDB_PATH_MAX);
 		trans.addr[trans.len] = '\0';
@@ -222,6 +222,7 @@ void	gtm_env_init_sp(void)
 			token = STRTOK_R(NULL, ":", &strtokptr);
 		}
 	}
+	/* $ydb_chset */
 	if (SS_NORMAL == ydb_trans_log_name(YDBENVINDX_CHSET, &trans, buf, YDB_PATH_MAX, IGNORE_ERRORS_TRUE, NULL)
 	    && STR_LIT_LEN(UTF8_NAME) == trans.len)
 	{

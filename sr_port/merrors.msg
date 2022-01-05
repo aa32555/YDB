@@ -581,7 +581,7 @@ RECCNT		<Last LOAD record number: !UL>/info/fao=1!/ansi=0
 TEXT		<!AD>/info/fao=2!/ansi=0
 ZWRSPONE	<Subscript patterns in ZWRITE are atomic; Invalid delimiter>/error/fao=0!/ansi=0
 FILEDEL		<File !AD successfully deleted>/info/fao=2!/ansi=0
-JNLBADLABEL	<Journal file !AD has a bad GT.M Journal File Label. Expected !AD. Found !AD.>/error/fao=6!/ansi=0
+JNLBADLABEL	<Journal file !AD has a bad GT.M/YottaDB Journal File Label. Expected !AD. Found !AD.>/error/fao=6!/ansi=0
 JNLREADEOF	<End of journal file encountered>/error/fao=0!/ansi=0
 JNLRECFMT	<Journal file record format error encountered>/error/fao=0!/ansi=0
 BLKTOODEEP	<Block level too deep>/warning/fao=0!/ansi=0
@@ -677,7 +677,7 @@ GTMSECSHRSRVF	<!AD - !UL : Attempt to service request failed (retry = !UL)>/erro
 FREEZECTRL	<Control Y or control C encountered during attempt to freeze the database. Aborting freeze.>/info/fao=0!/ansi=0
 JNLFLUSH	<Error flushing journal buffers to journal file !AD>/info/fao=2!/ansi=0
 CCPSIGDMP	<CCP non fatal dump, continuing operation. Report to your YottaDB Support Channel.>/info/fao=0!/ansi=0
-NOPRINCIO	<Unable to write to principal device>/fatal/fao=0!/ansi=0
+NOPRINCIO	<Unable to !AD principal device: !AD at !AD due to: !AD>/fatal/fao=8!/ansi=0
 INVPORTSPEC	<Invalid port specification>/error/fao=0!/ansi=0
 INVADDRSPEC	<Invalid IP address specification>/error/fao=0!/ansi=0
 MUREENCRYPTEND	<Database !AD : MUPIP REORG ENCRYPT finished by pid !UL at transaction number [0x!16@XQ]>/info/fao=4!/ansi=0
@@ -1712,6 +1712,7 @@ MUKEEPPERCENT	<Keep threshold percentage should be from 0 to 99>/error/fao=0!/an
 MUKEEPNODEC	<Expected decimal integer input for keep>/error/fao=0!/ansi=0
 MUKEEPNOTRUNC	<Keep issued without -truncate>/error/fao=0!/ansi=0
 MUTRUNCNOSPKEEP	<Region !AD has insufficient space to meet truncate target percentage of !UL with keep at !UL blocks>/info/fao=4!/ansi=0
+TERMHANGUP	<Terminal has disconnected>/error/fao=0!/ansi=0
 !
 ! If there are UNUSEDMSG* lines unused for more than one year and at least two non-patch releases, use them before adding new lines.
 !

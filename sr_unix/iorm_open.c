@@ -1,9 +1,9 @@
 /****************************************************************
  *								*
- * Copyright (c) 2001-2018 Fidelity National Information	*
+ * Copyright (c) 2001-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018-2019 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2021 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -19,6 +19,7 @@
 #include "gtm_stat.h"
 #include "gtm_stdio.h"
 #include "gtm_string.h"
+#include "gtm_stdlib.h"
 #include "gtm_limits.h"
 #include "io.h"
 #include "iormdef.h"
@@ -39,6 +40,7 @@
 
 GBLREF io_pair		io_curr_device;
 GBLREF	boolean_t	gtm_utf8_mode;
+GBLREF  boolean_t       ydb_nofflf;             /* Used to control "write #" behavior ref GTM-9136 */
 ZOS_ONLY(GBLREF boolean_t	gtm_tag_utf8_as_ascii;)
 #ifdef __MVS__
 error_def(ERR_BADTAG);
@@ -98,6 +100,7 @@ short	iorm_open(io_log_name *dev_name, mval *pp, int fd, mval *mspace, uint8 tim
 		d_rm->stream = FALSE;
 		iod->width = DEF_RM_WIDTH;
 		iod->length = DEF_RM_LENGTH;
+		iod->fflf = !ydb_nofflf;	/* GTM-9136: Set FFLF mode by env var ydb_nofflf */
 		d_rm->recordsize = DEF_RM_RECORDSIZE;
 		d_rm->def_width = d_rm->def_recsize = TRUE;
 		d_rm->fixed = FALSE;

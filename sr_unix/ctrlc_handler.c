@@ -1,8 +1,9 @@
 /****************************************************************
  *								*
- * Copyright 2001, 2013 Fidelity Information Services, Inc	*
+ * Copyright (c) 2001-2019 Fidelity National Information	*
+ * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2019-2020 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2019-2021 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -28,8 +29,7 @@
 #include "io.h"
 #include "invocation_mode.h"
 #include "libyottadb_int.h"
-
-GBLREF	struct sigaction	orig_sig_action[];
+#include "outofband.h"		/* for CTRLC and CTRLD */
 
 void ctrlc_handler(int sig, siginfo_t *info, void *context)
 {
@@ -40,11 +40,10 @@ void ctrlc_handler(int sig, siginfo_t *info, void *context)
 	 * simple[Threaded]API.
 	 */
 	FORWARD_SIG_TO_MAIN_THREAD_IF_NEEDED(sig_hndlr_ctrlc_handler, sig, IS_EXI_SIGNAL_FALSE, info, context);
-	assert(SIGINT == sig);
 	assert(!(MUMPS_CALLIN & invocation_mode));
 	/* Normal procedure from MUMPS is to set our outofband trigger to handle this signal */
 	save_errno = errno;
-	ob_char = 3;
+	ob_char = (SIGINT == sig) ? CTRLC : CTRLD;	/* borrowing CTRLD for SIGHUP */
 	std_dev_outbndset(ob_char);
 	errno = save_errno;
 }

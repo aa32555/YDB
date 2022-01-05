@@ -21,18 +21,13 @@
 #include "gtm_string.h"
 #include "gtm_strings.h"
 #include "gtm_stdlib.h"		/* needed for realpath */
-#include <gtm_limits.h>		/* needed for GTM_PATH_MAX */
+#include "gtm_limits.h"		/* needed for GTM_PATH_MAX */
 #include "gtm_stat.h"
 
 #include <wctype.h>
 #include <dlfcn.h>
 #include <locale.h>		/* needed for setlocale() */
 #include <langinfo.h>		/* needed for nl_langinfo() */
-#ifdef _AIX
-#include <sys/ldr.h>		/* needed for loadquery */
-#include <libgen.h>		/* needed for basename */
-#include <errno.h>
-#endif
 
 #define GTMIO_MINIMAL		/* If gtmio.h is pulled in for tracing, don't include stuff that causes redefined errors */
 #include "error.h"
@@ -43,13 +38,6 @@
 #include "fgncal.h"		/* needed for COPY_DLLERR_MSG() */
 #include "restrict.h"		/* Needed for restrictions */
 #include "have_crit.h"		/* Defer interrupts */
-
-#ifdef _AIX
-# define DELIM			":"
-# define MAX_SEARCH_PATH_LEN	YDB_PATH_MAX * 4 /* Give enough room for loadquery to give the search paths in the first time */
-# define ICU_LIBNAME_LEN	YDB_PATH_MAX
-# define ICU_NOT_FOUND_ERR	"Cannot find ICU library in the standard system library path (/usr/lib, /usr/lib64 etc.) or LIBPATH"
-#endif
 
 ZOS_ONLY(GBLREF	char	*gtm_utf8_locale_object;)
 GBLREF boolean_t		ydb_dist_ok_to_use;
@@ -456,13 +444,6 @@ void gtm_icu_init(void)
 	 * we skip the "dlopen_handle_array_add" (and in turn "dlopen_handle_array_close" at "ydb_exit" time).
 	 */
 	ENABLE_INTERRUPTS(INTRPT_IN_FUNC_WITH_MALLOC, prev_intrpt_state);
-	#ifndef DEBUG
-		symbols_renamed = FALSE; /* This should not be needed because findx will be 0 on the first iteration and this
-				  	  * variable should be initialized after the first iteration but valgrind throws what
-				  	  * what we believe is a false uninitialized variable warning for this so we set it
-					  * to avoid the warning.
-				  	  */
-	#endif
 	DEBUG_ONLY(symbols_renamed = -1;)
 	for (findx = 0; findx < icu_func_n; ++findx)
 	{
@@ -478,11 +459,11 @@ void gtm_icu_init(void)
 		assert((0 != findx) || (-1 == symbols_renamed));
 		assert((0 == findx) || (FALSE == symbols_renamed) || (TRUE == symbols_renamed));
 		if ((0 == findx) || !symbols_renamed)
-#ifdef __CYGWIN__ /* Don't ask why... I have no idea how all the funcs are just in the global space in Cygwin */
+#			ifdef __CYGWIN__ /* Don't ask why... I have no idea how all the funcs are just in the global space in Cygwin */
 			fptr = (icu_func_t)dlsym(NULL, icu_final_fname);
-#else
+#			else
 			fptr = (icu_func_t)dlsym(handle, icu_final_fname);
-#endif
+#			endif
 		if (NULL == fptr)
 		{	/* If ydb_icu_version is defined to a proper value, then try function name with <major_ver>_<minor_ver> */
 			if (ydb_icu_ver_defined && ((0 == findx) || symbols_renamed))
@@ -491,11 +472,11 @@ void gtm_icu_init(void)
 				icu_final_fname_len += icusymver_len;
 				icu_final_fname[icu_final_fname_len] = '\0';
 				assert(SIZEOF(icu_final_fname) > icu_final_fname_len);
-#ifdef __CYGWIN__
+#				ifdef __CYGWIN__
 				fptr = (icu_func_t)dlsym(NULL, icu_final_fname);
-#else
+#				else
 				fptr = (icu_func_t)dlsym(handle, icu_final_fname);
-#endif
+#				endif
 			}
 			if (NULL == fptr)
 			{

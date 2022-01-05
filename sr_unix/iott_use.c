@@ -1,9 +1,9 @@
 /****************************************************************
  *								*
- * Copyright (c) 2001-2017 Fidelity National Information	*
+ * Copyright (c) 2001-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2021 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -24,6 +24,7 @@
 #include "gtm_termios.h"
 #include "gtm_unistd.h"
 #include "gtm_signal.h"	/* for SIGPROCMASK used inside Tcsetattr */
+#include "gtm_stdlib.h"
 
 #include "io_params.h"
 #include "io.h"
@@ -48,6 +49,8 @@
 #include "invocation_mode.h"
 #include "sig_init.h"
 #include "libyottadb.h"
+#include "svnames.h"
+#include "util.h"
 
 LITDEF nametabent filter_names[] =
 {
@@ -63,11 +66,11 @@ LITDEF unsigned char filter_index[27] =
 	,4, 4, 4
 };
 
-GBLREF boolean_t		ctrlc_on, dollar_zininterrupt;
-GBLREF char			*CURSOR_ADDRESS, *CLR_EOL, *CLR_EOS;
-GBLREF io_pair			io_std_device;
-GBLREF io_pair			io_curr_device;
-GBLREF void 			(*ctrlc_handler_ptr)();
+GBLREF boolean_t	ctrlc_on, dollar_zininterrupt, hup_on, prin_in_dev_failure, prin_out_dev_failure;
+GBLREF char		*CURSOR_ADDRESS, *CLR_EOL, *CLR_EOS;
+GBLREF io_pair		io_curr_device, io_std_device;
+GBLREF mval		dollar_zstatus;
+GBLREF void		(*ctrlc_handler_ptr)();
 
 LITREF unsigned char	io_params_size[];
 
@@ -120,6 +123,7 @@ void iott_use(io_desc *iod, mval *pp)
 		if (0 != status)
 		{
 			save_errno = errno;
+			ISSUE_NOPRINCIO_IF_NEEDED(io_curr_device.out, FALSE, FALSE);	/* FALSE, FALSE: READ (sorta), not socket */
 			rts_error_csa(CSA_ARG(NULL) VARLSTCNT(4) ERR_TCGETATTR, 1, tt_ptr->fildes, save_errno);
 		}
 		flush_input = FALSE;
@@ -214,13 +218,24 @@ void iott_use(io_desc *iod, mval *pp)
 					GET_LONG(tt_ptr->enbld_outofbands.mask, pp->str.addr + p_offset);
 					if (!ctrlc_on)
 					{	/* if cenable, ctrlc_handler active anyway, otherwise, depends on ctrap=$c(3) */
-						sigemptyset(&act.sa_mask);
+						void *sighandler;
+
 						if (CTRLC_MSK & tt_ptr->enbld_outofbands.mask)
-							act.sa_sigaction = ctrlc_handler_ptr;
+							sighandler = ctrlc_handler_ptr;
 						else
-							act.sa_sigaction = null_handler;
-						act.sa_flags = YDB_SIGACTION_FLAGS;
-						sigaction(SIGINT, &act, NULL);
+							sighandler = null_handler;
+						if (!USING_ALTERNATE_SIGHANDLING)
+						{
+							sigemptyset(&act.sa_mask);
+							act.sa_flags = YDB_SIGACTION_FLAGS;
+							act.sa_sigaction = sighandler;
+							sigaction(SIGINT, &act, NULL);
+						} else
+						{
+							if (null_handler == sighandler)
+								sighandler = NULL;	/* Better method of ignoring signal */
+							SET_ALTERNATE_SIGHANDLER(SIGINT, sighandler);
+						}
 					}
 					break;
 				case iop_downscroll:
@@ -297,6 +312,46 @@ void iott_use(io_desc *iod, mval *pp)
 					break;
 				case iop_nohostsync:
 					t.c_iflag &= ~IXOFF;
+					break;
+				case iop_hupenable:
+					if (!hup_on)
+					{	/* if it's already hupenable, no need to change */
+						temp_ptr = (d_tt_struct *)io_std_device.in->dev_sp;
+						if (tt_ptr->fildes == temp_ptr->fildes)
+						{	/* if $PRINCIPAL, enable hup_handler; similar code in term_setup.c */
+							if (!USING_ALTERNATE_SIGHANDLING)
+							{
+								sigemptyset(&act.sa_mask);
+								act.sa_flags = 0;
+								act.sa_handler = ctrlc_handler_ptr;
+								sigaction(SIGHUP, &act, 0);
+								hup_on = TRUE;
+							} else
+							{
+								SET_ALTERNATE_SIGHANDLER(SIGHUP, &ydb_altmain_sighandler);
+							}
+						}
+					}
+					break;
+				case iop_nohupenable:
+					if (hup_on)
+					{	/* if it's already nohupenable, no need to change */
+						temp_ptr = (d_tt_struct *)io_std_device.in->dev_sp;
+						if (tt_ptr->fildes == temp_ptr->fildes)
+						{	/* if $PRINCIPAL, disable the hup_handler */
+							if (!USING_ALTERNATE_SIGHANDLING)
+							{
+								sigemptyset(&act.sa_mask);
+								act.sa_flags = 0;
+								act.sa_handler = SIG_IGN;
+								sigaction(SIGHUP, &act, 0);
+								hup_on = FALSE;
+							} else
+							{
+								SET_ALTERNATE_SIGHANDLER(SIGHUP, NULL);
+							}
+						}
+					}
 					break;
 				case iop_insert:
 					if (io_curr_device.in == io_std_device.in)

@@ -86,6 +86,7 @@ GBLREF	boolean_t	ztrap_new;		/* Each time $ZTRAP is set it is automatically NEW'
 GBLREF	size_t		ydb_max_storalloc;	/* Used for testing: creates an allocation barrier */
 GBLREF	int		ydb_repl_filter_timeout;/* # of seconds that source server waits before issuing FILTERTIMEDOUT */
 GBLREF  boolean_t 	dollar_test_default; 	/* Default value taken by dollar_truth via dollar_test_default */
+GBLREF	boolean_t	ydb_nofflf;		/* Used to control "write #" behavior ref GTM-9136 */
 
 void	gtm_env_init(void)
 {
@@ -391,7 +392,7 @@ void	gtm_env_init(void)
 		/* See if $ydb_string_pool_limit is set */
 		temp_strpllim = ydb_trans_numeric(YDBENVINDX_STRING_POOL_LIMIT, &is_defined, IGNORE_ERRORS_TRUE, NULL);
 		if (0 < temp_strpllim)
-			TREF(gtm_strpllim) = temp_strpllim;
+			TREF(ydb_strpllim) = temp_strpllim;
 		/* See if ydb_repl_filter_timeout is specified */
 		ydb_repl_filter_timeout = ydb_trans_numeric(YDBENVINDX_REPL_FILTER_TIMEOUT, &is_defined, IGNORE_ERRORS_TRUE, NULL);
 		if (!is_defined)
@@ -402,9 +403,13 @@ void	gtm_env_init(void)
 			ydb_repl_filter_timeout = REPL_FILTER_TIMEOUT_MAX;
 		assert((REPL_FILTER_TIMEOUT_MIN <= ydb_repl_filter_timeout)
 				&& (REPL_FILTER_TIMEOUT_MAX >= ydb_repl_filter_timeout));
+		/* See if $ydb_dollar_test is set - Default is TRUE */
 		ret = ydb_logical_truth_value(YDBENVINDEX_DOLLAR_TEST, FALSE, &is_defined);
 		dollar_test_default = (is_defined ? ret : TRUE);
-		/* Platform specific initialization */
+		/* ydb_nofflf for GTM-9136.  Default is FALSE */
+		ydb_nofflf = ydb_logical_truth_value(YDBENVINDX_NOFFLF, FALSE, &is_defined);
+
+		/* Platform specific initializations */
 		gtm_env_init_sp();
 	}
 }

@@ -1544,4 +1544,5 @@ const static readonly int error_ansi[] = {
 	   0,	/* MUKEEPNODEC */
 	   0,	/* MUKEEPNOTRUNC */
 	   0,	/* MUTRUNCNOSPKEEP */
+	   0,	/* TERMHANGUP */
 	};

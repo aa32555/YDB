@@ -134,6 +134,7 @@ LITREF int4		ydb_release_name_len;
 
 void op_svget(int varnum, mval *v)
 {
+	boolean_t	lcl_compile_time;
 	io_log_name	*tl;
 	int 		count;
 	gtm_uint64_t	ucount;
@@ -650,7 +651,7 @@ void op_svget(int varnum, mval *v)
 			get_dlr_zkey(v);
 			break;
 		case SV_ZSTRPLLIM:
-			count = TREF(gtm_strpllim);
+			count = TREF(ydb_strpllim);
 			MV_FORCE_MVAL(v, count);
 			break;
 		case SV_ZTIMEOUT:
@@ -673,7 +674,10 @@ void op_svget(int varnum, mval *v)
 		} else if (!(MVTYPE_IS_NUMERIC(v->mvtype)))
 		{
 			assert(MVTYPE_IS_STRING(v->mvtype));
+			lcl_compile_time = TREF(compile_time);
+			TREF(compile_time) = TRUE;
 			s2n(v);
+			TREF(compile_time) = lcl_compile_time;
 		}
 	}
 }

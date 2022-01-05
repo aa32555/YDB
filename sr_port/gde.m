@@ -3,7 +3,7 @@
 ; Copyright (c) 2001-2017 Fidelity National Information		;
 ; Services, Inc. and/or its subsidiaries. All rights reserved.	;
 ;								;
-; Copyright (c) 2018 YottaDB LLC and/or its subsidiaries.	;
+; Copyright (c) 2018-2021 YottaDB LLC and/or its subsidiaries.	;
 ; All rights reserved.						;
 ;								;
 ;	This source code contains the intellectual property	;
@@ -12,14 +12,14 @@
 ;	the license, please stop and do not read further.	;
 ;								;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-gde:	;base module - d DEBUG^GDE to debug
+gde:	; Base module - d DBG^GDE to debug
 	n  ; clear calling process M variable state (if any) so it does not interfere with GDE variable names
 	s (debug,runtime)=0
-DBG:	;transfer point for DEBUG and "runtime" %gde
+DBG:	; Transfer point for DBG and "runtime" %gde
 	; Save parent process context before GDE tampers with it for its own necessities.
 	; Most of it is stored in the "gdeEntryState" local variable in subscripted nodes.
 	; Exceptions are local collation related act,ncol,nct values which have to be stored in in unsubscripted variables
-	;	to prevent COLLDATAEXISTS error as part of the $$set^%LCLCOL below.
+	; to prevent COLLDATAEXISTS error as part of the $$set^%LCLCOL below.
 	n gdeEntryState,gdeEntryStateAct,gdeEntryStateNcol,gdeEntryStateNct
 	s gdeEntryStateAct=$$get^%LCLCOL
 	s gdeEntryStateNcol=$$getncol^%LCLCOL
@@ -38,12 +38,12 @@ DBG:	;transfer point for DEBUG and "runtime" %gde
 	s $et=$s(debug:"b:$zs'[""%GDE""!allerrs  ",1:"")_"g:(""%GDE%NONAME""[$p($p($zs,"","",3),""-"")) SHOERR^GDE d ABORT^GDE"
 	s io=$io,useio="io",comlevel=0,combase=$zl,resume(comlevel)=$zl_":INTERACT"
 	i $$set^%PATCODE("M")
-	d GDEINIT^GDEINIT,GDEMSGIN^GDEMSGIN,GDFIND^GDESETGD,CREATE^GDEGET:create,LOAD^GDEGET:'create
 	i debug s prompt="DEBUGDE>",uself="logfile"
 	e  s prompt="GDE>",uself="logfile:(ctrap=$c(3,25,26):exception=""d CTRL^GDE"")"
 	e  s useio="io:(ctrap=$c(3,25,26):exception=""d CTRL^GDE"")"
+	d GDEINIT^GDEINIT,GDEMSGIN^GDEMSGIN,GDFIND^GDESETGD,CREATE^GDEGET:create,LOAD^GDEGET:'create
 	u @useio
-	; comline is set to $ZCMDLINE on entry. If the entry zlevel is 0, set the resume point to exit
+	; comline is set to $ZCMDLINE by ^GDEINIT. If the entry zlevel is 0, set the resume point to exit
 	i $l(comline) s:'gdeEntryState("zlevel") resume(comlevel)=$zl_":EXIT^GDEEXIT" d comline,EXIT^GDEEXIT
 	i runtime s prompt="GD_SHOW>",verb="SHOW",x="" f  s x=$o(syntab(x)) q:'$l(x)  i x'="SHOW" k syntab(x)
 INTERACT
