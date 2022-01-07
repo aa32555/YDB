@@ -1,9 +1,9 @@
 /****************************************************************
  *								*
- * Copyright (c) 2001-2017 Fidelity National Information	*
+ * Copyright (c) 2001-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2022 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -24,6 +24,7 @@
 #include "gtm_termios.h"
 #include "gtm_unistd.h"
 #include "gtm_signal.h"	/* for SIGPROCMASK used inside Tcsetattr */
+#include "gtm_stdlib.h"
 
 #include "io_params.h"
 #include "io.h"
@@ -48,6 +49,41 @@
 #include "invocation_mode.h"
 #include "sig_init.h"
 #include "libyottadb.h"
+#include "svnames.h"
+#include "util.h"
+
+/* This macro is used if we get an error from a tcgetattr() or tcsetattr() call on the terminal.
+ * We check if the terminal is the principal device (input or output side). If so, we issue NOPRINCIO message
+ * in the syslog if an error has already been seen (e.g. "prin_out_dev_failure" is already set before the macro
+ * call). But since the caller of this macro is going to issue an "rts_error" right after this (which will most
+ * likely terminate the process), make sure we send a NOPRINCIO message even if "prin_out_dev_failure" is not
+ * already set before this macro was invoked. This is done by reinvoking the ISSUE_NOPRINCIO_IF_NEEDED macro
+ * (in that case, the first invocation will set "prin_out_dev_failure" to TRUE and the second invocation will
+ * send the NOPRINCIO error message to the syslog).
+ */
+#define	ISSUE_NOPRINCIO_BEFORE_RTS_ERROR_IF_APPROPRIATE(IOD)								\
+{															\
+	GBLREF io_pair		io_std_device;										\
+															\
+ 	/* Check if terminal is used as input or output device to decide 2nd parameter for below macro call. */		\
+	if (IOD == io_std_device.out)											\
+	{														\
+		boolean_t	save_prin_out_dev_failure;								\
+															\
+		save_prin_out_dev_failure = prin_out_dev_failure;							\
+		ISSUE_NOPRINCIO_IF_NEEDED(IOD, TRUE, FALSE);	/* TRUE, FALSE ==> WRITE, not socket */			\
+		if (!save_prin_out_dev_failure && prin_out_dev_failure)							\
+			ISSUE_NOPRINCIO_IF_NEEDED(IOD, TRUE, FALSE);	/* TRUE, FALSE ==> WRITE, not socket */		\
+	} else if (IOD == io_std_device.in)										\
+	{														\
+		boolean_t	save_prin_in_dev_failure;								\
+															\
+		save_prin_in_dev_failure = prin_in_dev_failure;								\
+		ISSUE_NOPRINCIO_IF_NEEDED(IOD, FALSE, FALSE);	/* FALSE, FALSE ==> READ, not socket */			\
+		if (!save_prin_in_dev_failure && prin_in_dev_failure)							\
+			ISSUE_NOPRINCIO_IF_NEEDED(IOD, FALSE, FALSE);	/* FALSE, FALSE ==> READ, not socket */		\
+	}														\
+}
 
 LITDEF nametabent filter_names[] =
 {
@@ -63,11 +99,11 @@ LITDEF unsigned char filter_index[27] =
 	,4, 4, 4
 };
 
-GBLREF boolean_t		ctrlc_on, dollar_zininterrupt;
-GBLREF char			*CURSOR_ADDRESS, *CLR_EOL, *CLR_EOS;
-GBLREF io_pair			io_std_device;
-GBLREF io_pair			io_curr_device;
-GBLREF void 			(*ctrlc_handler_ptr)();
+GBLREF boolean_t	ctrlc_on, dollar_zininterrupt, hup_on, prin_in_dev_failure, prin_out_dev_failure;
+GBLREF char		*CURSOR_ADDRESS, *CLR_EOL, *CLR_EOS;
+GBLREF io_pair		io_curr_device, io_std_device;
+GBLREF mval		dollar_zstatus;
+GBLREF void		(*ctrlc_handler_ptr)();
 
 LITREF unsigned char	io_params_size[];
 
@@ -120,6 +156,7 @@ void iott_use(io_desc *iod, mval *pp)
 		if (0 != status)
 		{
 			save_errno = errno;
+			ISSUE_NOPRINCIO_BEFORE_RTS_ERROR_IF_APPROPRIATE(iod);
 			rts_error_csa(CSA_ARG(NULL) VARLSTCNT(4) ERR_TCGETATTR, 1, tt_ptr->fildes, save_errno);
 		}
 		flush_input = FALSE;
@@ -297,6 +334,34 @@ void iott_use(io_desc *iod, mval *pp)
 					break;
 				case iop_nohostsync:
 					t.c_iflag &= ~IXOFF;
+					break;
+				case iop_hupenable:
+					if (!hup_on)
+					{	/* if it's already hupenable, no need to change */
+						temp_ptr = (d_tt_struct *)io_std_device.in->dev_sp;
+						if (tt_ptr->fildes == temp_ptr->fildes)
+						{	/* if $PRINCIPAL, enable hup_handler; similar code in term_setup.c */
+							sigemptyset(&act.sa_mask);
+							act.sa_flags = 0;
+							act.sa_handler = ctrlc_handler_ptr;
+							sigaction(SIGHUP, &act, 0);
+							hup_on = TRUE;
+						}
+					}
+					break;
+				case iop_nohupenable:
+					if (hup_on)
+					{	/* if it's already nohupenable, no need to change */
+						temp_ptr = (d_tt_struct *)io_std_device.in->dev_sp;
+						if (tt_ptr->fildes == temp_ptr->fildes)
+						{	/* if $PRINCIPAL, disable the hup_handler */
+							sigemptyset(&act.sa_mask);
+							act.sa_flags = 0;
+							act.sa_handler = SIG_IGN;
+							sigaction(SIGHUP, &act, 0);
+							hup_on = FALSE;
+						}
+					}
 					break;
 				case iop_insert:
 					if (io_curr_device.in == io_std_device.in)
@@ -480,6 +545,7 @@ void iott_use(io_desc *iod, mval *pp)
 		if (0 != status)
 		{
 			assert(WBTEST_YDB_KILL_TERMINAL == ydb_white_box_test_case_number);
+			ISSUE_NOPRINCIO_BEFORE_RTS_ERROR_IF_APPROPRIATE(iod);
 			rts_error_csa(CSA_ARG(NULL) VARLSTCNT(4) ERR_TCSETATTR, 1, tt_ptr->fildes, save_errno);
 		}
 		if (tt == d_in->type)

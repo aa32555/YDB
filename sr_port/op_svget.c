@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2017-2021 YottaDB LLC and/or its subsidiaries. *
+ * Copyright (c) 2017-2022 YottaDB LLC and/or its subsidiaries. *
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -672,8 +672,13 @@ void op_svget(int varnum, mval *v)
 			n2s(v);
 		} else if (!(MVTYPE_IS_NUMERIC(v->mvtype)))
 		{
+			boolean_t	lcl_compile_time;
+
 			assert(MVTYPE_IS_STRING(v->mvtype));
+			lcl_compile_time = TREF(compile_time);
+			TREF(compile_time) = TRUE;
 			s2n(v);
+			TREF(compile_time) = lcl_compile_time;
 		}
 	}
 }

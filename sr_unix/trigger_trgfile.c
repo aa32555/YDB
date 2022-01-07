@@ -130,9 +130,10 @@ STATICFNDEF boolean_t trigger_trgfile_tpwrap_helper(char *trigger_filename, uint
 		if ((0 != len) && (COMMENT_LITERAL != trigptr[0]))
 		{
 			if (0 == trigger_filename_len)
-				util_out_print_gtmio("STDIN, Line !UL: ", NOFLUSH, record_num);
+				util_out_print_gtmio("STDIN, Line !UL: ", NOFLUSH_OUT, record_num);
 			else
-				util_out_print_gtmio("File !AD, Line !UL: ", NOFLUSH, trigger_filename_len, trigger_filename, record_num);
+				util_out_print_gtmio("File !AD, Line !UL: ", NOFLUSH_OUT,
+							trigger_filename_len, trigger_filename, record_num);
 		}
 		trigger_rec->str.len = len;
 		trigger_rec->str.addr = trigptr;

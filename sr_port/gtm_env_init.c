@@ -3,7 +3,7 @@
  * Copyright (c) 2004-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2017-2021 YottaDB LLC and/or its subsidiaries. *
+ * Copyright (c) 2017-2022 YottaDB LLC and/or its subsidiaries. *
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -86,6 +86,7 @@ GBLREF	boolean_t	ztrap_new;		/* Each time $ZTRAP is set it is automatically NEW'
 GBLREF	size_t		ydb_max_storalloc;	/* Used for testing: creates an allocation barrier */
 GBLREF	int		ydb_repl_filter_timeout;/* # of seconds that source server waits before issuing FILTERTIMEDOUT */
 GBLREF  boolean_t 	dollar_test_default; 	/* Default value taken by dollar_truth via dollar_test_default */
+GBLREF	boolean_t	gtm_nofflf;		/* Used to control "write #" behavior ref GTM-9136 */
 
 void	gtm_env_init(void)
 {
@@ -402,9 +403,12 @@ void	gtm_env_init(void)
 			ydb_repl_filter_timeout = REPL_FILTER_TIMEOUT_MAX;
 		assert((REPL_FILTER_TIMEOUT_MIN <= ydb_repl_filter_timeout)
 				&& (REPL_FILTER_TIMEOUT_MAX >= ydb_repl_filter_timeout));
-		ret = ydb_logical_truth_value(YDBENVINDEX_DOLLAR_TEST, FALSE, &is_defined);
+		ret = ydb_logical_truth_value(YDBENVINDX_DOLLAR_TEST, FALSE, &is_defined);
 		dollar_test_default = (is_defined ? ret : TRUE);
-		/* Platform specific initialization */
+		/* gtm_nofflf for GTM-9136.  Default is FALSE */
+		gtm_nofflf = ydb_logical_truth_value(YDBENVINDX_NOFFLF, FALSE, &is_defined);
+
+		/* Platform specific initializations */
 		gtm_env_init_sp();
 	}
 }

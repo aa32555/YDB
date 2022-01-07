@@ -1,9 +1,9 @@
 /****************************************************************
  *								*
- * Copyright (c) 2001-2017 Fidelity National Information	*
+ * Copyright (c) 2001-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2022 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -28,10 +28,8 @@
 
 GBLREF	io_log_name	*io_root_log_name;
 GBLREF	int		process_exiting;
-GBLREF	uint4		process_id;
 GBLREF	io_pair		io_std_device;
-GBLREF	bool		prin_in_dev_failure;
-GBLREF	bool		prin_out_dev_failure;
+GBLREF	boolean_t	prin_in_dev_failure, prin_out_dev_failure;
 
 void io_dev_close(io_log_name *d);
 
@@ -91,7 +89,7 @@ void io_dev_close (io_log_name *d)
 	iod = d->iod;
 	if (iod->pair.in == io_std_device.in  &&  iod->pair.out == io_std_device.out)
 	{
-		if (prin_in_dev_failure || prin_out_dev_failure)
+		if (prin_out_dev_failure || (prin_in_dev_failure && (io_std_device.in == io_std_device.out)))
 			return;
 	}
 	pp.mvtype = MV_STR;

@@ -1,9 +1,9 @@
 /****************************************************************
  *								*
- * Copyright (c) 2004-2018 Fidelity National Information	*
+ * Copyright (c) 2004-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018-2021 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2022 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -78,10 +78,12 @@ GBLREF	boolean_t		utf8_patnumeric;
 GBLREF	boolean_t		badchar_inhibit;
 GBLREF	boolean_t		ydb_quiet_halt;
 GBLREF	int			ydb_non_blocked_write_retries;	/* number for retries for non_blocked write to pipe */
+GBLREF	boolean_t		dmterm_default, hup_on;
+GBLREF	boolean_t		ipv4_only;		/* If TRUE, only use AF_INET. */
 GBLREF	char			*gtm_core_file;
 GBLREF	char			*gtm_core_putenv;
-GBLREF	boolean_t		dmterm_default;
-GBLREF	boolean_t		ipv4_only;		/* If TRUE, only use AF_INET. */
+GBLREF	int			gtm_non_blocked_write_retries;	/* number for retries for non_blocked write to pipe */
+GBLREF	uint4			gtm_principal_editing_defaults;	/* ext_cap flags if tt */
 ZOS_ONLY(GBLREF	char		*gtm_utf8_locale_object;)
 ZOS_ONLY(GBLREF	boolean_t	gtm_tag_utf8_as_ascii;)
 GBLREF	volatile boolean_t	timer_in_handler;
@@ -182,6 +184,8 @@ void	gtm_env_init_sp(void)
 	ydb_zlib_cmp_level = ydb_trans_numeric(YDBENVINDX_ZLIB_CMP_LEVEL, &is_defined, IGNORE_ERRORS_TRUE, NULL);
 	if (YDB_CMPLVL_OUT_OF_RANGE(ydb_zlib_cmp_level))
 		ydb_zlib_cmp_level = ZLIB_CMPLVL_MIN;	/* no compression in this case */
+	/* Check for and and setup gtm_hupenable if specified */
+	hup_on = ydb_logical_truth_value(YDBENVINDX_HUPENABLE, FALSE, &is_defined);
 	ydb_principal_editing_defaults = 0;
 	if (SS_NORMAL == ydb_trans_log_name(YDBENVINDX_PRINCIPAL_EDITING, &trans, buf, YDB_PATH_MAX,
 												IGNORE_ERRORS_TRUE, NULL))

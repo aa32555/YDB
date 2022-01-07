@@ -1,8 +1,9 @@
 /****************************************************************
  *								*
- * Copyright 2001, 2007 Fidelity Information Services, Inc	*
+ * Copyright (c) 2001-2019 Fidelity National Information	*
+ * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2020 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2020-2022 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -36,7 +37,7 @@ void ctrap_set(int4 ob_char)
 
 	if (!outofband)
 	{
-		SET_OUTOFBAND(ctrap);
+		SET_OUTOFBAND((CTRLC == ob_char) ? ctrap : sighup);
 		ctrap_action_is = ob_char;
 	}
 }

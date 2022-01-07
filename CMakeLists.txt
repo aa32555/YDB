@@ -1,9 +1,9 @@
 #################################################################
 #								#
-# Copyright (c) 2012-2018 Fidelity National Information		#
+# Copyright (c) 2012-2019 Fidelity National Information		#
 # Services, Inc. and/or its subsidiaries. All rights reserved.	#
 #								#
-# Copyright (c) 2017-2021 YottaDB LLC and/or its subsidiaries.	#
+# Copyright (c) 2017-2022 YottaDB LLC and/or its subsidiaries.	#
 # All rights reserved.						#
 #								#
 # Copyright (c) 2017 Stephen L Johnson. All rights reserved.	#
@@ -87,14 +87,10 @@ set(extralibs "")
 message("--> OS = ${CMAKE_SYSTEM_NAME} / ARCH = ${CMAKE_SYSTEM_PROCESSOR}")
 # Establish platform
 # Except for Solaris, CMAKE_COMPILER_IS_GNUCC is true
-if("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   include(sr_linux/platform.cmake)
-elseif("${CMAKE_SYSTEM_NAME}" MATCHES "HP-UX")
-  include(sr_hpux/platform.cmake)
-elseif("${CMAKE_SYSTEM_NAME}" MATCHES "AIX")
+elseif(${CMAKE_SYSTEM_NAME} STREQUAL "AIX")
   include(sr_aix/platform.cmake)
-elseif("${CMAKE_SYSTEM_NAME}" MATCHES "SunOS")
-  include(sr_sun/platform.cmake)
 else()
   message(FATAL_ERROR "--> OS = ${CMAKE_SYSTEM_NAME} / ARCH = ${CMAKE_SYSTEM_PROCESSOR}")
 endif()
@@ -531,7 +527,6 @@ set(m_files_sr_port
   gdeexit.m
   gdehelp.m
   gdeinit.m
-  gdeinitsz.m
   gdelocks.m
   gdelog.m
   gdemap.m

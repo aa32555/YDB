@@ -1,9 +1,9 @@
 /****************************************************************
  *								*
- * Copyright (c) 2001-2018 Fidelity National Information	*
+ * Copyright (c) 2001-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2020-2021 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2020-2022 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -34,16 +34,17 @@
 #include "gtm_stdlib.h"
 #include "min_max.h"
 #include "arit.h"
-#ifdef UTF8_SUPPORTED
-#include "gtm_conv.h"
-#include "gtm_utf8.h"
-#endif
 #include "gtmcrypt.h"
 #include "error.h"
 #include "send_msg.h"
 #include "get_fs_block_size.h"
 #include "op.h"
+#include "util.h"
 #include "indir_enum.h"
+#ifdef UTF8_SUPPORTED
+#include "gtm_conv.h"
+#include "gtm_utf8.h"
+#endif
 
 /* Only want to do fstat() once on this file, not on every use. */
 #define FSTAT_CHECK(GETMODE)										\
@@ -149,7 +150,7 @@ typedef struct
 LITREF	unsigned char		io_params_size[];
 GBLREF	boolean_t		gtm_utf8_mode;
 GBLREF	io_pair			io_std_device;		/* standard device	*/
-
+GBLREF	boolean_t		prin_in_dev_failure;
 
 #ifdef UTF8_SUPPORTED
 GBLREF	UConverter		*chset_desc[];
@@ -349,7 +350,11 @@ void	iorm_use(io_desc *iod, mval *pp)
 				if (0 != statbuf.st_size)
 					iod->dollar.zeof = FALSE;
 				else
+				{
 					iod->dollar.zeof = TRUE;
+					if (io_std_device.in == iod)
+						prin_in_dev_failure = FALSE;
+				}
 				iod->dollar.y = 0;
 				iod->dollar.x = 0;
 				rm_ptr->lastop = RM_NOOP;
@@ -909,6 +914,12 @@ void	iorm_use(io_desc *iod, mval *pp)
 				break;
 			}
 			rm_ptr->fsblock_buffer_size = fwrite_buffer_size;
+			break;
+		case iop_fflf:				/* Turn off GTM-9136 NL suppression regardless of env gtm_fflf setting */
+			iod->fflf = TRUE;
+			break;
+		case iop_nofflf:			/* Turn on GTM-9136 NL suppression regardless of env gtm_fflf setting */
+			iod->fflf = FALSE;
 			break;
 		default:
 			break;
