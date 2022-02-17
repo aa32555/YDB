@@ -1,6 +1,6 @@
 #################################################################
 #								#
-# Copyright (c) 2018-2021 YottaDB LLC and/or its subsidiaries.	#
+# Copyright (c) 2018-2022 YottaDB LLC and/or its subsidiaries.	#
 # All rights reserved.						#
 #								#
 #	This source code contains the intellectual property	#
@@ -42,6 +42,7 @@ RUN apt-get update && \
                     libncurses-dev \
                     libssl-dev \
                     zlib1g-dev \
+		    wget \
                     && \
     apt-get clean
 
@@ -81,7 +82,9 @@ RUN mkdir -p /tmp/yottadb-build \
       -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
       /tmp/yottadb-src \
  && make -j $(nproc) \
- && make install
+ && make install \
+ && cd /tmp/yottadb-release \
+ && ./ydbinstall --utf8 default --debug --installdir /opt/yottadb/current
 
 # Stage 2: YottaDB release image
 FROM ubuntu:${OS_VSN} as ydb-release
@@ -92,25 +95,13 @@ RUN apt-get update && \
                     file \
                     binutils \
                     libelf-dev \
-                    libicu-dev \
-                    locales \
-                    pkg-config \
-                    wget \
-                    vim \
+                    libicu66 \
+		    nano \
                     && \
     apt-get clean
-RUN locale-gen en_US.UTF-8
 WORKDIR /data
-COPY --from=ydb-release-builder /tmp/yottadb-release /tmp/yottadb-release
-RUN cd /tmp/yottadb-release  \
- && pkg-config --modversion icu-io \
-      > /tmp/yottadb-release/.icu.vsn \
- && ./ydbinstall \
-      --utf8 `cat /tmp/yottadb-release/.icu.vsn` \
-      --installdir /opt/yottadb/current \
- && rm -rf /tmp/yottadb-release
+COPY --from=ydb-release-builder /opt/yottadb/current /opt/yottadb/current
+COPY --from=ydb-release-builder /usr/share/pkgconfig/yottadb.pc /usr/share/pkgconfig/yottadb.pc
 ENV gtmdir=/data \
-    LANG=en_US.UTF-8 \
-    LANGUAGE=en_US:en \
-    LC_ALL=en_US.UTF-8
+    LC_ALL=C.UTF-8
 ENTRYPOINT ["/opt/yottadb/current/ydb"]
