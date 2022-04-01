@@ -1,9 +1,9 @@
 /****************************************************************
  *								*
- * Copyright (c) 2018-2019 Fidelity National Information	*
+ * Copyright (c) 2018-2020 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2019-2021 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2019-2022 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -118,7 +118,6 @@ void check_and_set_ztimeout(mval * inp_val)
 	DCL_THREADGBL_ACCESS;
 
 	SETUP_THREADGBL_ACCESS;
-	SIGPROCMASK(SIG_BLOCK, &blockalrm, &savemask, rc);
 	if (NULL != ztimeout_local_str_val)
 	{	/* This is left over from a previous call to "check_and_set_ztimeout()" that encountered an error
 		 * midway (e.g. inside "op_commarg()" call below) and so could not get a chance to free memory then
@@ -229,6 +228,7 @@ void check_and_set_ztimeout(mval * inp_val)
 						 * so no need to keep track of this for freeing purposes.
 						 */
 	}
+	SIGPROCMASK(SIG_BLOCK, &blockalrm, &savemask, rc);
 	(TREF(dollar_ztimeout)).ztimeout_vector = ztimeout_vector;
 	(TREF(dollar_ztimeout)).ztimeout_seconds = ztimeout_seconds;
 	if (!is_negative)

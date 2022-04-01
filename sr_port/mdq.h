@@ -1,9 +1,9 @@
 /****************************************************************
  *								*
- * Copyright (c) 2001-2019 Fidelity National Information	*
+ * Copyright (c) 2001-2020 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018-2020 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2022 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -15,6 +15,8 @@
 
 #ifndef MDQ_H_DEFINED
 #define MDQ_H_DEFINED
+
+#include "opcode.h"
 
 /* Define basic working macros for queue management of doubly linked list is defined using elements "N.fl" and "N.bl".
  * The DSRINS insert at tail rather than head and so work FIFO rather than LIFO with DQLOOP and associated macros
@@ -46,9 +48,19 @@
  * the test to see if should do debugging is not elegant but it does allow decent debugging. Note those macros without
  * debugging are statically defined.
  */
-
 #define dqloop(Q, N, I) DQLOOP(Q, N, I)
-#define dqinit(Q, N)	DQINIT(Q, N)
+#ifdef GTM_MALLOC_BUILD		/* gtm_malloc doesn't deal with triples and the include they require make for trouble */
+#define dqinit(Q, N) DQINIT(Q, N)
+#define DQTRIPCHK(Q, N)
+#else
+#define dqinit(Q, N)					\
+MBSTART {						\
+	if (!memcmp(#N, "exorder", 3))			\
+		((triple *)(Q))->opcode = OCQ_INVALID;	\
+	DQINIT(Q, N); 					\
+} MBEND
+#define DQTRIPCHK(Q, N) assert((0 != memcmp(#N, "exorder", 3)) || (OCQ_INVALID != ((triple *)(Q))->opcode))
+#endif
 
 /* #define DEBUG_TRIPLES / * Uncomment this to do triple debugging, which is also tied to ydb_dbglvl, as of this writing: 0x4000 */
 #ifndef DEBUG_TRIPLES
@@ -58,9 +70,8 @@
 #  define dqrins(Q, N, X)	DQRINS(Q, N, X)
 #  define dqadd(Q, X, N)	DQADD(Q, X, N)
 #  define CHKTCHAIN(Q, N, B)
+#  define dqnoop(Q)
 #else
-#  include "compiler.h"
-#  include "gtm_string.h"
 #  include "gtmdbglvl.h"
 GBLREF	uint4		ydbDebugLevel;
 /* Q: head of queue to check; N: the name of queue; B: whether to check main exorder (from curtchain) and any expr_start queue */
@@ -71,7 +82,7 @@ MBSTART {										\
 											\
 	SETUP_THREADGBL_ACCESS;								\
 					/* memcmp() is fast and 3 chars sufficient */	\
- 	if ((ydbDebugLevel & GDL_DebugCompiler) && (0 == memcmp(#N, "exorder", 3)))	\
+	if ((GDL_DebugCompiler & ydbDebugLevel) && (0 == memcmp(#N, "exorder", 3)))	\
 	{										\
 		if ((triple *)-1 != (triple *)(Q)) /* to avoid post-checking deletes */	\
 			chktchain((triple *)(Q));					\
@@ -99,22 +110,38 @@ MBSTART {			\
 } MBEND
 #  define dqins(Q, N, X)	\
 MBSTART {			\
+	DQTRIPCHK (Q, N);	\
 	CHKTCHAIN(Q, N, FALSE);	\
 	DQINS(Q, N, X);		\
 	CHKTCHAIN(Q, N, TRUE);	\
 } MBEND
 #  define dqrins(Q, N, X)	\
 MBSTART {			\
+	DQTRIPCHK (Q, N);	\
 	CHKTCHAIN(Q, N, FALSE);	\
 	DQRINS(Q, N, X);	\
 	CHKTCHAIN(Q, N, TRUE);	\
 } MBEND
-#  define dqadd(Q, X, N)	\
-MBSTART {			\
-	CHKTCHAIN(Q, N, FALSE);	\
-	CHKTCHAIN(X, N, FALSE);	\
-	DQADD(Q, X, N);		\
-	CHKTCHAIN(Q, N, TRUE);	\
+#  define dqadd(Q, X, N)				\
+MBSTART {						\
+	DQTRIPCHK (Q, N);				\
+	CHKTCHAIN(Q, N, FALSE);				\
+	CHKTCHAIN(X, N, FALSE);				\
+	DQADD(Q, X, N);					\
+	CHKTCHAIN(Q, N, ((Q) != TREF(expr_start)));	\
+} MBEND
+#  define dqnoop(Q)						\
+MBSTART {							\
+	triple *REF;						\
+								\
+	if ((OCQ_INVALID == ((triple *)(Q))->opcode)            \
+		&& (((triple *)(Q))->exorder.bl == (Q)))	\
+	{							\
+		REF =  maketriple(OC_NOOP);                     \
+		DQINIT(REF, exorder);				\
+		DQINS((Q), exorder, REF);			\
+	}							\
+	CHKTCHAIN(Q, N, TRUE);					\
 } MBEND
 #endif
 

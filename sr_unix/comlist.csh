@@ -1,6 +1,6 @@
 #################################################################
 #								#
-# Copyright (c) 2001-2019 Fidelity National Information		#
+# Copyright (c) 2001-2020 Fidelity National Information		#
 # Services, Inc. and/or its subsidiaries. All rights reserved.	#
 #								#
 # Copyright (c) 2017-2022 YottaDB LLC and/or its subsidiaries.	#
@@ -22,9 +22,9 @@
 #	arguments:
 #		$1 -	assembler options
 #		$2 -	C compiler options
-#		$3 -	"gtm_bta" => build bta images ($gtm_vrt/bta)
-#			"gtm_dbg" => build dbg images ($gtm_vrt/dbg)
-#			"gtm_pro" => build pro images ($gtm_vrt/pro)
+#		$3 -	"gtm_bta" => build bta images ($gtm_ver/bta)
+#			"gtm_dbg" => build dbg images ($gtm_ver/dbg)
+#			"gtm_pro" => build pro images ($gtm_ver/pro)
 #		$4 -	version number (without punctuation) or code letter:
 #			e.g., "V123" => version "V1.2-3" or:
 #				"a" => current active (in current process) release
@@ -77,10 +77,6 @@ echo "Value after reset : ydb_dist=$ydb_dist"
 echo "Value after reset : gtmroutines=""$gtmroutines"""
 echo "--------------------------------------------"
 echo ""
-
-if ( "$version" =~ *ibm-aix* ) then
-	unsetenv gtm_icu_version
-endif
 
 # Unset gtm_custom_errors to prevent some errors, especially %YDB-E-FTOKERR if $gtm_repl_instance is set in the environment
 unsetenv gtm_custom_errors
@@ -532,7 +528,7 @@ if ( $?gt_as_use_prebuilt == 0 ) then
 		$shell -f $gtm_tools/gt_as.csh ${asmsublist}
 	end
 else
-	cp -p $gtm_vrt/$gt_as_use_prebuilt/*.o .
+	cp -p $gtm_ver/$gt_as_use_prebuilt/*.o .
 endif
 
 if ( $HOSTOS =~ "CYGWIN*" ) then
@@ -689,6 +685,8 @@ if (-e GTMDefinedTypesInit.m) then
 	source $gtm_tools/set_library_path.csh
 	source $gtm_tools/check_utf8_support.csh
 	if (-e $gtm_dist/utf8 && ("TRUE" == "$is_utf8_support")) then
+		set icuver =  `setenv gtm_dist $PWD ; $gtm_tools/is_icu_symbol_rename.csh`
+		if ("" != "$icuver") setenv ydb_icu_version "$icuver"
 		if (! -e $gtm_dist/utf8/GTMDefinedTypesInit.m) then
 		    ln -s $gtm_dist/GTMDefinedTypesInit.m $gtm_dist/utf8/GTMDefinedTypesInit.m
 		endif
@@ -772,7 +770,7 @@ $gtm_com/IGS $ydb_dist/gtmsecshr UNHIDE
 set distfiles_log = "dist_files.`basename $gtm_exe`.log"
 find $ydb_dist -type f >&! $gtm_log/$distfiles_log
 if ($?scan_image) then
-	tar cvf $ydb_dist/veracode-${gtm_verno}-${HOST:ar}.tar dbcertify dse ftok gtmsec* gtcm* libgtmshr.so lke mumps mupip
+	tar cvf $ydb_dist/veracode-${gtm_verno}-${HOST:ar}.tar dse ftok gtmsec* gtcm* libgtmshr.so lke mumps mupip
 	tar rvf $ydb_dist/veracode-${gtm_verno}-${HOST:ar}.tar plugin/libgtm* plugin/gtmcrypt/maskpass
 	tar rvf $ydb_dist/veracode-${gtm_verno}-${HOST:ar}.tar /usr/lib64/lib{config,gpgme,gpg-error,crypt,ssl,icu*,z,elf}.so*
 	gzip    $ydb_dist/veracode-${gtm_verno}-${HOST:ar}.tar

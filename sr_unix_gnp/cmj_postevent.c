@@ -1,8 +1,9 @@
 /****************************************************************
  *								*
- * Copyright 2001, 2004 Sanchez Computer Associates, Inc.	*
+ * Copyright (c) 2001-2020 Fidelity National Information	*
+ * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2017 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2017-2022 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -33,7 +34,7 @@ cmi_status_t cmj_postevent(struct CLB *lnk)
 	case CMI_REASON_IODONE:
 		if (lnk->ast)
 		{
-			CMI_DPRINT(("CALLING AST FROM CMJ_POSTEVENT after IODONE, called from 0x%x\n", caller_id()));
+			CMI_DPRINT(("CALLING AST FROM CMJ_POSTEVENT after IODONE, called from 0x%x\n", caller_id(0)));
 			(*lnk->ast)(lnk);
 		}
 		break;
@@ -65,7 +66,7 @@ cmi_status_t cmj_postevent(struct CLB *lnk)
 		}
 		if (lnk->ast)
 		{
-			CMI_DPRINT(("CALLING AST FROM CMJ_POSTEVENT after ERROR, called from 0x%x\n", caller_id()));
+			CMI_DPRINT(("CALLING AST FROM CMJ_POSTEVENT after ERROR, called from 0x%x\n", caller_id(0)));
 			(*lnk->ast)(lnk);
 		}
 		if (tsk->err)

@@ -1,10 +1,10 @@
 #!/usr/local/bin/tcsh -f
 #################################################################
 #								#
-# Copyright (c) 2001-2019 Fidelity National Information		#
+# Copyright (c) 2001-2020 Fidelity National Information		#
 # Services, Inc. and/or its subsidiaries. All rights reserved.	#
 #								#
-# Copyright (c) 2018-2019 YottaDB LLC and/or its subsidiaries.	#
+# Copyright (c) 2018-2022 YottaDB LLC and/or its subsidiaries.	#
 # All rights reserved.						#
 #								#
 #	This source code contains the intellectual property	#
@@ -37,7 +37,7 @@ else if ("FALSE" == "$supported_list") then
 	exit
 endif
 # Remove all lingering gpg-agent processes because they may have cached passphrases.
-set gpg_agent_pids = `ps -ef | awk '/gpg-agent --homedir \/tmp\/gnupgdir\/'$USER' .*--daemon/ {print $2}'`
+set gpg_agent_pids = `ps -fu $USER | awk '/gpg-agent --homedir \/tmp\/gnupgdir\/'$USER' .*--daemon/ {print $2}'`
 foreach gpg_agent_pid ($gpg_agent_pids)
 	kill $gpg_agent_pid >&! /dev/null
 end
@@ -110,6 +110,8 @@ endif
 source $gtm_tools/set_library_path.csh
 source $gtm_tools/check_utf8_support.csh
 if ("TRUE" == "$is_utf8_support") then
+	set icuver =  `$gtm_tools/is_icu_symbol_rename.csh`
+	if ("" != "$icuver") setenv ydb_icu_version "$icuver"
 	if (! -e $ydb_dist/utf8) mkdir $ydb_dist/utf8
 endif
 # Build and install all encryption libraries and executables.

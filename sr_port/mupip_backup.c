@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2019 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2017-2019 YottaDB LLC and/or its subsidiaries. *
+ * Copyright (c) 2017-2022 YottaDB LLC and/or its subsidiaries. *
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -634,6 +634,26 @@ void mupip_backup(void)
 					gtm_putmsg_csa(CSA_ARG(cs_addrs) VARLSTCNT(4) ERR_FILEPARSE, 2, nbytes2, tempfilename2);
 					free(tempfilename2);
 				}
+				mubclnup(rptr, need_to_del_tempfile);
+				mupip_exit(ERR_FILENAMETOOLONG);
+			}
+			/* GTM-9182 : If there's just enough space for the temp filepath, BUT NOT for the backup filepath, backup
+			 *  succeeds even though the full pathname of backup file exceeds MAX_FN_LEN. This should NOT be allowed.
+			 * This check is not required for backup files having full pathnames
+			 */
+			for (index=0; index < file->len; index++)
+			{
+				if ('/' == file->addr[index])
+					break;
+			}
+			if ((index >= file->len) && (MAX_FN_LEN < (tempdir_full.len + file->len)))
+			{
+				tempdir_trans.addr[tempdir_trans.len] = '/';
+				tempdir_trans.len++;
+				memcpy(&tempdir_trans.addr[tempdir_trans.len], file->addr, file->len);
+				tempdir_trans.len += file->len;
+				gtm_putmsg_csa(CSA_ARG(cs_addrs) VARLSTCNT(4) ERR_FILEPARSE, 2, tempdir_trans.len,
+						tempdir_trans.addr);
 				mubclnup(rptr, need_to_del_tempfile);
 				mupip_exit(ERR_FILENAMETOOLONG);
 			}

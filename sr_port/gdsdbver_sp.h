@@ -1,6 +1,6 @@
 /****************************************************************
  *								*
- * Copyright (c) 2015-2018 Fidelity National Information	*
+ * Copyright (c) 2015-2020 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
  * Copyright (c) 2018-2022 YottaDB LLC and/or its subsidiaries.	*
@@ -45,7 +45,7 @@ ENUM_ENTRY(GDSMV63007),		/* Reuse abandoned field for use controlled stable flus
 				 * In GDSMR122, this is what happened.
 				 *	New field "reorg_sleep_nsec" to slow down reorg update rate (e.g. reduce restarts) by user
 				 */
-ENUM_ENTRY(GDSMVFILLER1),	/* Space reserved for GT.M changes to minor db format */
+ENUM_ENTRY(GDSMV63012),		/* New fullblklwrt option */
 ENUM_ENTRY(GDSMVFILLER2),	/* Space reserved for GT.M changes to minor db format */
 ENUM_ENTRY(GDSMVFILLER3),	/* Space reserved for GT.M changes to minor db format */
 ENUM_ENTRY(GDSMVFILLER4),	/* Space reserved for GT.M changes to minor db format */
@@ -64,4 +64,5 @@ ENUM_ENTRY(GDSMVFILLER16),	/* Space reserved for GT.M changes to minor db format
 ENUM_ENTRY(GDSMR126),		/* Includes GT.M V6.3-007 */
 ENUM_ENTRY(GDSMR130),
 ENUM_ENTRY(GDSMR134),		/* New field "max_procs" records max concurrent processes accessing database */
+ENUM_ENTRY(GDSMR136),		/* Includes GT.M V6.3-012 */
 ENUM_ENTRY(GDSMVLAST)

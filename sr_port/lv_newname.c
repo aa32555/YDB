@@ -1,8 +1,9 @@
 /****************************************************************
  *								*
- * Copyright 2001, 2014 Fidelity Information Services, Inc	*
+ * Copyright (c) 2001-2020 Fidelity National Information	*
+ * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2022 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -47,7 +48,7 @@ void lv_newname(ht_ent_mname *hte, symval *sym)
 	LVVAL_INIT(lv, sym);
 	DBGRFCT((stderr, "\nlv_newname: Varname '%.*s' in sym 0x"lvaddr" resetting hte 0x"lvaddr" from 0x"lvaddr" to 0x"lvaddr
 		 " -- called from 0x"lvaddr"\n\n", hte->key.var_name.len, hte->key.var_name.addr, sym, hte, hte->value, lv,
-		 caller_id()));
+		 caller_id(0)));
 	hte->value = lv;
 	assert(1 == lv->stats.trefcnt);
 	assert(0 == lv->stats.crefcnt);

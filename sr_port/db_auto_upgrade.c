@@ -1,6 +1,6 @@
 /****************************************************************
  *								*
- * Copyright (c) 2001-2019 Fidelity National Information	*
+ * Copyright (c) 2001-2020 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
  * Copyright (c) 2017-2022 YottaDB LLC and/or its subsidiaries. *
@@ -202,6 +202,9 @@ void db_auto_upgrade(gd_region *reg)
 				/* YottaDB r122 introduced "reorg_sleep_nsec" to slow down reorg update rate by user */
 				csd->reorg_sleep_nsec = 0;
 			case GDSMV63007:	/* Note: This is also the case for GDSMR122 */
+				/* GT.M V63012 added fullblkwrt option */
+				csd->write_fullblk = 0;
+			case GDSMV63012:
 			case GDSMR126:
 				/* YottaDB r130 changed "flush_time" from milliseconds to nanoseconds to support nanosecond timers */
 				csd->flush_time = csd->flush_time * NANOSECS_IN_MSEC;
@@ -219,8 +222,11 @@ void db_auto_upgrade(gd_region *reg)
 				 */
 				csd->max_procs.cnt = 0;
 				csd->max_procs.time = 0;
-				break;
 			case GDSMR134:
+				/* GT.M V63012 (merged after YottaDB r1.34) added fullblkwrt option */
+				csd->write_fullblk = 0;
+				break;
+			case GDSMR136:
 		/* When adding a new minor version, the following template should be maintained
 		 * a) If there are any file header fields added in the new minor version, initialize the fields to default values
 		 *    in the last case (i.e. above this comment block). Do not add a "break" for the above "case" block.
@@ -236,7 +242,6 @@ void db_auto_upgrade(gd_region *reg)
 			/* Move the below cases above the "case GDSMR126:" above as later GT.M versions use these minor
 			 * db version enum values.
 			 */
-			case GDSMVFILLER1:
 			case GDSMVFILLER2:
 			case GDSMVFILLER3:
 			case GDSMVFILLER4:

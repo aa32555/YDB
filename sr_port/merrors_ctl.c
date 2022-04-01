@@ -1547,6 +1547,7 @@ LITDEF	err_msg merrors[] = {
 	{ "MUKEEPNOTRUNC", "Keep issued without -truncate", 0, 0 },
 	{ "MUTRUNCNOSPKEEP", "Region !AD has insufficient space to meet truncate target percentage of !UL with keep at !UL blocks", 4, 0 },
 	{ "TERMHANGUP", "Terminal has disconnected", 0, 0 },
+	{ "DBFILNOFULLWRT", "Disabling fullblock writes. !AD !AD !UL", 5, 0 },
 };
 
 
@@ -1585,7 +1586,7 @@ GBLDEF	err_ctl merrors_ctl = {
 	246,
 	"GTM",
 	&merrors[0],
-	1530,
+	1531,
 	&merrors_undocarr[0],
 	26
 };
