@@ -1,6 +1,7 @@
 /****************************************************************
  *								*
- * Copyright 2001, 2013 Fidelity Information Services, Inc	*
+ * Copyright (c) 2001-2020 Fidelity National Information	*
+ * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
  * Copyright (c) 2017-2022 YottaDB LLC and/or its subsidiaries. *
  * All rights reserved.						*
@@ -31,8 +32,10 @@
 #include "promodemo.h"	/* for "demote" prototype used in LV_NODE_GET_KEY */
 #include "libyottadb_int.h"
 
-GBLREF spdesc		stringpool;
+GBLREF bool		undef_inhibit;
 GBLREF mv_stent		*mv_chain;
+GBLREF spdesc		stringpool;
+GBLREF symval		*curr_symval;
 GBLREF unsigned char	*msp, *stackwarn, *stacktop;
 
 LITREF	mval		literal_null;
@@ -75,18 +78,18 @@ void op_fnquery(int sbscnt, mval *dst, ...)
 
 void op_fnquery_va(int sbscnt, mval *dst, va_list var)
 {
-	int			length, dstlen;
-	mval			tmp_sbs, *last_fnquery_ret;
-	mval			*varname, *v1, *v2, *mv, tmpmv;
-	mval			*arg1, **argpp, *args[MAX_LVSUBSCRIPTS], **argpp2, *lfrsbs, *argp2;
+	boolean_t		found, is_num, is_simpleapi_mode, is_sqlnull, is_str, last_sub_null, nullsubs_implies_firstsub,
+				push_v1;
+	ht_ent_mname		*tabent;
+	int			i, j, nexti, length, dstlen;
+	lv_val			*lvn, *v, *ve;
+	lvTree			*lvt;
+	lvTreeNode		**h1, **h2, *history[MAX_LVSUBSCRIPTS + 1], *node, *nullsubsnode, *nullsubsparent, *parent;
+	mname_entry		lvent;
+	mval			*arg1, **argpp, *argp2, **argpp2, *args[MAX_LVSUBSCRIPTS], *lfrsbs, *mv, tmpmv, tmp_sbs,
+				*last_fnquery_ret, *varname, *v1, *v2;
 	mval			xform_args[MAX_LVSUBSCRIPTS];	/* for lclcol */
 	mstr			format_out, *retsub;
-	lv_val			*v;
-	lvTreeNode		**h1, **h2, *history[MAX_LVSUBSCRIPTS + 1], *parent, *node, *nullsubsnode, *nullsubsparent;
-	lvTree			*lvt;
-	int			i, j, nexti;
-	boolean_t		found, is_num, last_sub_null, nullsubs_implies_firstsub, is_str, push_v1, is_simpleapi_mode;
-	boolean_t		is_sqlnull;
 	DCL_THREADGBL_ACCESS;
 
 	SETUP_THREADGBL_ACCESS;
@@ -97,15 +100,27 @@ void op_fnquery_va(int sbscnt, mval *dst, va_list var)
 	varname = va_arg(var, mval *);
 	v = va_arg(var, lv_val *);
 	assert(v);
-	assert(LV_IS_BASE_VAR(v));
-	lvt = LV_GET_CHILD(v);
+	if (varname->str.len > MAX_MIDENT_LEN)
+		varname->str.len = MAX_MIDENT_LEN;
+	lvent.var_name.len = varname->str.len;
+	lvent.var_name.addr = varname->str.addr;
+	COMPUTE_HASH_MNAME(&lvent);
+	if (tabent = lookup_hashtab_mname(&curr_symval->h_symtab, &lvent))
+	{	/* if the variable exists find out if it has children */
+		ve = (lv_val *)tabent->value;
+		assert(ve);
+		assert(HTENT_VALID_MNAME(tabent, lv_val, ve));
+		assert(LV_IS_BASE_VAR(ve));
+		lvt = LV_GET_CHILD(ve);
+		assert((NULL == lvt) || (LV_GET_CHILD(v) == lvt));
+	} else
+		lvt = NULL;
 	is_simpleapi_mode = IS_SIMPLEAPI_MODE;
 	if (NULL == lvt)
 	{
 		if (!is_simpleapi_mode)
-		{	/* Array size of zero is the signal there is nothing else */
-			dst->mvtype = MV_STR;
-			dst->str.len = 0;
+		{	/* no such unsubscripted variable or no descendants */
+			*dst = literal_null;
 		}
 		return;
 	}
@@ -144,10 +159,9 @@ void op_fnquery_va(int sbscnt, mval *dst, va_list var)
 				 */
 				nullsubs_implies_firstsub = TRUE;
 				last_fnquery_ret = &TREF(last_fnquery_return_varname);
-				if (last_fnquery_ret->str.len
+				if (last_fnquery_ret->str.len && (sbscnt == TREF(last_fnquery_return_subcnt))
 				    && (last_fnquery_ret->str.len == varname->str.len)
-				    && (0 == memcmp(last_fnquery_ret->str.addr, varname->str.addr, varname->str.len))
-				    && (sbscnt == TREF(last_fnquery_return_subcnt)))
+				    && (0 == memcmp(last_fnquery_ret->str.addr, varname->str.addr, varname->str.len)))
 				{	/* We have an equivalent varname and same number subscripts */
 					for (j = 0, argpp2 = &args[0], lfrsbs = TADR(last_fnquery_return_sub);
 					     j < i; j++, argpp2++, lfrsbs++)
@@ -276,8 +290,7 @@ void op_fnquery_va(int sbscnt, mval *dst, va_list var)
 				{
 					if (!is_simpleapi_mode)
 					{	/* Array size of zero is the signal there is nothing else */
-						dst->mvtype = MV_STR;
-						dst->str.len = 0;
+						*dst = literal_null;
 					}
 					return;
 				}
@@ -347,6 +360,7 @@ void op_fnquery_va(int sbscnt, mval *dst, va_list var)
 			} else
 				(TREF(last_fnquery_return_varname)).str.addr = varname->str.addr;
 			(TREF(last_fnquery_return_varname)).str.len = varname->str.len;
+			(TREF(last_fnquery_return_varname)).mvtype = MV_STR;
 		}
 		/* Verify global subscript array is available and if not make it so */
 		if (NULL == TREF(sapi_query_node_subs))
@@ -402,10 +416,8 @@ void op_fnquery_va(int sbscnt, mval *dst, va_list var)
 				if (last_sub_null)
 				{
 					TAREF1(last_fnquery_return_sub,(TREF(last_fnquery_return_subcnt))).mvtype = v2->mvtype;
-					TAREF1(last_fnquery_return_sub,(TREF(last_fnquery_return_subcnt))).str.addr =
-						v2->str.addr;
-					TAREF1(last_fnquery_return_sub,(TREF(last_fnquery_return_subcnt))++).str.len =
-						v2->str.len;
+					TAREF1(last_fnquery_return_sub,(TREF(last_fnquery_return_subcnt))).str.addr = v2->str.addr;
+					TAREF1(last_fnquery_return_sub,(TREF(last_fnquery_return_subcnt))++).str.len = v2->str.len;
 				}
 			}
 			/* Save a copy of the mstr in our global subscript structure we'll return to our caller */
@@ -432,6 +444,7 @@ void op_fnquery_va(int sbscnt, mval *dst, va_list var)
 		{
 			(TREF(last_fnquery_return_varname)).str.addr = (char *)stringpool.free;
 			(TREF(last_fnquery_return_varname)).str.len = varname->str.len;
+			(TREF(last_fnquery_return_varname)).mvtype = MV_STR;
 		}
 		stringpool.free += varname->str.len;
 		*stringpool.free++ = '(';
@@ -503,8 +516,7 @@ void op_fnquery_va(int sbscnt, mval *dst, va_list var)
 							= MV_STR;
 						TAREF1(last_fnquery_return_sub,(TREF(last_fnquery_return_subcnt))).str.addr
 							= (char *)stringpool.free;
-						TAREF1(last_fnquery_return_sub,(TREF(last_fnquery_return_subcnt))++).str.len
-							= v2->str.len;
+						TAREF1(last_fnquery_return_sub,(TREF(last_fnquery_return_subcnt))++).str.len = v2->str.len;
 					}
 					stringpool.free += v2->str.len;
 					*stringpool.free++ = '\"';

@@ -180,7 +180,9 @@ int gtmsource_est_conn()
 		gtmsource_poll_actions(FALSE);
 		if ((GTMSOURCE_CHANGING_MODE == gtmsource_state) || (GTMSOURCE_HANDLE_ONLN_RLBK == gtmsource_state))
 			return (SS_NORMAL);
-		comminit_retval = gtmsource_comm_init(throw_errors);
+		/* Check for network resolution issues if the socket is invalid */
+		if (FD_INVALID == gtmsource_sock_fd)
+			comminit_retval = gtmsource_comm_init(throw_errors);
 	} while (++connection_attempts < hardtries_count);
 	gtmsource_poll_actions(FALSE);
 	if ((GTMSOURCE_CHANGING_MODE == gtmsource_state) || (GTMSOURCE_HANDLE_ONLN_RLBK == gtmsource_state))
@@ -238,7 +240,9 @@ int gtmsource_est_conn()
 			gtmsource_poll_actions(FALSE);
 			if ((GTMSOURCE_CHANGING_MODE == gtmsource_state) || (GTMSOURCE_HANDLE_ONLN_RLBK == gtmsource_state))
 				return (SS_NORMAL);
-			comminit_retval = gtmsource_comm_init(throw_errors);
+			/* Check for network resolution issues if the socket is invalid */
+			if (FD_INVALID == gtmsource_sock_fd)
+				comminit_retval = gtmsource_comm_init(throw_errors);
 			connection_attempts++;
 			if (0 == (connection_attempts % logging_interval) && 0 == (logging_attempts % alert_attempts))
 			{ 	/* Log ALERT message */

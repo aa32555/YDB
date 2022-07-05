@@ -1,9 +1,9 @@
 /****************************************************************
  *								*
- * Copyright (c) 2016-2019 Fidelity National Information	*
+ * Copyright (c) 2016-2020 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018-2019 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2022 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -48,6 +48,7 @@
 #include "repl_msg.h"			/* for gtmsource.h */
 #include "gtmsource.h"			/* for jnlpool_addrs_ptr_t */
 #include "gtm_signal.h"			/* for SIGPROCMASK */
+#include "gvt_inline.h"
 
 LITREF mval		literal_statsDB_gblname;
 
@@ -159,7 +160,7 @@ void gvcst_init_statsDB(gd_region *baseDBreg, boolean_t do_statsdb_init)
 	srch_blk_status 		*bh;
 	char				statsDBinitrec[SIZEOF(gvstats_rec_t) * 2];	/* Gives chunk large enuf to hold pad */
 	int				datasize, extlen, freespace, padsize, sizewkey, sizewkeyrnd, rc;
-	gv_key				save_altkey[DBKEYALLOC(MAX_KEY_SZ)], save_currkey[DBKEYALLOC(MAX_KEY_SZ)];
+	gv_key_buf			save_altkey, save_currkey;
 	sgmnt_addrs			*baseDBcsa, *statsDBcsa;
 	statsDB_deferred_init_que_elem	*sdiqeptr;
 	gvnh_reg_t			*save_gd_targ_gvnh_reg;
@@ -503,7 +504,7 @@ void gvcst_remove_statsDB_linkage(gd_region *baseDBreg)
 	gd_region		*statsDBreg, *save_cur_region;
 	gv_namehead		*save_gv_target, *save_reset_gv_target;
 	char			statsDBinitrec[SIZEOF(gvstats_rec_t) * 2];	/* Gives us a chunk large enuf to hold padding */
-	gv_key			save_currkey[DBKEYALLOC(MAX_KEY_SZ)];
+	gv_key_buf		save_currkey;
 	sgmnt_addrs		*baseDBcsa, *statsDBcsa;
 	gvstats_rec_t		*gvstats_rec_p;
 	gvnh_reg_t		*save_gd_targ_gvnh_reg;

@@ -1,9 +1,9 @@
 /****************************************************************
  *								*
- * Copyright (c) 2001-2019 Fidelity National Information	*
+ * Copyright (c) 2001-2020 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2017-2020 YottaDB LLC and/or its subsidiaries. *
+ * Copyright (c) 2017-2022 YottaDB LLC and/or its subsidiaries. *
  * All rights reserved.						*
  *								*
  * Copyright (c) 2017 Stephen L Johnson. All rights reserved.	*
@@ -724,7 +724,7 @@ void stp_gcol(size_t space_asked)	/* BYPASSOK */
 #		ifdef GTM_TRIGGER
 		MVAL_STPG_ADD(&dollar_ztwormhole);
 #		endif
-		MVAL_STPG_ADD(TADR(last_fnquery_return_varname));
+		MVAL_STPG_ADD(&(TREF(last_fnquery_return_varname)));
 		MVAL_STPG_ADD(&dollar_testmv);
 		for (index = 0; index < TREF(last_fnquery_return_subcnt); index++)
 			MVAL_STPG_ADD(&TAREF1(last_fnquery_return_sub, index));

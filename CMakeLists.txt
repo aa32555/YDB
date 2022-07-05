@@ -1,6 +1,6 @@
 #################################################################
 #								#
-# Copyright (c) 2012-2019 Fidelity National Information		#
+# Copyright (c) 2012-2020 Fidelity National Information		#
 # Services, Inc. and/or its subsidiaries. All rights reserved.	#
 #								#
 # Copyright (c) 2017-2022 YottaDB LLC and/or its subsidiaries.	#
@@ -55,7 +55,9 @@ else()
 endif()
 
 if ( CMAKE_COMPILER_IS_GNUCC )
-    set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -Wextra -Waddress")
+    set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wall -Wno-unused-result -Wno-parentheses -Wno-unused-value -Wno-unused-variable")
+    set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wno-maybe-uninitialized -Wno-char-subscripts -Wno-unused-but-set-variable")
+    set(CMAKE_C_FLAGS  "${CMAKE_C_FLAGS} -Wno-unused-function")
 endif()
 
 # The below option enables the address sanitizer in the build.

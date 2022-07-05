@@ -1,8 +1,9 @@
 /****************************************************************
  *								*
- * Copyright 2001 Sanchez Computer Associates, Inc.		*
+ * Copyright (c) 2001-2020 Fidelity National Information	*
+ * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2017 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2017-2022 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -16,7 +17,7 @@
 #include "gt_timer.h"
 #include "eintr_wrappers.h"
 
-GBLDEF struct NTD *ntd_root;
+GBLREF struct NTD *ntd_root;
 
 void cmi_idle(uint4 hiber)
 {

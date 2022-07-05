@@ -1,6 +1,6 @@
 /****************************************************************
  *                                                              *
- * Copyright (c) 2001-2018 Fidelity National Information	*
+ * Copyright (c) 2001-2020 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
  * Copyright (c) 2017-2022 YottaDB LLC and/or its subsidiaries.	*
@@ -21,7 +21,7 @@
 #include "opcode.h"
 #include "stringpool.h"
 
-LITREF octabstruct	oc_tab[];
+LITREF	octabstruct	oc_tab[];
 
 /*
  * Invoked to resolve expresions that are by definition coerced to Boolean, which include
@@ -100,6 +100,7 @@ int bool_expr(boolean_t sense, oprtype *addr, triple **boolexprfinish_ptr)
 	 */
 	andor_opcode = bx_get_andor_opcode(x.oprval.tref->opcode, OC_NOOP);
 	bx_tail(x.oprval.tref, sense, addr, 0, andor_opcode, !sense, 0, IS_LAST_BOOL_OPERAND_TRUE);
+	CHKTCHAIN(TREF(curtchain), exorder, TRUE);	/* defined away in mdq.h except with DEBUG_TRIPLES */
 	DECREMENT_EXPR_DEPTH;
 	return TRUE;
 }

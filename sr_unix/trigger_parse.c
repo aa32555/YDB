@@ -1,6 +1,6 @@
 /****************************************************************
  *								*
- * Copyright (c) 2010-2019 Fidelity National Information	*
+ * Copyright (c) 2010-2020 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
  * Copyright (c) 2018-2022 YottaDB LLC and/or its subsidiaries.	*
@@ -42,6 +42,14 @@ GBLREF CLI_ENTRY                *cmd_ary;
 GBLREF	gd_region		*gv_cur_region;
 GBLREF CLI_ENTRY                trigger_cmd_ary[];
 GBLREF	volatile boolean_t	timer_in_handler;
+
+STATICFNDCL char *scan_to_end_quote(char *ptr, int len, int max_len);
+STATICFNDCL boolean_t process_dollar_char(char **src_ptr, int *src_len, boolean_t have_star, char **d_ptr, int *dst_len);
+STATICFNDCL boolean_t process_delim(char *delim_str, uint4 *delim_len);
+STATICFNDCL boolean_t process_options(char *option_str, uint4 option_len, boolean_t *isolation, boolean_t *noisolation,
+				    boolean_t *consistency, boolean_t *noconsistency);
+STATICFNDCL boolean_t process_subscripts(char *subscr_str, uint4 *subscr_len, char **next_str, char *out_str, int4 *out_max);
+STATICFNDCL boolean_t process_pieces(char *piece_str, uint4 *piece_len);
 
 #define BITS_PER_INT		(SIZEOF(uint4) * 8)		/* Number of bits in an integer */
 #define MAX_PIECE_VALUE		((BITS_PER_INT * 1024) - 1)	/* Largest value allowed in -pieces string */
@@ -1245,7 +1253,7 @@ STATICFNDEF boolean_t process_pieces(char *piece_str, uint4 *piece_len)
 	return TRUE;
 }
 
-STATICFNDEF boolean_t process_xecute(char *xecute_str, uint4 *xecute_len, boolean_t multi_line)
+boolean_t process_xecute(char *xecute_str, uint4 *xecute_len, boolean_t multi_line)
 {
 	uint4		dst_len;
 	char		dst_string[MAX_SRCLINE];

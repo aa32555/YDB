@@ -1,9 +1,9 @@
 /****************************************************************
  *								*
- * Copyright (c) 2001-2019 Fidelity National Information	*
+ * Copyright (c) 2001-2020 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2019-2021 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2019-2022 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -47,9 +47,7 @@ GBLREF	sgmnt_addrs		*cs_addrs;
 GBLREF	sgmnt_data_ptr_t	cs_data;
 GBLREF	boolean_t		write_after_image;
 GBLREF	unsigned int		t_tries;
-#ifdef UNIX
 GBLREF	jnl_gbls_t		jgbl;
-#endif
 
 void gvcst_blk_build(cw_set_element *cse, sm_uc_ptr_t base_addr, trans_num ctn)
 {
@@ -74,8 +72,8 @@ void gvcst_blk_build(cw_set_element *cse, sm_uc_ptr_t base_addr, trans_num ctn)
 	 * which holds crit for the entire duration
 	 */
 	is_mm = (dba_mm == cs_data->acc_meth);
-	assert((dba_bg != cs_data->acc_meth) || dollar_tlevel || !cs_addrs->now_crit || write_after_image
-			UNIX_ONLY(|| jgbl.onlnrlbk));
+	assert((dba_bg != cs_data->acc_meth) || dollar_tlevel || !cs_addrs->now_crit || write_after_image| jgbl.onlnrlbk
+		|| ((NULL != cse->recompute_list_head) && (gds_t_write == cse->mode)));
 	assert(!is_mm || dollar_tlevel || cs_addrs->now_crit);
 	assert(cse->mode != gds_t_writemap);
 	array = (blk_segment *)cse->upd_addr;

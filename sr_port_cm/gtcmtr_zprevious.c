@@ -1,8 +1,9 @@
 /****************************************************************
  *								*
- * Copyright 2001, 2009 Fidelity Information Services, Inc	*
+ * Copyright (c) 2001-2020 Fidelity National Information	*
+ * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2017-2021 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2017-2022 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -35,6 +36,7 @@
 #include "gtcmtr_protos.h"
 #include "gdscc.h"
 #include "jnl.h"
+#include "gvt_inline.h"
 
 GBLREF connection_struct *curr_entry;
 GBLREF gv_namehead	*gv_target;
@@ -53,9 +55,6 @@ cm_op_t gtcmtr_zprevious(void)
 	gv_key			*save_key;
 	cm_region_list		*reg_ref;
 	cm_region_head		*cm_reg_head;
-
-	error_def(ERR_UNIMPLOP);
-	error_def(ERR_TEXT);
 
 	ASSERT_IS_LIBGNPSERVER;
 	ptr = curr_entry->clb_ptr->mbf;
@@ -78,7 +77,7 @@ cm_op_t gtcmtr_zprevious(void)
 	if (gv_currkey->prev)
 	{
 		gtcm_bind_name(cm_reg_head, FALSE); /* sets gv_target; do not use gv_target before gtcm_bind_name */
-		GTCMTR_SUBS2STR_XFORM_IF_NEEDED(gv_target, gv_currkey, old_top);
+		gtcmtr_sub2str_xform_if_needed(gv_target, gv_currkey, old_top);
 		found = (0 == gv_target->root) ? FALSE : gvcst_zprevious();
 	} else
 	{	/* name level */
@@ -99,8 +98,7 @@ cm_op_t gtcmtr_zprevious(void)
 									 * and two <NUL> delimiters */
 			if ((PRE_V5_MAX_MIDENT_LEN < strlen((char *)gv_altkey->base)) && !curr_entry->client_supports_long_names)
 			{
-				rts_error(VARLSTCNT(6) ERR_UNIMPLOP, 0,
-					ERR_TEXT, 2,
+				rts_error_csa(CSA_ARG(cs_addrs) VARLSTCNT(6) ERR_UNIMPLOP, 0, ERR_TEXT, 2,
 					LEN_AND_LIT("GT.CM client does not support global names greater than 8 characters"));
 			}
 			save_key = gv_currkey;

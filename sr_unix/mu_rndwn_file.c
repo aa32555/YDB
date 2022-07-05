@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2020 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2017-2021 YottaDB LLC and/or its subsidiaries. *
+ * Copyright (c) 2017-2022 YottaDB LLC and/or its subsidiaries. *
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -132,6 +132,8 @@ error_def(ERR_STATSDBNOTSUPP);
 error_def(ERR_SYSCALL);
 error_def(ERR_TEXT);
 error_def(ERR_VERMISMATCH);
+
+STATICFNDCL boolean_t	mu_rndwn_file_statsdb(gd_region *statsDBreg, boolean_t *statsdb_exists, boolean_t standalone);
 
 #define	ALIGN_BUFF_IF_NEEDED_FOR_DIO(UDI, BUFF, TSD, TSD_SIZE)	\
 MBSTART {							\
@@ -1257,14 +1259,12 @@ boolean_t mu_rndwn_file(gd_region *reg, boolean_t standalone)
 				return FALSE;
 			}
 			if (FROZEN_CHILLED(csa) && !override_present)
-			{	/* If there is an online freeze, we can't do the file writes, so autorelease or give up. */
-				DO_CHILLED_AUTORELEASE(csa, csd);
-				if (FROZEN_CHILLED(csa))
-				{
-					gtm_putmsg_csa(CSA_ARG(NULL) VARLSTCNT(4) ERR_OFRZACTIVE, 2, DB_LEN_STR(reg));
-					MU_RNDWN_FILE_CLNUP(reg, udi, tsd, sem_created, udi->counter_acc_incremented);
-					return FALSE;
-				}
+			{	/* If there is an online freeze, we can't do the file writes.
+				 * Reject any command that requires a write to the frozen database file.
+				 */
+				gtm_putmsg_csa(CSA_ARG(NULL) VARLSTCNT(4) ERR_OFRZACTIVE, 2, DB_LEN_STR(reg));
+				MU_RNDWN_FILE_CLNUP(reg, udi, tsd, sem_created, udi->counter_acc_incremented);
+				return FALSE;
 			}
 			/* If there was an online freeze and it was autoreleased, we don't want to take down the shared memory
 			 * and lose the freeze_online state.

@@ -43,6 +43,7 @@ void ex_tail(oprtype *opr, int depth)
 	assert(TRIP_REF == opr->oprclass);
 	UNARY_TAIL(opr, depth); /* this is first because it can change opr and thus whether we should even process the tail */
 	RETURN_IF_RTS_ERROR;
+	CHKTCHAIN(TREF(curtchain), exorder, TRUE);	/* defined away in mdq.h except with DEBUG_TRIPLES */
 	t = opr->oprval.tref; /* Refind t since UNARY_TAIL may have shifted it */
 	c = t->opcode;
 	oct = oc_tab[c].octype;
@@ -79,7 +80,7 @@ void ex_tail(oprtype *opr, int depth)
 	DEBUG_ONLY(bitrip->src = t->src);
 	dqrins(t1, exorder, bitrip);
 	t2 = t->exorder.fl;
-	assert((OC_COMVAL == t2->opcode) || (OC_COMINT == t2->opcode));
+	assert((OC_COMVAL == t2->opcode) || (OC_COMINT == t2->opcode));	/* may need to change COMINT to COMVAL in bx_boolop */
 	assert(&t2->operand[0] == opr);				/* check next operation ensures an expression */
 	/* Overwrite depth (set in coerce.c to INIT_GBL_BOOL_DEPTH) to current bool expr depth */
 	assert(TRIP_REF == t2->operand[1].oprclass);
@@ -99,5 +100,6 @@ void ex_tail(oprtype *opr, int depth)
 	bx_tail(t, FALSE, i, depth + 1, andor_opcode, CALLER_IS_BOOL_EXPR_FALSE, depth + 1, IS_LAST_BOOL_OPERAND_TRUE);
 	RETURN_IF_RTS_ERROR;
 	*i = put_tnxt(bftrip);
+	CHKTCHAIN(TREF(curtchain), exorder, TRUE);	/* defined away in mdq except with DEBUG_TRIPLES */
 	return;
 }

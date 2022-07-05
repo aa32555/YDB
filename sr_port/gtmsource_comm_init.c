@@ -72,7 +72,6 @@ int gtmsource_comm_init(boolean_t print_addresolve_error)
 	char			hostinfo[SIZEOF(RESOLUTION_FAILURE_PREFIX) + MAX_HOST_NAME_LEN + NI_MAXSERV];
 	int			port_len;
 	int			errcode;
-	int			tries;
 
 	if (FD_INVALID != gtmsource_sock_fd) /* Initialization done already */
 		return(0);
@@ -82,9 +81,7 @@ int gtmsource_comm_init(boolean_t print_addresolve_error)
 	port_buffer[port_len] = '\0';
 	host = gtmsource_local->secondary_host;
 	CLIENT_HINTS(hints);
-	for (tries = 0;
-	     (tries < MAX_GETHOST_TRIES) && (EAI_AGAIN == (errcode = dogetaddrinfo(host, port_buffer, &hints, &ai_head)));
-	     tries++);
+	errcode = dogetaddrinfo(host, port_buffer, &hints, &ai_head);
 	if ((0 != errcode) && print_addresolve_error)
 	{
 		SNPRINTF(hostinfo, SIZEOF(hostinfo), "%s%s:%s", RESOLUTION_FAILURE_PREFIX, host, port_buffer);

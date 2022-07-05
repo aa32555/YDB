@@ -54,6 +54,7 @@
 #include "gvcst_protos.h"
 #include "muextr.h"
 #include "mu_getkey.h"
+#include "gvt_inline.h"
 
 #define MAX_UTIL_LEN			96
 #define APPROX_ALL_ERRORS		1000000
@@ -129,6 +130,7 @@ GBLDEF int			rec_len;
  */
 GBLDEF enc_handles		mu_int_encr_handles;
 GBLDEF boolean_t		ointeg_this_reg;
+GBLDEF util_snapshot_ptr_t	util_ss_ptr;
 GBLDEF boolean_t		preserve_snapshot;
 GBLDEF boolean_t		online_specified;
 
@@ -147,7 +149,6 @@ GBLREF gv_namehead		*gv_target;
 GBLREF sgmnt_addrs		*cs_addrs;
 GBLREF short			crash_count;
 GBLREF tp_region		*grlist;
-GBLREF util_snapshot_ptr_t	util_ss_ptr;
 
 void mupip_integ(void)
 {
