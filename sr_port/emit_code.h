@@ -67,7 +67,7 @@ int	gtm_reg(int vax_reg);
 #define PUSH_LIST_SIZE	500
 
 #if defined(__vms) || defined(_AIX) || defined(__sparc) || defined(__hpux)						\
-	|| (defined(__linux__) && defined(__ia64) || defined(__aarch64__)) || defined(__MVS__)
+	|| (defined(__linux__) && defined(__ia64) || defined(__aarch64__) || defined(__riscv)) || defined(__MVS__)
 #  define TRUTH_IN_REG
 #elif defined(__osf__) || (defined(__linux__) && defined(__x86_64__)) || defined(Linux390)				\
 	|| (defined(__CYGWIN__) && defined(__x86_64__))									\

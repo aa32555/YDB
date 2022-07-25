@@ -104,6 +104,8 @@ void extract_signal_info(int sig, siginfo_t *info, gtm_sigcontext_t *context, gt
 					gtmsi->int_iadr = (caddr_t)context->uc_mcontext.arm_pc;
 #    elif defined(__aarch64__)
 					gtmsi->int_iadr = (caddr_t)context->uc_mcontext.pc;
+#    elif defined(__riscv)
+					gtmsi->int_iadr = (caddr_t)context->uc_mcontext.__gregs[REG_PC];
 #    else
 #      error "Unsupported Linux Platform"
 #    endif

@@ -213,6 +213,17 @@ typedef uint4 mach_inst;				/* machine instruction */
 typedef uint4 mach_inst;				/* machine instruction */
 #endif
 
+#if defined(__riscv)
+#  define CACHELINE_SIZE		64
+#  define USHBIN_SUPPORTED
+#  define AUTORELINK_SUPPORTED
+#  define LINKAGE_PSECT_BOUNDARY	8
+#  define INO_T_LONG
+#  undef BIGENDIAN
+typedef uint4 mach_inst;				/* machine instruction */
+#endif
+
+
 /* On NON_USHBIN_ONLY platforms, reserve enough space in routine header for the dummy
  * string "GTM_CODE". On USHBIN_ONLY platforms, reserve space of 16 bytes that holds
  * instructions for simple 'return -1' plus as many characters of "GTM_CODE" as can be fit

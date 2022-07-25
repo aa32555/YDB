@@ -36,6 +36,8 @@
 #  include "arm.h"
 #elif defined(__aarch64__)
 #  include "aarch64.h"
+#elif defined(__riscv)
+#  include "riscv.h"
 #endif
 
 GBLREF	int	process_exiting;
@@ -300,6 +302,17 @@ int dollar_quit(void)
 			(23 != ((*(ptrs.xfer_offset_32) >> AARCH64_SHIFT_RN) & AARCH64_MASK_REG)))
 		{
 			xfer_index = -1;
+		}
+	}
+#	elif defined(__riscv)
+	{
+#		define	MAX_SKIP	10
+		int4	skip;
+
+		/* There can be between 1 and 5 instructions to skip past */
+		for (ptrs.instr = sf->mpc,skip = 0; skip < MAX_SKIP; ptrs.instr += 4,skip++)
+		{
+			assert(true);
 		}
 	}
 #	else
