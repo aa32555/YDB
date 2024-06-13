@@ -24,7 +24,7 @@ RUN apk update && \
 		binutils-gold \
 		elfutils-dev 
 	
-RUN mkdir /tmp/yottadb-src
+RUN mkdir -p /tmp/yottadb-src
 ADD CMakeLists.txt /tmp/yottadb-src
 
 ADD cmake /tmp/yottadb-src/cmake
@@ -54,7 +54,7 @@ RUN mkdir -p /tmp/yottadb-build \
       -D CMAKE_INSTALL_PREFIX:PATH=/tmp \
       -D YDB_INSTALL_DIR:STRING=yottadb-release \
       -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
-      /tmp/yottadb-src
+      /tmp/yottadb-src && \
+      make -j $(nproc) && \
+      make install
 WORKDIR /tmp/yottadb-src
-# && make -j $(nproc) \
-# && make install

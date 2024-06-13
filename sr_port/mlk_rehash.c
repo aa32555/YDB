@@ -12,8 +12,6 @@
  *	the license, please stop and do not read further.	*
  *								*
  ****************************************************************/
-#include "gtm_string.h"
-
 #include "mdef.h"
 #include "gdsroot.h"
 #include "gdsblk.h"
