@@ -56,7 +56,9 @@
 #ifdef __x86_64
 #	include <math.h>
 #	include "gtm_utsname.h"
+#ifndef __MUSL
 #	include <gnu/libc-version.h>
+#endif
 #	include <dlfcn.h>
 #	define BUF_MAX		100
 #	define MIN_ETA		10
@@ -1072,6 +1074,9 @@ inline boolean_t ink_backup(void)
 	char *ptr;
 	long int kernel_major, kernel_minor;
 	float glibcversion;
+#ifdef __MUSL
+	return FALSE;
+#endif
 	/* Check for the copy_file_range symbol */
 	func_ptr = dlsym(RTLD_DEFAULT, "copy_file_range");
 	if (NULL == func_ptr)
