@@ -54,6 +54,12 @@
 #include "mlkdef.h"
 #include "iormdef.h"
 #include "toktyp.h"
+#include "arit.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
+
 #ifdef DEBUG
 #  include "wbox_test_init.h"
 #endif
@@ -105,6 +111,7 @@ LITREF char		ydb_release_stamp[];
 LITREF int4		ydb_release_stamp_len;
 LITREF char		ydb_release_name[];
 LITREF int4		ydb_release_name_len;
+LITREF int4		ten_pwr[];
 
 void op_svget(int varnum, mval *v)
 {
@@ -388,6 +395,9 @@ void op_svget(int varnum, mval *v)
 			v->mvtype = MV_STR;
 			v->str.addr = (char *)gtm_release_name;
 			v->str.len = gtm_release_name_len;
+			break;
+		case SV_ZYCYCLES:		
+			op_zycycles(v);
 			break;
 		case SV_ZYINTRSIG:
 			if (dollar_zininterrupt)

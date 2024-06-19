@@ -142,6 +142,7 @@ static readonly char zusedstor_text[] = "$ZUSEDSTOR";
 static readonly char zversion_text[] = "$ZVERSION";
 static readonly char zreldate_text[] = "$ZRELDATE";
 static readonly char zyerror_text[] = "$ZYERROR";
+static readonly char zycycles_text[] = "$ZYCYCLES";
 static readonly char zyintrsig_text[] = "$ZYINTRSIG";
 static readonly char zyrelease_text[] = "$ZYRELEASE";
 static readonly char zysqlnull_text[] = "$ZYSQLNULL";
@@ -908,6 +909,13 @@ void zshow_svn(zshow_out *output, int one_sv)
 			var.mvtype = MV_STR;
 			var.str = dollar_zyerror.str;
 			ZS_VAR_EQU(&x, zyerror_text);
+			mval_write(output, &var, TRUE);
+			if (SV_ALL != one_sv)
+				break;
+		/* CAUTION: fall through */
+		case SV_ZYCYCLES:
+			op_zycycles(&var);
+			ZS_VAR_EQU(&x, zycycles_text);
 			mval_write(output, &var, TRUE);
 			if (SV_ALL != one_sv)
 				break;
