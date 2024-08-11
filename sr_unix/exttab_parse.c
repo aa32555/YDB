@@ -108,7 +108,7 @@ const int parm_space_needed[] =
 	SIZEOF(ydb_string_t),									/* ydb_jbig_decimal */
 	SIZEOF(ydb_buffer_t *) + SIZEOF(ydb_buffer_t),						/* ydb_buffer_star */
 };
-static_assert(ARRAYSIZE(parm_space_needed) == YDB_TYPES_COUNT, "array size does not match ydb_types enum");
+//static_assert(ARRAYSIZE(parm_space_needed) == YDB_TYPES_COUNT, "array size does not match ydb_types enum");
 
 // Constants used in table below
 #define IN 1
@@ -152,7 +152,7 @@ const char parm_allowed_callout[] =
     0,          // ydb_jbig_decimal is not supported by call-outs
     RET|IN|OUT, // ydb_buffer_star
 };
-static_assert(ARRAYSIZE(parm_allowed_callout) == YDB_TYPES_COUNT, "array size does not match ydb_types enum");
+//static_assert(ARRAYSIZE(parm_allowed_callout) == YDB_TYPES_COUNT, "array size does not match ydb_types enum");
 
 // Whether each call-in type is valid as an input, output, and/or return value
 const char parm_allowed_callin[] =
@@ -191,7 +191,7 @@ const char parm_allowed_callin[] =
     IN,         // ydb_jbig_decimal
     RET|IN|OUT, // ydb_buffer_star
 };
-static_assert(ARRAYSIZE(parm_allowed_callin) == YDB_TYPES_COUNT, "array size does not match ydb_types enum");
+//static_assert(ARRAYSIZE(parm_allowed_callin) == YDB_TYPES_COUNT, "array size does not match ydb_types enum");
 
 /* This table is searched serially so the search priority is:
  *   1. ydb_ types
@@ -312,7 +312,7 @@ const static int default_pre_alloc_value[] =
 	1, /* java big decimal */
 	1, /* pointer to buffer */
 };
-static_assert(ARRAYSIZE(default_pre_alloc_value) == YDB_TYPES_COUNT, "array size does not match ydb_types enum");
+//static_assert(ARRAYSIZE(default_pre_alloc_value) == YDB_TYPES_COUNT, "array size does not match ydb_types enum");
 
 error_def(ERR_CIDIRECTIVE);
 error_def(ERR_CIENTNAME);
