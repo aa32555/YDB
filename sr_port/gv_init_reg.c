@@ -3,7 +3,7 @@
  * Copyright (c) 2001-2017 Fidelity National Information	*
  * Services, Inc. and/or its subsidiaries. All rights reserved.	*
  *								*
- * Copyright (c) 2018 YottaDB LLC and/or its subsidiaries.	*
+ * Copyright (c) 2018-2024 YottaDB LLC and/or its subsidiaries.	*
  * All rights reserved.						*
  *								*
  *	This source code contains the intellectual property	*
@@ -56,8 +56,9 @@ void gv_init_reg (gd_region *reg)
 				gvcst_init(reg);
 			break;
 		default:
-		assertpro(reg->dyn.addr->acc_meth != reg->dyn.addr->acc_meth);
+			assertpro(reg->dyn.addr->acc_meth != reg->dyn.addr->acc_meth);
+			break;
 	}
-	assert(reg->open);
+	assert(reg->open || IS_STATSDB_REG(reg));
 	return;
 }
