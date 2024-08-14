@@ -327,6 +327,7 @@ int	opp_zst_over_retarg();
 int	opp_zstepret();
 int	opp_zstepretarg();
 void	op_zut(mval *s);
+void	op_zycycles(mval *s);
 void	op_zwritesvn(int svn);
 void	op_zst_over_retarg_helper(void);
 void	op_zstepretarg_helper(void);

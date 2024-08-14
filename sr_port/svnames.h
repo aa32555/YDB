@@ -99,9 +99,10 @@ enum isvopcode
 	SV_ZAUDIT,		/* 78 */
 	SV_ZMLKHASH,		/* 79 */
 	SV_ZMALLOCLIM,		/* 80 */
-	SV_ZYINTRSIG,		/* 81 */
-	SV_ZYRELEASE,		/* 82 */
-	SV_ZYSQLNULL,		/* 83 */
+	SV_ZYCYCLES,		/* 81 */
+	SV_ZYINTRSIG,		/* 82 */
+	SV_ZYRELEASE,		/* 83 */
+	SV_ZYSQLNULL,		/* 84 */
 	SV_NUM_SV,		/* count - should be next to last SV entry just prior to dummy entry below */
 	SV_DUMMY_TO_FORCE_INT = 0x0FFFFFFF	/* to ensure an int on S390 */
 };
