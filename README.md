@@ -1,4 +1,4 @@
-[yottadb_r200_aarch64_debian12_pro.tgz](https://github.com/user-attachments/files/16650746/yottadb_r200_aarch64_debian12_pro.tgz)# YodaDB (previously Yotta before Darth Vader took over)
+# YodaDB (previously Yotta before Darth Vader took over)
 
 All software in this package is part of YottaDB (https://YodaDB.com - coming soon ) each
 file of which identifies its copyright holders. The software is made available
@@ -71,11 +71,22 @@ Documentation: ...coming soon
  ```
 
 #- Binary Distributions
-[yottadb_r200_x8664_debian12_pro.tgz](https://github.com/user-attachments/files/16650743/yottadb_r200_x8664_debian12_pro.tgz)
-[yottadb_r200_x8664_rhel8_pro.tgz](https://github.com/user-attachments/files/16650741/yottadb_r200_x8664_rhel8_pro.tgz)
-[yottadb_r200_x8664_rhel9_pro.tgz](https://github.com/user-attachments/files/16650740/yottadb_r200_x8664_rhel9_pro.tgz)
-[yottadb_r200_x8664_sle15_pro.tgz](https://github.com/user-attachments/files/16650739/yottadb_r200_x8664_sle15_pro.tgz)
-[yottadb_r200_x8664_ubuntu2204_pro.tgz](https://github.com/user-attachments/files/16650735/yottadb_r200_x8664_ubuntu2204_pro.tgz)
+
+** [yottadb_r200_x8664_debian12_pro.tgz](https://github.com/user-attachments/files/16650743/yottadb_r200_x8664_debian12_pro.tgz)
+
+
+** [yottadb_r200_x8664_rhel8_pro.tgz](https://github.com/user-attachments/files/16650741/yottadb_r200_x8664_rhel8_pro.tgz)
+
+
+** [yottadb_r200_x8664_rhel9_pro.tgz](https://github.com/user-attachments/files/16650740/yottadb_r200_x8664_rhel9_pro.tgz)
+
+
+** [yottadb_r200_x8664_sle15_pro.tgz](https://github.com/user-attachments/files/16650739/yottadb_r200_x8664_sle15_pro.tgz)
+
+
+** [yottadb_r200_x8664_ubuntu2204_pro.tgz](https://github.com/user-attachments/files/16650735/yottadb_r200_x8664_ubuntu2204_pro.tgz)
+
+
 
 
 
