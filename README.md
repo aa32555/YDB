@@ -11,7 +11,7 @@ Documentation: ...coming soon
 - Installing YodaDB
  ## Ubuntu Linux OR Raspbian Linux ***Must be run as root***
 
-* Install the required packages
+* To Install ===>
 ```sh
  apt-get update
  apt-get install
@@ -63,16 +63,10 @@ Documentation: ...coming soon
  apt-get install curl
  apt-get install libgcrypt20-dev
  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash
-```
-The ydbinstall.sh script downloads and installs YodaDB.
-Download the script in a temporary directory, and make it executable, e.g.:
-
-```
-mkdir /tmp/tmp && cd /tmp/tmp && wget https://raw.githubusercontent.com/aa32555/YDB/master/sr_unix/ydbinstall.sh && chmod +x ydbinstall.sh
-./ydbinstall.sh --utf8 default --verbose --octo
-
-/ydbinstall.sh --utf8 default --verbose --octo --from-source https://github.com/aa32555/YDB.git 
-
+ mkdir -p /tmp/tmp
+ cd /tmp/tmp
+ wget https://raw.githubusercontent.com/aa32555/YDB/master/sr_unix/ydbinstall.sh
+ chmod +x ydbinstall.sh
 ./ydbinstall.sh --utf8 default --verbose --octo --from-source https://github.com/aa32555/YDB.git --overwrite-existing 
  ```
 
