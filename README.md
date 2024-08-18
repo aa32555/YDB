@@ -70,8 +70,7 @@ Documentation: ...coming soon
 ./ydbinstall.sh --utf8 default --verbose --octo --from-source https://github.com/aa32555/YDB.git --overwrite-existing 
  ```
 
-#- Binary Distributions
-
+#- Downloads
 
 - [yottadb_r200_x8664_debian12_pro.tgz](https://github.com/user-attachments/files/16650743/yottadb_r200_x8664_debian12_pro.tgz)
 
@@ -87,16 +86,34 @@ Documentation: ...coming soon
 
 - [yottadb_r200_armv6l_debian12_pro.tgz](https://github.com/user-attachments/files/16650826/yottadb_r200_armv6l_debian12_pro.tgz)
 
+- [yottadb_r134_aarch64_debian11_pro.tgz](https://github.com/user-attachments/files/16650985/yottadb_r134_aarch64_debian11_pro.tgz)
+ 
+- [yottadb_r134_armv6l_debian11_pro.tgz](https://github.com/user-attachments/files/16650984/yottadb_r134_armv6l_debian11_pro.tgz)
+ 
+- [yottadb_r134_x8664_debian11_pro.tgz](https://github.com/user-attachments/files/16650983/yottadb_r134_x8664_debian11_pro.tgz)
+ 
+- [yottadb_r134_x8664_rhel7_pro.tgz](https://github.com/user-attachments/files/16650982/yottadb_r134_x8664_rhel7_pro.tgz)
+ 
+- [yottadb_r134_x8664_rhel8_pro.tgz](https://github.com/user-attachments/files/16650981/yottadb_r134_x8664_rhel8_pro.tgz)
+ 
+- [yottadb_r134_x8664_ubuntu2004_pro.tgz](https://github.com/user-attachments/files/16650980/yottadb_r134_x8664_ubuntu2004_pro.tgz)
 
-#- To install on an aarch64:
+- [YDB-r1.34.tar.gz](https://github.com/user-attachments/files/16650979/YDB-r1.34.tar.gz)
+
+
+
+
+
+#- To build
 ```sh
-mkdir -p /tmp/tmp
-cd /tmp/tmp
-wget -o- https://github.com/user-attachments/files/16650828/yottadb_r200_aarch64_debian12_pro.tgz
-tar -xvf yottadb_r200_aarch64_debian12_pro.tgz
-cd yottadb_r200
+mkdir build
+cd build
+export CC=/usr/bin/clang
+cmake -D CMAKE_LINKER:PATH=/usr/bin/ld.lld ..
+make -j $(getconf _NPROCESSORS_ONLN)
+make install
+cd *otta*
 ./ydbinstall --utf8 default --verbose --octo
 ```
-
 
 
