@@ -109,7 +109,7 @@ dump_info()
 {
 	set +x
 	if [ -n "$timestamp" ] ; then echo timestamp " : " $timestamp ; fi
-	if [ -n "$ydb_aim" ] ; then echo ydb_aim " : " $ydb_aim ; fi
+	#if [ -n "$ydb_aim" ] ; then echo ydb_aim " : " $ydb_aim ; fi
 	if [ -n "$ydb_branch" ] ; then echo ydb_branch " : " $ydb_branch ; fi
 	if [ -n "$ydb_change_removeipc" ] ; then echo ydb_change_removeipc " : " $ydb_change_removeipc ; fi
 	if [ -n "$ydb_curl" ] ; then echo ydb_curl " : " $ydb_curl ; fi
