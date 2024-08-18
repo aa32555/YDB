@@ -71,14 +71,32 @@ Documentation: ...coming soon
  ```
 
 #- Binary Distributions
-*[yottadb_r200_x8664_debian12_pro.tgz](https://github.com/user-attachments/files/16650743/yottadb_r200_x8664_debian12_pro.tgz)
-*[yottadb_r200_x8664_rhel8_pro.tgz](https://github.com/user-attachments/files/16650741/yottadb_r200_x8664_rhel8_pro.tgz)
-*[yottadb_r200_x8664_rhel9_pro.tgz](https://github.com/user-attachments/files/16650740/yottadb_r200_x8664_rhel9_pro.tgz)
-*[yottadb_r200_x8664_sle15_pro.tgz](https://github.com/user-attachments/files/16650739/yottadb_r200_x8664_sle15_pro.tgz)
-*[yottadb_r200_x8664_ubuntu2204_pro.tgz](https://github.com/user-attachments/files/16650735/yottadb_r200_x8664_ubuntu2204_pro.tgz)
-*[yottadb_r200_aarch64_debian12_pro.tgz](https://github.com/user-attachments/files/16650828/yottadb_r200_aarch64_debian12_pro.tgz)
-*[yottadb_r200_armv6l_debian12_pro.tgz](https://github.com/user-attachments/files/16650826/yottadb_r200_armv6l_debian12_pro.tgz)
 
+
+- [yottadb_r200_x8664_debian12_pro.tgz](https://github.com/user-attachments/files/16650743/yottadb_r200_x8664_debian12_pro.tgz)
+
+- [yottadb_r200_x8664_rhel8_pro.tgz](https://github.com/user-attachments/files/16650741/yottadb_r200_x8664_rhel8_pro.tgz)
+
+- [yottadb_r200_x8664_rhel9_pro.tgz](https://github.com/user-attachments/files/16650740/yottadb_r200_x8664_rhel9_pro.tgz)
+
+- [yottadb_r200_x8664_sle15_pro.tgz](https://github.com/user-attachments/files/16650739/yottadb_r200_x8664_sle15_pro.tgz)
+
+- [yottadb_r200_x8664_ubuntu2204_pro.tgz](https://github.com/user-attachments/files/16650735/yottadb_r200_x8664_ubuntu2204_pro.tgz)
+
+- [yottadb_r200_aarch64_debian12_pro.tgz](https://github.com/user-attachments/files/16650828/yottadb_r200_aarch64_debian12_pro.tgz)
+
+- [yottadb_r200_armv6l_debian12_pro.tgz](https://github.com/user-attachments/files/16650826/yottadb_r200_armv6l_debian12_pro.tgz)
+
+
+#- To install on an aarch64:
+```
+mkdir -p /tmp/tmp
+cd /tmp/tmp
+wget -o- https://github.com/user-attachments/files/16650828/yottadb_r200_aarch64_debian12_pro.tgz
+tar -xvf yottadb_r200_aarch64_debian12_pro.tgz
+cd yottadb_r200
+./ydbinstall.sh --utf8 default --verbose --octo
+```
 
 
 
