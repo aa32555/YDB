@@ -109,7 +109,7 @@ mkdir -p /tmp/tmp
 wget -o- https://github.com/user-attachments/files/16651027/YDB-r2.00.tar.gz
 tar -xvf YDB-r2.00.tar.gz
 mv YDB-r2.00 yottadb_r200
-cd YDB
+cd yottadb_r*
 mkdir build
 cd build
 cmake ..
