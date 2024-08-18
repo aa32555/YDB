@@ -110,31 +110,31 @@ dump_info()
 	set +x
 	if [ -n "$timestamp" ] ; then echo timestamp " : " $timestamp ; fi
 	#if [ -n "$ydb_aim" ] ; then echo ydb_aim " : " $ydb_aim ; fi
-	if [ -n "$ydb_branch" ] ; then echo ydb_branch " : " $ydb_branch ; fi
+	#if [ -n "$ydb_branch" ] ; then echo ydb_branch " : " $ydb_branch ; fi
 	if [ -n "$ydb_change_removeipc" ] ; then echo ydb_change_removeipc " : " $ydb_change_removeipc ; fi
-	if [ -n "$ydb_curl" ] ; then echo ydb_curl " : " $ydb_curl ; fi
-	if [ -n "$ydb_debug" ] ; then echo ydb_debug " : " $ydb_debug ; fi
-	if [ -n "$ydb_deprecated" ] ; then echo ydb_deprecated " : " $ydb_deprecated ; fi
+	#if [ -n "$ydb_curl" ] ; then echo ydb_curl " : " $ydb_curl ; fi
+	#if [ -n "$ydb_debug" ] ; then echo ydb_debug " : " $ydb_debug ; fi
+	#if [ -n "$ydb_deprecated" ] ; then echo ydb_deprecated " : " $ydb_deprecated ; fi
 	if [ -n "$ydb_distrib" ] ; then echo ydb_distrib " : " $ydb_distrib ; fi
 	if [ -n "$ydb_dist" ] ; then echo ydb_dist " : " $ydb_dist ; fi
 	if [ -n "$ydb_encplugin" ] ; then echo ydb_encplugin " : " $ydb_encplugin ; fi
 	if [ -n "$ydb_filename" ] ; then echo ydb_filename " : " $ydb_filename ; fi
 	if [ -n "$ydb_flavor" ] ; then echo ydb_flavor " : " $ydb_flavor ; fi
-	if [ -n "$ydb_force_install" ] ; then echo ydb_force_install " : " $ydb_force_install ; fi
+	#if [ -n "$ydb_force_install" ] ; then echo ydb_force_install " : " $ydb_force_install ; fi
 	if [ -n "$ydb_from_source" ] ; then echo ydb_from_source " : " $ydb_from_source ; fi
-	if [ -n "$ydb_gui" ] ; then echo ydb_gui " : " $ydb_gui ; fi
-	if [ -n "$ydb_installdir" ] ; then echo ydb_installdir " : " $ydb_installdir ; fi
+	#if [ -n "$ydb_gui" ] ; then echo ydb_gui " : " $ydb_gui ; fi
+	#if [ -n "$ydb_installdir" ] ; then echo ydb_installdir " : " $ydb_installdir ; fi
 	if [ -n "$ydb_octo" ] ; then echo ydb_octo " : " $ydb_octo ; fi
-	if [ -n "$ydb_pkgconfig" ] ; then echo ydb_pkgconfig " : " $ydb_pkgconfig ; fi
-	if [ -n "$ydb_posix" ] ; then echo ydb_posix " : " $ydb_posix ; fi
+	#if [ -n "$ydb_pkgconfig" ] ; then echo ydb_pkgconfig " : " $ydb_pkgconfig ; fi
+	#if [ -n "$ydb_posix" ] ; then echo ydb_posix " : " $ydb_posix ; fi
 	if [ -n "$ydb_routines" ] ; then echo ydb_routines " : " $ydb_routines ; fi
-	if [ -n "$ydb_sodium" ] ; then echo ydb_sodium " : " $ydb_sodium ; fi
-	if [ -n "$ydb_support" ] ; then echo ydb_support " : " $ydb_support ; fi
-	if [ -n "$ydb_syslog" ] ; then echo ydb_syslog " : " $ydb_syslog ; fi
+	#if [ -n "$ydb_sodium" ] ; then echo ydb_sodium " : " $ydb_sodium ; fi
+	#if [ -n "$ydb_support" ] ; then echo ydb_support " : " $ydb_support ; fi
+	#if [ -n "$ydb_syslog" ] ; then echo ydb_syslog " : " $ydb_syslog ; fi
 	if [ -n "$ydb_utf8" ] ; then echo ydb_utf8 " : " $ydb_utf8 ; fi
 	if [ -n "$ydb_version" ] ; then echo ydb_version " : " $ydb_version ; fi
-	if [ -n "$ydb_ws" ] ; then echo ydb_ws " : " $ydb_ws ; fi
-	if [ -n "$ydb_zlib" ] ; then echo ydb_zlib " : " $ydb_zlib ; fi
+	#if [ -n "$ydb_ws" ] ; then echo ydb_ws " : " $ydb_ws ; fi
+	#if [ -n "$ydb_zlib" ] ; then echo ydb_zlib " : " $ydb_zlib ; fi
 	if [ -n "$gtm_arch" ] ; then echo gtm_arch " : " $gtm_arch ; fi
 	if [ -n "$gtm_buildtype" ] ; then echo gtm_buildtype " : " $gtm_buildtype ; fi
 	if [ -n "$gtm_configure_in" ] ; then echo gtm_configure_in " : " $gtm_configure_in ; fi
