@@ -852,11 +852,11 @@ if [ -n "$ydb_from_source" ] ; then
 			# if --buildtype is dbg, tell CMake to make a dbg build
 			cmake_command="${cmakecmd} -D CMAKE_BUILD_TYPE=Debug"
 		else
-			cmake_command="${cmakecmd} -D CMAKE_LINKER:PATH=/usr/bin/ld.lld .." #-D CMAKE_BUILD_TYPE=RelWithDebInfo"
+			cmake_command="${cmakecmd} -D CMAKE_LINKER:PATH=/usr/bin/ld.lld"
 		fi
-		#if ! ${cmake_command} .. ; then
-		#	echo "CMake failed. Exiting. Temporary directory $ydbinstall_tmp will not be deleted."
-		#	err_exit
+		if ! ${cmake_command} .. && ls; then
+			echo "CMake failed. Exiting. Temporary directory $ydbinstall_tmp will not be deleted."
+			err_exit
 		fi
 		if ! make -j $(getconf _NPROCESSORS_ONLN) ; then 
 			echo "Build failed. Exiting. Temporary directory $ydbinstall_tmp will not be deleted."
