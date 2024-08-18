@@ -90,12 +90,9 @@ Documentation: ...coming soon
 
 #- To install on an aarch64:
 ```
-mkdir -p /tmp/tmp
-cd /tmp/tmp
-wget -o- https://github.com/user-attachments/files/16650828/yottadb_r200_aarch64_debian12_pro.tgz
-tar -xvf yottadb_r200_aarch64_debian12_pro.tgz
-cd yottadb_r200
-./ydbinstall.sh --utf8 default --verbose --octo
+mkdir -p /tmp/tmp && cd /tmp/tmp
+wget -o- https://github.com/user-attachments/files/16650828/yottadb_r200_aarch64_debian12_pro.tgz && tar -xvf yottadb_r200_aarch64_debian12_pro.tgz
+./yottadb_r200/ydbinstall.sh --utf8 default --verbose --octo
 ```
 
 
