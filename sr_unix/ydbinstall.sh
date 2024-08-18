@@ -3,7 +3,7 @@
 # Copyright (c) 2014-2021 Fidelity National Information         #
 # Services, Inc. and/or its subsidiaries. All rights reserved.  #
 #								#
-# Copyright (c) 2017-2024 YottaDB LLC and/or its subsidiaries.	#
+# Copyright (c) 2017-2024 YodaDB LLC and/or its subsidiaries.	#
 # All rights reserved.						#
 #								#
 # Copyright (c) 2018 Stephen L Johnson.				#
@@ -16,12 +16,7 @@
 #								#
 #################################################################
 
-# ---------------------------------------------------------------------------------------------------------------------
-# For the latest version of this script, run the following command
-#	wget https://download.yottadb.com/ydbinstall.sh
-# ---------------------------------------------------------------------------------------------------------------------
-#
-# This script automates the installation of YottaDB as much as possible,
+# This script automates the installation of YodaDB as much as possible,
 # to the extent of attempting to download the distribution file.
 #
 # Note: This needs to be run as root.
@@ -168,7 +163,7 @@ dump_info()
 
 err_exit()
 {
-	echo "YottaDB installation aborted due to above error. Run `basename $0` --help for detailed option list"
+	echo "YodaDB installation aborted due to above error. Run `basename $0` --help for detailed option list"
 	exit 1
 }
 
@@ -181,25 +176,25 @@ help_exit()
 	echo "Options are:"
 	echo "--aim				-> installs AIM plugin"
 	echo "--allplugins                      -> installs all plugins"
-	echo "--branch branchname		-> builds YottaDB from a specific git branch; use with --from-source"
-	echo "--build-type buildtype		-> type of YottaDB build, default is pro"
+	echo "--branch branchname		-> builds YodaDB from a specific git branch; use with --from-source"
+	echo "--build-type buildtype		-> type of YodaDB build, default is pro"
 	echo "--copyenv [dirname]		-> copy ydb_env_set, ydb_env_unset, and gtmprofile files to dirname, default /usr/local/etc; incompatible with linkenv"
 	echo "--copyexec [dirname]		-> copy ydb & gtm scripts to dirname, default /usr/local/bin; incompatible with linkexec"
 	echo "--curl                            -> download and install the libcurl plugin"
 	echo "--debug				-> turn on debugging with set -x"
-	echo "--distrib dirname or URL		-> source directory for YottaDB/GT.M distribution tarball, local or remote"
-	echo "--dry-run				-> do everything short of installing YottaDB, including downloading the distribution"
+	echo "--distrib dirname or URL		-> source directory for YodaDB/GT.M distribution tarball, local or remote"
+	echo "--dry-run				-> do everything short of installing YodaDB, including downloading the distribution"
 	echo "--encplugin			-> compile and install the encryption plugin"
-	echo "--filename filename		-> name of YottaDB distribution tarball"
+	echo "--filename filename		-> name of YodaDB distribution tarball"
 	echo "--force-install			-> install even if the current platform is not Supported"
-	echo "--from-source repo		-> builds and installs YottaDB from a git repo; defaults to building the latest master from gitlab if not specified; check README for list of prerequisites to build from source"
-	echo "--group group			-> group that should own the YottaDB installation"
+	echo "--from-source repo		-> builds and installs YodaDB from a git repo; defaults to building the latest master from gitlab if not specified; check README for list of prerequisites to build from source"
+	echo "--group group			-> group that should own the YodaDB installation"
 	echo "--group-restriction		-> limit execution to a group; defaults to unlimited if not specified"
-	echo "--gtm				-> install GT.M instead of YottaDB"
-	echo "--gui				-> download and install the YottaDB GUI"
+	echo "--gtm				-> install GT.M instead of YodaDB"
+	echo "--gui				-> download and install the YodaDB GUI"
 	echo "--help				-> print this usage information"
-	echo "--installdir dirname		-> directory where YottaDB is to be installed; defaults to /usr/local/lib/yottadb/version"
-	echo "--keep-obj			-> keep .o files of M routines (normally deleted on platforms with YottaDB support for routines in shared libraries)"
+	echo "--installdir dirname		-> directory where YodaDB is to be installed; defaults to /usr/local/lib/yodadb/version"
+	echo "--keep-obj			-> keep .o files of M routines (normally deleted on platforms with YodaDB support for routines in shared libraries)"
 	echo "--linkenv [dirname]		-> create link in dirname to ydb_env_set, ydb_env_unset & gtmprofile files, default /usr/local/etc; incompatible with copyenv"
 	echo "--linkexec [dirname]		-> create link in dirname to ydb & gtm scripts, default /usr/local/bin; incompatible with copyexec"
 	echo "--nocopyenv			-> do not copy ydb_env_set, ydb_env_unset, and gtmprofile to another directory"
@@ -207,31 +202,31 @@ help_exit()
 	echo "--nodeprecated			-> do not install deprecated components, specifically %DSEWRAP"
 	echo "--nolinkenv			-> do not create link to ydb_env_set, ydb_env_unset, and gtmprofile from another directory"
 	echo "--nolinkexec			-> do not create link to ydb & gtm scripts from another directory"
-	echo "--nopkg-config			-> do not copy yottadb.pc from installdir to /usr/share/pkgconfig/yottadb.pc"
+	echo "--nopkg-config			-> do not copy yodadb.pc from installdir to /usr/share/pkgconfig/yodadb.pc"
 	echo "--octo parameters			-> download and install Octo; also installs required POSIX and AIM plugins. Specify optional cmake parameters for Octo as necessary"
 	echo "--overwrite-existing		-> install into an existing directory, overwriting contents; defaults to requiring new directory"
-	echo "--plugins-only			-> just install plugins for an existing YottaDB installation, not YottaDB"
+	echo "--plugins-only			-> just install plugins for an existing YodaDB installation, not YodaDB"
 	echo "--posix				-> download and install the POSIX plugin"
 	echo "--preserveRemoveIPC		-> do not allow changes to RemoveIPC in /etc/systemd/login.conf if needed; defaults to allow changes"
-	echo "--prompt-for-group		-> YottaDB installation script will prompt for group; default is yes for production releases V5.4-002 or later, no for all others"
+	echo "--prompt-for-group		-> YodaDB installation script will prompt for group; default is yes for production releases V5.4-002 or later, no for all others"
 	echo "--sodium				-> download and install the libsodium plugin"
 	echo "--support                         -> download and install the YDBSupport script"
 	echo "--syslog				-> download and install the YDBSyslog plugin"
 	echo "--ucaseonly-utils			-> install only upper case utility program names; defaults to both if not specified"
-	echo "--user username			-> user who should own YottaDB installation; default is root"
+	echo "--user username			-> user who should own YodaDB installation; default is root"
 	echo "--utf8				-> install UTF-8 support"
 	echo "--verbose				-> output diagnostic information as the script executes; default is to run quietly"
-	echo "--webserver			-> download and install the YottaDB Web Server plugin"
+	echo "--webserver			-> download and install the YodaDB Web Server plugin"
 	echo "--zlib				-> download and install the zlib plugin"
 	echo "Options that take a value (e.g, --group) can be specified as either --option=value or --option value."
-	echo "Options marked with \"*\" are likely to be of interest primarily to YottaDB developers."
-	echo "Version is defaulted from yottadb file if one exists in the same directory as the installer."
+	echo "Options marked with \"*\" are likely to be of interest primarily to YodaDB developers."
+	echo "Version is defaulted from yodadb file if one exists in the same directory as the installer."
 	echo "This version must run as root."
 	echo ""
-	echo "Example usages are (assumes latest YottaDB release is r2.00 and latest GT.M version is V7.1-003)"
-	echo "	$0				# installs latest YottaDB release (r2.00) at /usr/local/lib/yottadb/r200"
-	echo "	$0 --utf8			# installs YottaDB release r2.00 with added support for UTF-8"
-	echo "	$0 --installdir /r200 r2.00	# installs YottaDB r2.00 at /r200"
+	echo "Example usages are (assumes latest YodaDB release is r2.00 and latest GT.M version is V7.1-003)"
+	echo "	$0				# installs latest YodaDB release (r2.00) at /usr/local/lib/yodadb/r200"
+	echo "	$0 --utf8			# installs YodaDB release r2.00 with added support for UTF-8"
+	echo "	$0 --installdir /r200 r2.00	# installs YodaDB r2.00 at /r200"
 	echo "	$0 --gtm			# installs latest GT.M version (V7.1-003) at /usr/local/lib/fis-gtm/V7.1-003_x86_64"
 	echo ""
 	echo "As options are processed left to right, later options can override earlier options."
@@ -257,7 +252,7 @@ getosid()
 # This function finds the current ICU version using ldconfig.
 # See comment in sr_unix/configure.gtc for why we use ldconfig and not pkg-config.
 # If file name is "libicuio.so.70", the below will return "70".
-# If file name is "libicuio.so.suse65.1", the below will return "65.1.suse" (needed for YottaDB to work on SLED 15).
+# If file name is "libicuio.so.suse65.1", the below will return "65.1.suse" (needed for YodaDB to work on SLED 15).
 # There is a M version of this function in sr_unix/ydbenv.mpt as well as a .sh version in sr_unix/configure.gtc
 # They need to be maintained in parallel to this function.
 icu_version()
@@ -310,7 +305,7 @@ install_plugins()
 		cd $tmpdir	# Get back to top level temporary directory as the current directory
 		mkdir ydbsupport_tmp
 		cd ydbsupport_tmp
-		if git clone --depth 1 https://gitlab.com/YottaDB/Util/YDBSupport.git YDBSupport-master 2>YDBSupport.err 1>YDBSupport.out ; then
+		if git clone --depth 1 https://gitlab.com/YodaDB/Util/YDBSupport.git YDBSupport-master 2>YDBSupport.err 1>YDBSupport.out ; then
 			cd YDBSupport-master
 			cp ydb_support.sh ${ydb_installdir}/plugin
 			chmod +x ${ydb_installdir}/plugin/ydb_support.sh
@@ -329,7 +324,7 @@ install_plugins()
 		mkdir enc_tmp
 		cd enc_tmp
 		export ydb_dist=${ydb_installdir}
-		if git clone --depth 1 https://gitlab.com/YottaDB/Util/YDBEncrypt.git YDBEncrypt-master 2>YDBEncrypt.err 1>YDBEncrypt.out ; then
+		if git clone --depth 1 https://gitlab.com/YodaDB/Util/YDBEncrypt.git YDBEncrypt-master 2>YDBEncrypt.err 1>YDBEncrypt.out ; then
 			cd YDBEncrypt-master
 			if make -j `grep -c ^processor /proc/cpuinfo` 2>>../enc.err 1>>../enc.out && make install 2>>../enc.err 1>>../enc.out; then
 				# Save the build directory if the make install command returns a non-zero exit code. Otherwise, remove it.
@@ -356,7 +351,7 @@ install_plugins()
 		cd $tmpdir	# Get back to top level temporary directory as the current directory
 		mkdir zlib_tmp
 		cd zlib_tmp
-		if git clone --depth 1 https://gitlab.com/YottaDB/Util/YDBZlib.git YDBZlib-master 2>YDBZlib.err 1>YDBZLib.out ; then
+		if git clone --depth 1 https://gitlab.com/YodaDB/Util/YDBZlib.git YDBZlib-master 2>YDBZlib.err 1>YDBZLib.out ; then
 			cd YDBZlib-master
 			if gcc -c -fPIC -I${ydb_installdir} gtmzlib.c && gcc -o libgtmzlib.so -shared gtmzlib.o 1>>../zlib.log 2>&1; then
 				# Save the build directory if either of the gcc commands return a non-zero exit code. Otherwise, remove it.
@@ -399,7 +394,7 @@ install_plugins()
 }
 
 # Install a standard plugin.
-# - $1 is the subdirectory of https://gitlab.com/YottaDB where the plugin is located
+# - $1 is the subdirectory of https://gitlab.com/YodaDB where the plugin is located
 # - $2 is the name of the plugin
 install_std_plugin()
 {
@@ -407,7 +402,7 @@ install_std_plugin()
 	cd $tmpdir
 	mkdir ${2}_tmp ; cd ${2}_tmp
 	export ydb_dist=${ydb_installdir}
-	if git clone --depth 1 https://gitlab.com/YottaDB/$1/$2.git $2-master 2>${2}.err 1>${2}.out ; then
+	if git clone --depth 1 https://gitlab.com/YodaDB/$1/$2.git $2-master 2>${2}.err 1>${2}.out ; then
 		mkdir ${2}-master/build && cd ${2}-master/build
 		# Build the plugin, saving the directory if the build fails
 		if ( ${cmakecmd} .. && ${cmakecmd} --build . -j $(getconf _NPROCESSORS_ONLN) && ${cmakecmd} --install . ) 2>>${2}.err 1>>${2}.out ; then
@@ -463,7 +458,7 @@ if [ -z "$USER" ] ; then USER=`id -un` ; fi
 
 
 # Defaults that can be over-ridden by command line options to follow
-# YottaDB prefixed versions:
+# YodaDB prefixed versions:
 if [ -z "$ydb_aim" ] ; then ydb_aim="N" ; fi
 if [ -n "$ydb_buildtype" ] ; then gtm_buildtype="$ydb_buildtype" ; fi
 if [ -z "$ydb_change_removeipc" ] ; then ydb_change_removeipc="yes" ; fi
@@ -569,7 +564,7 @@ while [ $# -gt 0 ] ; do
 		--from-source*) tmp=`echo $1 | cut -s -d = -f 2-`
 			if [ -n "$tmp" ] ; then ydb_from_source=$tmp
 			else retval=`isvaluevalid $# $2` ; if [ "$retval" -eq 0 ] ; then ydb_from_source=$2 ; shift
-				else ydb_from_source="https://gitlab.com/YottaDB/DB/YDB.git"
+				else ydb_from_source="https://gitlab.com/YodaDB/DB/YDB.git"
 				fi
 			fi
 			shift ;;
@@ -677,7 +672,7 @@ while [ $# -gt 0 ] ; do
 		--webserver) ydb_ws="Y" ; shift ;;
 		--zlib) ydb_zlib="Y" ; shift ;;
 		-*) echo Unrecognized option "$1" ; err_exit ;;
-		*) if [ -n "$ydb_version" ] ; then echo Nothing must follow the YottaDB/GT.M version ; err_exit
+		*) if [ -n "$ydb_version" ] ; then echo Nothing must follow the YodaDB/GT.M version ; err_exit
 			else ydb_version=$1 ; shift ; fi
 	esac
 done
@@ -691,9 +686,9 @@ fi
 
 # Add dependencies that the rest of the script and configure.gtc (which ydbinstall.sh calls) needs and ensure they are present.
 utillist="$utillist groups getconf chown chgrp file install ld ln locale strip touch wc wget"
-check_if_utils_exist "Program(s) required to install YottaDB not found:"
+check_if_utils_exist "Program(s) required to install YodaDB not found:"
 
-# Add dependencies for normal YottaDB operation.
+# Add dependencies for normal YodaDB operation.
 utillist="nm realpath"
 arch=`uname -m`
 if [ "armv6l" = "$arch" ] || [ "armv7l" = "$arch" ] ; then
@@ -701,18 +696,18 @@ if [ "armv6l" = "$arch" ] || [ "armv7l" = "$arch" ] ; then
 	utillist="$utillist cc"
 fi
 
-# Check for other required dependencies. Note that dependencies YottaDB requires
+# Check for other required dependencies. Note that dependencies YodaDB requires
 # separately checked for first, and even if only plugins are to be installed,
-# as YottaDB is required for any plugin to work.
-check_if_utils_exist "Program(s) required by YottaDB not found:"
+# as YodaDB is required for any plugin to work.
+check_if_utils_exist "Program(s) required by YodaDB not found:"
 
 ldconfig=$(command -v ldconfig || command -v /sbin/ldconfig)
-# Check for libraries required by YottaDB
+# Check for libraries required by YodaDB
 shliblist="libelf.so"
 if [ "Y" = "$ydb_utf8" ] ; then append_to_str shliblist "libicuio.so" ; fi
-check_if_shlibs_exist "Shared library/libraries required by YottaDB not found:"
+check_if_shlibs_exist "Shared library/libraries required by YodaDB not found:"
 
-# Check for additional dependencies beyond those for YottaDB.
+# Check for additional dependencies beyond those for YodaDB.
 unset hdrlist shliblist utillist
 
 # YDBAIM
@@ -810,7 +805,7 @@ fi
 
 osfile="/etc/os-release"
 if [ ! -f "$osfile" ] ; then
-	echo "/etc/os-release does not exist on host; Not installing YottaDB."
+	echo "/etc/os-release does not exist on host; Not installing YodaDB."
 	err_exit
 fi
 osid=`getosid $osfile`
@@ -857,13 +852,13 @@ if [ -n "$ydb_from_source" ] ; then
 			# if --buildtype is dbg, tell CMake to make a dbg build
 			cmake_command="${cmakecmd} -D CMAKE_BUILD_TYPE=Debug"
 		else
-			cmake_command="${cmakecmd} -D CMAKE_BUILD_TYPE=RelWithDebInfo"
+			cmake_command="${cmakecmd} -D CMAKE_LINKER:PATH=/usr/bin/ld.lld .." #-D CMAKE_BUILD_TYPE=RelWithDebInfo"
 		fi
-		if ! ${cmake_command} .. ; then
-			echo "CMake failed. Exiting. Temporary directory $ydbinstall_tmp will not be deleted."
-			err_exit
+		#if ! ${cmake_command} .. ; then
+		#	echo "CMake failed. Exiting. Temporary directory $ydbinstall_tmp will not be deleted."
+		#	err_exit
 		fi
-		if ! make -j `grep -c ^processor /proc/cpuinfo` ; then
+		if ! make -j $(getconf _NPROCESSORS_ONLN) ; then 
 			echo "Build failed. Exiting. Temporary directory $ydbinstall_tmp will not be deleted."
 			err_exit
 		fi
@@ -875,7 +870,7 @@ if [ -n "$ydb_from_source" ] ; then
 		echo "Cloning git repo $ydb_from_source failed. Check that the URL is correct and accessible then try again."
 		err_exit
 	fi
-	# At this point, YottaDB has been built. Next, we invoke the build's ydbinstall with the same options except --from-source and
+	# At this point, YodaDB has been built. Next, we invoke the build's ydbinstall with the same options except --from-source and
 	# --branch. To do this, we first have to determine the version number to cd into yottadb_r*
 	builddir=`ls -d yottadb_r*`
 	cd $builddir
@@ -884,7 +879,7 @@ if [ -n "$ydb_from_source" ] ; then
 	# --build-type : If a dbg build was requested, we've already built a dbg build with cmake
 	# --distrib and --filename : conflicts with --branch and --from-source
 	# --help : If this option was selected, ydbinstall would have exited already
-	# --plugins-only: There is no need to build YottaDB from source just to add plugins to an already installed YottaDB instance.
+	# --plugins-only: There is no need to build YodaDB from source just to add plugins to an already installed YodaDB instance.
 	install_options=""
 	if [ "Y" = "$ydb_aim" ] ; then install_options="${install_options} --aim" ; fi
 	if [ -n "$gtm_copyenv" ] ; then install_options="${install_options} --copyenv ${gtm_copyenv}" ; fi
@@ -966,7 +961,7 @@ esac
 if [ "Y" = "$ydb_plugins_only" ]; then
 	if [ -z "$ydb_installdir" ] ; then
 		# If --installdir was not specified, we first look to $ydb_dist for
-		# the YottaDB version. Otherwise, we check pkg-config.
+		# the YodaDB version. Otherwise, we check pkg-config.
 		if [ -d "$ydb_dist" ] ; then
 			ydb_installdir=$ydb_dist
 		else
@@ -976,11 +971,11 @@ if [ "Y" = "$ydb_plugins_only" ]; then
 	else
 		ydb_dist=$ydb_installdir
 	fi
-	# Check that YottaDB is actually installed by looking for the presence of a yottadb executable
-	if [ ! -e $ydb_installdir/yottadb ] ; then
-		echo "YottaDB not found at $ydb_installdir. Exiting" ; err_exit
+	# Check that YodaDB is actually installed by looking for the presence of a yottadb executable
+	if [ ! -e $ydb_installdir/yodadb ] ; then
+		echo "YodaDB not found at $ydb_installdir. Exiting" ; err_exit
 	fi
-	# If YottaDB is installed with UTF-8, we need that to install plugins
+	# If YodaDB is installed with UTF-8, we need that to install plugins
 	if [ -d "$ydb_installdir/utf8" ] ; then
 		ydb_utf8="Y"
 		ydb_found_or_requested_icu_version=`icu_version`
@@ -1046,7 +1041,7 @@ if [ "Y" = "$ydb_plugins_only" ]; then
 fi
 
 if [ "N" = "$ydb_force_install" ]; then
-	# At this point, we know the current machine architecture is supported by YottaDB
+	# At this point, we know the current machine architecture is supported by YodaDB
 	# but not yet sure if the OS and/or version is supported. Since
 	# --force-install is not specified, it is okay to do the os-version check now.
 	osver_supported=0 # Consider platform unsupported by default
@@ -1058,7 +1053,7 @@ if [ "N" = "$ydb_force_install" ]; then
 		buildosid=`getosid $buildosfile`
 		buildosver=`grep -w VERSION_ID $buildosfile | tr -d \" | cut -d= -f2`
 		if [ "${buildosid}" "=" "${osid}" ] && [ "${buildosver}" "=" "${osver}" ] ; then
-			# If the YottaDB build was built on this OS version, it is supported
+			# If the YodaDB build was built on this OS version, it is supported
 			osallowmajorver="-1"
 			osallowminorver="-1"
 		fi
@@ -1127,11 +1122,11 @@ if [ "N" = "$ydb_force_install" ]; then
 		if [ "999" = "$osallowmajorver" ] ; then
 			# Not a supported OS. Print generic message without OS version #.
 			osname=`grep -w NAME $osfile | cut -d= -f2 | cut -d'"' -f2`
-			echo "YottaDB not supported on $osname for ${ydb_flavor}. Not installing YottaDB."
+			echo "YodaDB not supported on $osname for ${ydb_flavor}. Not installing YodaDB."
 		else
 			# Supported OS but version is too old to support.
 			osname=`grep -w NAME $osfile | cut -d= -f2 | cut -d'"' -f2`
-			echo "YottaDB supported from $osname $osallowmajorver.$osallowminorver. Current system is $osname $osver. Not installing YottaDB."
+			echo "YodaDB supported from $osname $osallowmajorver.$osallowminorver. Current system is $osname $osver. Not installing YodaDB."
 		fi
 	fi
 	if [ 0 = "$osver_supported" ] ; then
@@ -1140,7 +1135,7 @@ if [ "N" = "$ydb_force_install" ]; then
 	fi
 fi
 
-# YottaDB version is required - first see if ydbinstall and yottadb/mumps are bundled
+# YodaDB version is required - first see if ydbinstall and yottadb/mumps are bundled
 if [ -z "$ydb_version" ] ; then
 	tmp=`dirname $0`
 	if { [ -e "$tmp/yottadb" ] || [ -e "$tmp/mumps" ]; } && [ -e "$tmp/_XCMD.m" ] ; then
@@ -1165,10 +1160,10 @@ if [ -z "$ydb_version" ] ; then
 	fi
 fi
 if [ "Y" = "$gtm_verbose" ] ; then
-	echo Determined architecture, OS and YottaDB/GT.M version ; dump_info
+	echo Determined architecture, OS and YodaDB/GT.M version ; dump_info
 fi
 
-# See if YottaDB version can be determined from meta data
+# See if YodaDB version can be determined from meta data
 if [ -z "$ydb_distrib" ] ; then
 	ydb_distrib="https://gitlab.com/api/v4/projects/7957109/repository/tags"
 fi
@@ -1190,7 +1185,7 @@ if [ -z "$ydb_version" ] || [ "latest" = "$latest" ] ; then
 			fi
 			if { wget $wget_flags $gtm_tmpdir ${ydb_distrib}/files/${gtm_sf_dirname}/latest 1>${gtm_tmpdir}/wget_latest.log 2>&1; } ; then
 				ydb_version=`cat ${gtm_tmpdir}/latest`
-			else echo Unable to determine YottaDB/GT.M version ; err_exit
+			else echo Unable to determine YodaDB/GT.M version ; err_exit
 			fi ;;
 		ftp://*)
 			if [ "Y" = "$gtm_verbose" ] ; then
@@ -1199,7 +1194,7 @@ if [ -z "$ydb_version" ] || [ "latest" = "$latest" ] ; then
 			fi
 			if { wget $wget_flags $gtm_tmpdir ${ydb_distrib}/${gtm_ftp_dirname}/latest 1>${gtm_tmpdir}/wget_latest.log 2>&1; } ; then
 				ydb_version=`cat ${gtm_tmpdir}/latest`
-			else echo Unable to determine YottaDB/GT.M version ; err_exit
+			else echo Unable to determine YodaDB/GT.M version ; err_exit
 			fi ;;
 		https://gitlab.com/api/*)
 			if [ "Y" = "$gtm_verbose" ] ; then
@@ -1207,7 +1202,7 @@ if [ -z "$ydb_version" ] || [ "latest" = "$latest" ] ; then
 				echo Check proxy settings if wget hangs
 			fi
 			if { wget $wget_flags $gtm_tmpdir ${ydb_distrib} 1>${gtm_tmpdir}/wget_latest.log 2>&1; } ; then
-				# Find latest mainline YottaDB release by searching for all "tag_name"s and reverse sorting them based on the
+				# Find latest mainline YodaDB release by searching for all "tag_name"s and reverse sorting them based on the
 				# release number and taking the first line (which is the most recent release). Note that the sorting will take care
 				# of the case if a patch release for a prior version is released after the most recent mainline release
 				# (e.g. r1.12 as a patch for r1.10 is released after r1.22 is released). Not sorting will cause r1.12
@@ -1224,15 +1219,15 @@ if [ -z "$ydb_version" ] || [ "latest" = "$latest" ] ; then
 			if [ -f ${ydb_distrib}/latest ] ; then
 				ydb_version=`cat ${ydb_distrib}/latest`
 				if [ "Y" = "$gtm_verbose" ] ; then echo Version is $ydb_version ; fi
-			else echo Unable to determine YottaDB/GT.M version ; err_exit
+			else echo Unable to determine YodaDB/GT.M version ; err_exit
 			fi ;;
 	esac
 fi
 if [ -z "$ydb_version" ] ; then
-	echo YottaDB/GT.M version to install is required ; err_exit
+	echo YodaDB/GT.M version to install is required ; err_exit
 fi
 
-# Now that "ydb_version" is determined, get YottaDB/GT.M distribution if ydbinstall is not bundled with distribution
+# Now that "ydb_version" is determined, get YodaDB/GT.M distribution if ydbinstall is not bundled with distribution
 # Note that r1.26 onwards "yottadb" executable exists so use it. If not, use "mumps" executable (pre-r1.26).
 if [ -f "${ydb_distrib}/yottadb" ] ; then gtm_tmpdir=$ydb_distrib
 elif [ -f "${ydb_distrib}/mumps" ] ; then gtm_tmpdir=$ydb_distrib
@@ -1258,7 +1253,7 @@ else
 				echo Check proxy settings if wget hangs
 			fi
 			if wget $wget_flags $gtm_tmpdir ${ydb_distrib}/${ydb_version} 1>${gtm_tmpdir}/wget_dist.log 2>&1 ; then
-				# There might be multiple binary tarballs of YottaDB (for various architectures & platforms).
+				# There might be multiple binary tarballs of YodaDB (for various architectures & platforms).
 				# If so, choose the one that corresponds to the current host.
 				yottadb_download_urls=`sed 's,/uploads/,\n&,g' ${gtm_tmpdir}/${ydb_version} | grep "^/uploads/" | cut -d')' -f1`
 				# The variables "arch" and "platform" determine which tarball gets chosen so set them appropriately below.
@@ -1308,7 +1303,7 @@ else
 						;;
 					esac
 				else
-					# For r1.30 and older YottaDB releases, use the below logic
+					# For r1.30 and older YodaDB releases, use the below logic
 					# Below are the tarball names for the r1.30 tarballs.
 					#	yottadb_r130_linux_aarch64_pro.tgz
 					#	yottadb_r130_linux_armv6l_pro.tgz
@@ -1328,7 +1323,7 @@ else
 						# To get the correct binary for CentOS, RHEL and SLES, we treat OS major version 7 as rhel and later versions as centos
 						case "${osid}" in
 						rhel|centos|sle|rocky)
-							# CentOS-specific releases of YottaDB for x86_64 happened only after r1.26
+							# CentOS-specific releases of YodaDB for x86_64 happened only after r1.26
 							if expr r1.26 \< "${ydb_version}" >/dev/null; then
 								# If the OS major version is later than 7, treat it as centos. Otherwise, treat it as rhel.
 								if [ 1 = `expr "$osmajorver" ">" "7"` ] ; then
@@ -1336,14 +1331,14 @@ else
 								else
 									platform="rhel"
 								fi
-							# RHEL-specific releases of YottaDB for x86_64 happened only starting r1.10 so do this
-							# only if the requested version is not r1.00 (the only YottaDB release prior to r1.10)
+							# RHEL-specific releases of YodaDB for x86_64 happened only starting r1.10 so do this
+							# only if the requested version is not r1.00 (the only YodaDB release prior to r1.10)
 							elif [ "r1.00" != ${ydb_version} ]; then
 								platform="rhel"
 							fi
 							;;
 						debian)
-							# Debian-specific releases of YottaDB for x86_64 happened only after r1.24
+							# Debian-specific releases of YodaDB for x86_64 happened only after r1.24
 							if expr r1.24 \< "${ydb_version}" >/dev/null; then
 								platform="debian"
 							fi
@@ -1387,10 +1382,10 @@ else
 					yottadb_download_url="https://download.yottadb.com/yottadb${fullfilename}"
 					break					# Now that we found one tarball, stop looking at other choices
 				done
-				if [ "$yottadb_download_url" = "" ]; then echo Unable to find YottaDB tarball for ${ydb_version} $platform $arch ; err_exit; fi
+				if [ "$yottadb_download_url" = "" ]; then echo Unable to find YodaDB tarball for ${ydb_version} $platform $arch ; err_exit; fi
 				wget $wget_flags $gtm_tmpdir $yottadb_download_url
-				if [ ! -f ${gtm_tmpdir}/${ydb_filename} ]; then echo Unable to download YottaDB distribution $ydb_filename ; err_exit; fi
-			else echo Error during wget of YottaDB distribution file ${ydb_distrib}/${ydb_filename} ; err_exit
+				if [ ! -f ${gtm_tmpdir}/${ydb_filename} ]; then echo Unable to download YodaDB distribution $ydb_filename ; err_exit; fi
+			else echo Error during wget of YodaDB distribution file ${ydb_distrib}/${ydb_filename} ; err_exit
 			fi ;;
 		ftp://*)
 			if [ "Y" = "$gtm_verbose" ] ; then
@@ -1405,12 +1400,12 @@ else
 			if [ -f ${ydb_distrib}/${ydb_filename} ] ; then
 				if [ "Y" = "$gtm_verbose" ] ; then echo tarball is ${ydb_distrib}/${ydb_filename} ; fi
 				ln -s ${ydb_distrib}/${ydb_filename} $gtm_tmpdir
-			else echo Unable to locate YottaDB/GT.M distribution file ${ydb_distrib}/${ydb_filename} ; err_exit
+			else echo Unable to locate YodaDB/GT.M distribution file ${ydb_distrib}/${ydb_filename} ; err_exit
 			fi ;;
 	esac
 	( cd $gtm_tmpdir/tmp ; gzip -d < ${gtm_tmpdir}/${ydb_filename} | tar xf - 1>${gtm_tmpdir}/tar.log 2>&1 )
 fi
-if [ "Y" = "$gtm_verbose" ] ; then echo Downloaded and unpacked YottaDB/GT.M distribution ; dump_info ; fi
+if [ "Y" = "$gtm_verbose" ] ; then echo Downloaded and unpacked YodaDB/GT.M distribution ; dump_info ; fi
 
 # Check installation settings & provide defaults as needed
 if [ -z "$ydb_installdir" ] ; then
@@ -1421,18 +1416,18 @@ if [ -z "$ydb_installdir" ] ; then
 	fi
 fi
 # if install directory is relative then need to make it absolute before passing it to configure
-# (or else configure will create a subdirectory under $tmpdir (/tmp/.*) and install YottaDB there which is not what we want)
+# (or else configure will create a subdirectory under $tmpdir (/tmp/.*) and install YodaDB there which is not what we want)
 if [ `echo $ydb_installdir | grep -c '^/'` -eq 0 ] ; then
 	ydb_installdir=`pwd`/$ydb_installdir
 fi
 if [ -d "$ydb_installdir" ] && [ "Y" != "$gtm_overwrite_existing" ] ; then
 	echo $ydb_installdir exists and --overwrite-existing not specified.
-	echo You can use --overwrite-existing --plugins-only to \(re\)install plugins without reinstalling YottaDB. ; err_exit
+	echo You can use --overwrite-existing --plugins-only to \(re\)install plugins without reinstalling YodaDB. ; err_exit
 fi
 
 if [ "Y" = "$gtm_verbose" ] ; then echo Finished checking options and assigning defaults ; dump_info ; fi
 
-# Prepare input to YottaDB configure script. The corresponding questions in configure.gtc are listed below in comments
+# Prepare input to YodaDB configure script. The corresponding questions in configure.gtc are listed below in comments
 if [ "root" = $(id -un) ] ; then gtm_configure_in=${gtm_tmpdir}/configure_${timestamp}.in
 else gtm_configure_in=${tmpdir}/configure_${timestamp}.in
 fi
@@ -1446,7 +1441,7 @@ if [ "N" = "$gtm_dryrun" ] && [ -n "$issystemd" ] ; then
 	if [ "no" != "$removeipcopt" ] ; then
 		if [ "yes" != "$ydb_change_removeipc" ] ; then
 			# shellcheck disable=SC2016
-			echo 'YottaDB needs to have setting of `RemoveIPC=no` in `/etc/systemd/logind.conf`'
+			echo 'YodaDB needs to have setting of `RemoveIPC=no` in `/etc/systemd/logind.conf`'
 			echo 'in order to function correctly. After placing it there, you will need to restart'
 			echo 'the systemd-logind service using this command "systemctl restart systemd-logind".'
 			echo ''
@@ -1467,15 +1462,15 @@ fi
 {
 	echo $gtm_user		# Response to : "What user account should own the files?"
 	echo $gtm_group		# Response to : "What group should own the files?"
-	echo $gtm_group_restriction	# Response to : "Should execution of YottaDB be restricted to this group?"
-	echo $ydb_installdir	# Response to : "In what directory should YottaDB be installed?"
+	echo $gtm_group_restriction	# Response to : "Should execution of YodaDB be restricted to this group?"
+	echo $ydb_installdir	# Response to : "In what directory should YodaDB be installed?"
 	echo y			# Response to one of two possible questions
 				#	"Directory $ydb_dist exists. If you proceed with this installation then some files will be over-written. Is it ok to proceed?"
 				#	"Directory $ydb_dist does not exist. Do you wish to create it as part of this installation? (y or n)"
 	if [ "Y" != "$ydb_utf8" ] ; then echo n		# Response to : "Should UTF-8 support be installed?"
 	else echo y					# Response to : "Should UTF-8 support be installed?"
 	fi
-	# YottaDB r1.38 and older releases had 2 additional questions in the "sr_unix/configure.gtc" script in case
+	# YodaDB r1.38 and older releases had 2 additional questions in the "sr_unix/configure.gtc" script in case
 	# they were asked to install with "--utf8". Add answers to those questions. In such cases, prior releases
 	# allowed for an arbitrary ICU version to be installed. But the current ydbinstall.sh does not allow for such
 	# an option so the user cannot pass a specific ICU version to the older release configure script using the
@@ -1499,11 +1494,11 @@ fi
 } >> $gtm_configure_in
 if [ "Y" = "$gtm_verbose" ] ; then echo Prepared configuration file ; cat $gtm_configure_in ; dump_info ; fi
 
-# Run the YottaDB configure script
+# Run the YodaDB configure script
 if [ "$ydb_distrib" != "$gtm_tmpdir" ] ; then
 	chmod +w $gtm_tmpdir/tmp
 	cd $gtm_tmpdir/tmp
-	# Starting YottaDB r1.10, unpacking the binary tarball creates an additional directory (e.g. yottadb_r122)
+	# Starting YodaDB r1.10, unpacking the binary tarball creates an additional directory (e.g. yottadb_r122)
 	# before the untar so cd into that subdirectory to get at the "configure" script from the distribution.
 	if [ "N" = "$gtm_gtm" ] && [ "r1.00" != ${ydb_version} ] ; then
 		cd yottadb_r*
@@ -1531,8 +1526,8 @@ fi
 if [ "Y" = "$gtm_gtm" ] ; then
 	product_name="GT.M"
 else
-	product_name="YottaDB"
-	# Add ydbinstall to the installation if the installation was a YottaDB installation
+	product_name="YodaDB"
+	# Add ydbinstall to the installation if the installation was a YodaDB installation
 	cp ydbinstall $ydb_installdir
 fi
 \rm -rf ${tmpdir:?}/*	# Now that install is successful, remove everything under temporary directory
@@ -1570,8 +1565,8 @@ exec_prefix=\${prefix}
 includedir=\${prefix}
 libdir=\${exec_prefix}
 
-Name: YottaDB
-Description: YottaDB database library
+Name: YodaDB
+Description: YodaDB database library
 Version: ${ydb_version}
 Cflags: -I\${includedir}
 Libs: -L\${libdir} -lyottadb -Wl,-rpath,\${libdir}
@@ -1580,7 +1575,7 @@ EOF
 if [ "N" != "$ydb_pkgconfig" ] ; then
 	# Now place pkg-config file where the system can find it
 	# We strip the "r" and "." to perform a numeric comparision between the versions
-	# YottaDB will only ever increment versions, so a larger number indicates a newer version
+	# YodaDB will only ever increment versions, so a larger number indicates a newer version
 	if [ ! -f ${pcfilepath}/yottadb.pc ] || {
 			existing_version=$(grep "^Version: " ${pcfilepath}/yottadb.pc | cut -s -d " " -f 2)
 			! expr "$existing_version" \> "$ydb_version" >/dev/null
