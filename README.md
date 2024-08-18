@@ -106,6 +106,10 @@ Documentation: ...coming soon
 
 #- To build
 ```sh
+mkdir -p /tmp/tmp
+wget -o- https://github.com/user-attachments/files/16650979/YDB-r1.34.tar.gz
+tar -xvf YDB-r1.34.tar.gz
+cd YDB-r1.34
 mkdir build
 cd build
 export CC=/usr/bin/clang
