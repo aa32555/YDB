@@ -100,24 +100,21 @@ Documentation: ...coming soon
 
 - [YDB-r1.34.tar.gz](https://github.com/user-attachments/files/16650979/YDB-r1.34.tar.gz)
 
-
-
+- [YDB-r2.00.tar.gz](https://github.com/user-attachments/files/16651027/YDB-r2.00.tar.gz)
 
 
 #- To build
 ```sh
 mkdir -p /tmp/tmp
-wget -o- https://github.com/user-attachments/files/16650979/YDB-r1.34.tar.gz
-tar -xvf YDB-r1.34.tar.gz
-cd YDB-r1.34
+wget -o- https://github.com/user-attachments/files/16651027/YDB-r2.00.tar.gz
+tar -xvf YDB-r2.00.tar.gz
+mv YDB-r2.00 YDB
+cd YDB
 mkdir build
 cd build
-export CC=/usr/bin/clang
-cmake -D CMAKE_LINKER:PATH=/usr/bin/ld.lld ..
+cmake ..
 make -j $(getconf _NPROCESSORS_ONLN)
 make install
-cd *otta*
-./ydbinstall --utf8 default --verbose --octo
 ```
 
 
