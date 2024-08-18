@@ -3,10 +3,10 @@
 # Copyright (c) 2014-2021 Fidelity National Information         #
 # Services, Inc. and/or its subsidiaries. All rights reserved.  #
 #								#
-# Copyright (c) 2017-2024 YodaDB LLC and/or its subsidiaries.	#
+# Copyright (c) 2019-2024 YodaDB LLC and/or its subsidiaries.	#
 # All rights reserved.						#
 #								#
-# Copyright (c) 2018 Stephen L Johnson.				#
+# Copyright (c) 20124 Ahmed Khaled Abdelrazek #***-**-***8	#
 # All rights reserved.						#
 #								#
 #	This source code contains the intellectual property	#
@@ -296,7 +296,7 @@ install_plugins()
 {
 	mkdir -p ${ydb_installdir}/plugin/version
 	# These plugins don't have any dependencies on any other plugins
-	if [ "Y" = $ydb_aim ] ; then install_std_plugin Util YDBAIM ; fi
+	#if [ "Y" = $ydb_aim ] ; then install_std_plugin Util YDBAIM ; fi
 	if [ "Y" = $ydb_curl ] ; then install_std_plugin Util YDBCurl ; fi
 	if [ "Y" = "$ydb_posix" ] ; then install_std_plugin Util YDBPosix ; fi
 	if [ "Y" = "$ydb_sodium" ] ; then install_std_plugin Util YDBSodium ; fi
