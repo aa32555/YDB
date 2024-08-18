@@ -1,5 +1,4 @@
-# YodaDB (previously Yotta before Darth Vader took over)
-
+# YodaDB
 All software in this package is part of YottaDB (https://YodaDB.com - coming soon ) each
 file of which identifies its copyright holders. The software is made available
 to you under the terms of a license. Refer to the [LICENSE](LICENSE) file for details.
@@ -7,10 +6,7 @@ to you under the terms of a license. Refer to the [LICENSE](LICENSE) file for de
 Homepage: https://github.com/aa32555/YDB
 
 Documentation: ...coming soon
-
-#- Building and Installing YodaDB
- ## Ubuntu Linux ***Must be run as root***
-
+##YodaDB 
 * To Install ===>
 ```sh
  apt-get update
