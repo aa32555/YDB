@@ -68,10 +68,11 @@ The ydbinstall.sh script downloads and installs YodaDB.
 Download the script in a temporary directory, and make it executable, e.g.:
 
 ```
-mkdir /tmp/tmp && cd /tmp/tmp && wget [https://yodadb.com/ydbinstall.sh](https://raw.githubusercontent.com/aa32555/YDB/master/sr_unix/ydbinstall.sh) && chmod +x ydbinstall.sh
-*- ***INSTALL***
+mkdir /tmp/tmp && cd /tmp/tmp && wget https://raw.githubusercontent.com/aa32555/YDB/master/sr_unix/ydbinstall.sh && chmod +x ydbinstall.sh
 ./ydbinstall.sh --utf8 default --verbose --octo
-*- ***BUILD*** (--overwrite-existing to overwrite)
-./ydbinstall.sh --utf8 default --verbose --octo --from-source https://github.com/aa32555/YDB.git 
+
+/ydbinstall.sh --utf8 default --verbose --octo --from-source https://github.com/aa32555/YDB.git 
+
+./ydbinstall.sh --utf8 default --verbose --octo --from-source https://github.com/aa32555/YDB.git --overwrite-existing 
  ```
 
